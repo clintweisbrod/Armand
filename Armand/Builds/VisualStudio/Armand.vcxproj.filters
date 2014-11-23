@@ -28,6 +28,9 @@
     <Filter Include="Header Files\Math">
       <UniqueIdentifier>{51988aad-b208-4e00-92ce-a19f686d49e2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Math\ttmath">
+      <UniqueIdentifier>{0fb1c4ce-dc79-473c-b2b2-c450aac24442}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -50,6 +53,45 @@
     </ClInclude>
     <ClInclude Include="..\..\Source\Math\VectorTemplates.h">
       <Filter>Header Files\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Math\ttmath\ttmath.h">
+      <Filter>Header Files\Math\ttmath</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Math\ttmath\ttmathbig.h">
+      <Filter>Header Files\Math\ttmath</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Math\ttmath\ttmathdec.h">
+      <Filter>Header Files\Math\ttmath</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Math\ttmath\ttmathint.h">
+      <Filter>Header Files\Math\ttmath</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Math\ttmath\ttmathmisc.h">
+      <Filter>Header Files\Math\ttmath</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Math\ttmath\ttmathobjects.h">
+      <Filter>Header Files\Math\ttmath</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Math\ttmath\ttmathparser.h">
+      <Filter>Header Files\Math\ttmath</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Math\ttmath\ttmaththreads.h">
+      <Filter>Header Files\Math\ttmath</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Math\ttmath\ttmathtypes.h">
+      <Filter>Header Files\Math\ttmath</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Math\ttmath\ttmathuint.h">
+      <Filter>Header Files\Math\ttmath</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Math\ttmath\ttmathuint_noasm.h">
+      <Filter>Header Files\Math\ttmath</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Math\ttmath\ttmathuint_x86.h">
+      <Filter>Header Files\Math\ttmath</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Math\ttmath\ttmathuint_x86_64.h">
+      <Filter>Header Files\Math\ttmath</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -75,5 +117,15 @@
     <ResourceCompile Include="..\..\Source\Main\Armand.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\Source\Math\ttmath\ttmathuint_x86_64_msvc.asm">
+      <Filter>Header Files\Math\ttmath</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="..\..\Source\Math\ttmath\ttmathuint_x86_64_msvc.obj">
+      <Filter>Header Files\Math\ttmath</Filter>
+    </Object>
   </ItemGroup>
 </Project>
