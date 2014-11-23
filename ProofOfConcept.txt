@@ -1,0 +1,83 @@
+Armand Proof of Concept Items
+
+- Get familiar with how Digital Universe data is organized.
+
+- 128-bit signed integer math for millimeter precision within the entire visible Universe
+	- ttmath template library
+	- Load testing. How much slower is it compared to native integers?
+	- Integrate with vector template library so that 128-bit integer vector math is possible.
+	- Casting to double precision floating points
+		- millimeters converted to light years
+		- Performance?
+	- May need to have some of ttmath running in vertex shader.
+	
+- OpenGL considerations
+	- State tracking
+	- Shader infrastructure
+	- VBO infrastructure
+	- FBO infrastructure
+	- Little to no immediate mode OpenGL calls
+		
+- Frustum testing
+	- Should be pretty simple for 180 degree fisheye.
+
+- Fisheye projection
+	- No multipass. vertex and geometry shaders will be used.
+		- Need method to transform universal coordinates to screen coordinates.
+		- Need method to transform screen coordinates to universal coordinates.
+		
+- Render performance
+	- Need to be able to render millions of points per frame
+	- Viewer always at OpenGL origin.
+		- Visible objects must be translated by viewer location: one vector subtraction
+		- Visible object 128-bit integer vector cast to float for GPU
+		- This must be done in vertex shader
+	- Complex 3DS models must render
+	
+- Texture management
+	- Similar to SN
+	- Needs to be done asynchronously and preemptively rather than on demand.
+	
+- Planet texturing
+	- At distances within a radius or so, planet textures will done with cube maps rather than
+	  equirectangular mapping.
+	- At distance significantly less than a radius, where only a small portion of the surface is visible,
+	  the surface will be rendered with higher resolution tiles.
+	- Bump mapping will never be done. Instead, planets will be rendered using terrain elevation data
+	  at all distances. Lighting normals will be specified per vertex.
+	- Rings
+		- Rendered with single square "donut" texture until very near ring plane.
+		- Rendered with particles when near ring plane.
+
+- Fonts
+	- Use third-party library.
+	
+- Viewer Orientation
+	- Controlled by quaternions. No gimball locking... ever.
+	- Spaceship mode will be primary mode of viewer movement, controlled by SciTouch
+		- Direction of travel controlled by SciTouch pointer position.
+		- Speed controlled by forward and back buttons
+		- Viewer direction control? Mods to SciTouch?
+	- Optional coupling to object coordinate system.
+	
+- Tripping
+	- Always done in primary "spaceship" viewer mode. No coordinate system interpolations.
+
+- Object Hierarchy
+	- One "Universe" object
+		- Every group of galaxies will be a child object of the Universe object.
+			- Every galaxy will be a child object of a galaxy group or the Universe object.
+				- Every nebula, star cluster, black hole, star, etc., will be a child object of a galaxy object.
+					- Every planet, comet, asteroid, probe, etc., will be a child object of a star object.
+						- Every moon, satellite, etc., will be a child object of a planet.
+	- Every object has a local coordinate system with a "up" direction.
+	- Every object has a rotation matrix that defines the object's rotation about the up axis.
+		- Must be coupled with time flow.
+	- Every object has a rotation matrix that takes a vector in the object's coordinate system
+	  and transforms it to the paren't coordinate system
+
+- Coordinate transformations
+	- Rotation matrices to tranform vectors from one coordinate system to another.
+		- Child-parent coordinate transformation
+		
+	
