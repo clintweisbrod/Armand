@@ -28,7 +28,6 @@
 using namespace std;		// Use the STL namespace; std
 
 #include <glew-1.11.0/include/GL/glew.h>
-//#include <glew-1.11.0/include/GL/glxew.h>
 #include <glew-1.11.0/include/GL/wglew.h>
 
 //#include <gl/gl.h>			// Header file for the OpenGL32 library
