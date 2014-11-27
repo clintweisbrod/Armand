@@ -112,6 +112,13 @@
       <AdditionalDependencies>glew32.lib;opengl32.lib;glu32.lib;freetype.lib;freetype-gl.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\SDKs\glew\lib\Release\x64;freetype\$(Platform)\$(Configuration);freetype-gl\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>copy "$(ProjectDir)..\..\SDKs\glew\bin\Release\x64\glew32.dll" "$(OutDir)" /y
+
+if not exist "$(OutDir)\Resources" mkdir "$(OutDir)\Resources"
+(robocopy "$(ProjectDir)..\..\Source\Resources" "$(OutDir)\Resources" /e /mt) &amp; IF %ERRORLEVEL% GTR 3 EXIT %ERRORLEVEL%
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -149,6 +156,13 @@
       <AdditionalLibraryDirectories>..\..\SDKs\glew\lib\Release\x64;freetype\$(Platform)\$(Configuration);freetype-gl\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>glew32.lib;opengl32.lib;glu32.lib;freetype.lib;freetype-gl.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>copy "$(ProjectDir)..\..\SDKs\glew\bin\Release\x64\glew32.dll" "$(OutDir)" /y
+
+if not exist "$(OutDir)\Resources" mkdir "$(OutDir)\Resources"
+(robocopy "$(ProjectDir)..\..\Source\Resources" "$(OutDir)\Resources" /e /mt) &amp; IF %ERRORLEVEL% GTR 3 EXIT %ERRORLEVEL%
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
