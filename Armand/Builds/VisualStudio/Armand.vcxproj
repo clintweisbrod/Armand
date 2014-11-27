@@ -72,7 +72,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>..\..\SDKs;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\SDKs\glew\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <OutDir>..\Output\</OutDir>
   </PropertyGroup>
@@ -81,6 +81,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>..\..\SDKs\glew\include;$(IncludePath)</IncludePath>
+    <OutDir>..\Output\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -102,13 +104,13 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\Source\Main;..\..\Source\Math;..\..\Source\OpenGL</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Main;..\..\Source\ThirdParty;..\..\Source\ThirdParty\freetype\devel;..\..\Source\ThirdParty\freetype\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glew32.lib;opengl32.lib;glu32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\SDKs\glew-1.11.0\lib\Release\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glew32.lib;opengl32.lib;glu32.lib;freetype.lib;freetype-gl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\SDKs\glew\lib\Release\x64;freetype\$(Platform)\$(Configuration);freetype-gl\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -135,14 +137,17 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>..\..\Source;..\..\Source\Main;..\..\Source\ThirdParty;..\..\Source\ThirdParty\freetype\devel;..\..\Source\ThirdParty\freetype\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>..\..\SDKs\glew\lib\Release\x64;freetype\$(Platform)\$(Configuration);freetype-gl\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glew32.lib;opengl32.lib;glu32.lib;freetype.lib;freetype-gl.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -167,14 +172,19 @@
     <ClInclude Include="..\..\Source\Math\ttmath\ttmathuint_x86.h" />
     <ClInclude Include="..\..\Source\Math\ttmath\ttmathuint_x86_64.h" />
     <ClInclude Include="..\..\Source\Math\VectorTemplates.h" />
+    <ClInclude Include="..\..\Source\OpenGL\Fonts\FontFactory.h" />
     <ClInclude Include="..\..\Source\OpenGL\OpenGLWindow.h" />
+    <ClInclude Include="..\..\Source\Utilities\easylogging++.h" />
+    <ClInclude Include="..\..\Source\Utilities\Singleton.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\Main\Armand.cpp" />
     <ClCompile Include="..\..\Source\Main\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\..\Source\OpenGL\Fonts\FontFactory.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\OpenGLWindow.cpp" />
   </ItemGroup>
   <ItemGroup>

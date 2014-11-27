@@ -31,6 +31,15 @@
     <Filter Include="Header Files\Math\ttmath">
       <UniqueIdentifier>{0fb1c4ce-dc79-473c-b2b2-c450aac24442}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\OpenGL\Fonts">
+      <UniqueIdentifier>{343f7aae-e6c5-44fb-9fb4-d8121a980216}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Utilities">
+      <UniqueIdentifier>{16a7bf15-3d36-40c1-84d6-de2cd933060f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\OpenGL\Fonts">
+      <UniqueIdentifier>{5c120bc0-5aba-4318-a704-c7b76823d439}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -93,6 +102,15 @@
     <ClInclude Include="..\..\Source\Math\ttmath\ttmathuint_x86_64.h">
       <Filter>Header Files\Math\ttmath</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Source\Utilities\Singleton.h">
+      <Filter>Header Files\Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\OpenGL\Fonts\FontFactory.h">
+      <Filter>Header Files\OpenGL\Fonts</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Utilities\easylogging++.h">
+      <Filter>Header Files\Utilities</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\Main\Armand.cpp">
@@ -103,6 +121,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\OpenGL\OpenGLWindow.cpp">
       <Filter>Source Files\OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\OpenGL\Fonts\FontFactory.cpp">
+      <Filter>Source Files\OpenGL\Fonts</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
