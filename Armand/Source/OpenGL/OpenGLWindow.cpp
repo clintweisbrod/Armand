@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "OpenGLWindow.h"
+#include "Fonts/FontFactory.h"
 
 bool OpenGLWindow::sEnabledGLExtensions = false;
 
@@ -718,12 +719,14 @@ void OpenGLWindow::render()								// Here's where we do all the drawing
 	// Compute light vector from our Euler angles
 	// This computation assumes that zero Euler angles give gaze down -z axis, which is the default
 	// OpenGL view transformation
-	mLightVector.x = cos(mLightPolar.fLatitude) * sin(-mLightPolar.fLongitude);
-	mLightVector.z = cos(mLightPolar.fLatitude) * cos(-mLightPolar.fLongitude);
-	mLightVector.y = sin(mLightPolar.fLatitude);
+	mLightVector.x = (GLfloat)(cos(mLightPolar.fLatitude) * sin(-mLightPolar.fLongitude));
+	mLightVector.z = (GLfloat)(cos(mLightPolar.fLatitude) * cos(-mLightPolar.fLongitude));
+	mLightVector.y = (GLfloat)sin(mLightPolar.fLatitude);
 
 	// Clear screen and modelview matrix
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	// Clear screen and depth buffer
+
+	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();									// Reset the current modelview matrix
 
 	GLfloat lightPosition[] = {0.0f, 0.0f, 0.0f, 1.0f};	// directional
@@ -795,6 +798,27 @@ void OpenGLWindow::renderCoordinateAxes() const
 		glVertex3i(0, 0, 0);
 		glVertex3i(0, 0, kAxisSize);
 	glEnd();
+
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+
+	gluOrtho2D(0, mWindowSize.cx, 0, mWindowSize.cy);
+
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
+	// Freetype library testing
+	FontFactory* ff = FontFactory::instance();
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+//	ff->render_text("The Quick Brown Fox Jumps Over The Lazy Dog.", 200, 200, 1.0f, 1.0f);
+	ff->render_text(mWindowSize);
+
+	glPopMatrix();
+
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
 }
 
 void OpenGLWindow::getGazeAngles(double& ioAzimuth, double& ioAltitude) const
@@ -831,7 +855,7 @@ double OpenGLWindow::getCurrentSeconds() const
 {
 	LARGE_INTEGER tick;
 	QueryPerformanceCounter(&tick);
-	double rawTime = tick.QuadPart;
+	double rawTime = (double)tick.QuadPart;
 	double seconds = rawTime/mTicksPerSecond.QuadPart;
 	
 	return seconds;
