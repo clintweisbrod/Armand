@@ -2,8 +2,8 @@
 //
 
 #include "stdafx.h"
-#include "Armand.h"
-#include "OpenGLWindow.h"
+#include "Main/Armand.h"
+#include "OpenGL/OpenGLWindow.h"
 
 #define MAX_LOADSTRING 100
 
@@ -13,6 +13,8 @@ TCHAR szTitle[MAX_LOADSTRING];					// The title bar text
 TCHAR szWindowClass[MAX_LOADSTRING];			// the main window class name
 OpenGLWindow* gOpenGLWindow;
 bool gActive = true;		// Window active flag set to true by default
+
+_INITIALIZE_EASYLOGGINGPP
 
 // Forward declarations of functions included in this code module:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
@@ -27,6 +29,10 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 {
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
+
+	// Load logging configuration from file
+	el::Configurations conf("logging.cfg");
+	el::Loggers::reconfigureAllLoggers(conf);
 
  	// TODO: Place code here.
 	MSG msg;
