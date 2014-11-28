@@ -14,7 +14,7 @@
 /*  understand and accept it fully.                                        */
 /*                                                                         */
 /***************************************************************************/
-
+#pragma warning( disable: 4244 )
 
 #include <ft2build.h>
 #include FT_INTERNAL_DEBUG_H
