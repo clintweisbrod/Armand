@@ -68,9 +68,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="stdafx.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\Source\ThirdParty\freetype-gl\font-manager.c">
       <Filter>Source Files</Filter>
     </ClCompile>
