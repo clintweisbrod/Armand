@@ -1,15 +1,12 @@
 #include "stdafx.h"
 
-#include <freetype-gl/freetype-gl.h>
-#include <freetype-gl/mat4.h>
-#include <freetype-gl/shader.h>
-#include <freetype-gl/vertex-buffer.h>
-
 #include "OpenGL/Fonts/FontFactory.h"
+#include "OpenGL/OpenGLWindow.h"
 
-GLuint shader;
-vertex_buffer_t *buffer;
-mat4   model, view, projection;
+extern OpenGLWindow* gOpenGLWindow;
+GLuint FontFactory::sShader = 0;
+
+const int kMinFontSize = 10;	// Font smaller than this are pretty difficult to read
 
 typedef struct {
 	float x, y, z;    // position
@@ -17,24 +14,154 @@ typedef struct {
 	float r, g, b, a; // color
 } vertex_t;
 
-
-void add_text(vertex_buffer_t * buffer, texture_font_t * font, wchar_t * text, vec4 * color, vec2 * pen)
+FontFactory::FontFactory()
 {
-	size_t i;
-	float r = color->red, g = color->green, b = color->blue, a = color->alpha;
-	for (i = 0; i<wcslen(text); ++i)
+	sShader = shader_load("shaders/v3f-t2f-c4f.vert", "shaders/v3f-t2f-c4f.frag");
+}
+
+FontFactory::~FontFactory()
+{
+	FontRendererMapType::iterator it;
+	for (it = mRenderers.begin(); it != mRenderers.end(); it++)
 	{
-		texture_glyph_t *glyph = texture_font_get_glyph(font, text[i]);
+		if (it->second)
+		{
+			delete it->second;
+			it->second = NULL;
+		}
+	}
+}
+
+FontRenderer* FontFactory::getFontRenderer(string& inFaceName)
+{
+	if (inFaceName.length() == 0)
+		return NULL;
+
+	FontRenderer* result = NULL;
+	FontRendererMapType::iterator it = mRenderers.find(inFaceName);
+	if (it == mRenderers.end())
+	{
+		// Create the renderer
+		FontRenderer* newRenderer = new FontRenderer(inFaceName);
+		if (newRenderer)
+		{
+			mRenderers[inFaceName] = newRenderer;
+			result = newRenderer;
+		}
+	}
+	else
+		result = it->second;
+
+	return result;
+}
+
+FontRenderer::FontRenderer(string& inFontName) : mAtlas(NULL),
+												 mVertexBuffer(NULL),
+												 mLargestFontSize(0)
+{
+	string fontFileName = getSystemFontFile(inFontName);
+	if (fontFileName.length() == 0)
+	{
+		return;
+	}
+
+	mFontName = inFontName;
+	mAtlas = texture_atlas_new(512, 512, 1);
+	if (mAtlas == NULL)
+	{
+		return;
+	}
+
+	// TODO: Fill theGlyphs with all reasonable characters that might be used. 
+	wchar_t* theGlyphs = L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+	// Populate 
+	const char* filename = fontFileName.c_str();
+	const int kMaxFontSize = 50;	// Highly unlikely we will get around to this font size.
+	for (int i = kMinFontSize; i <= kMaxFontSize; i += 2)
+	{
+		texture_font_t* font = texture_font_new_from_file(mAtlas, (float)i, filename);
+		if (texture_font_load_glyphs(font, theGlyphs) == 0)
+			mFonts[i] = font;
+		else
+		{
+			mLargestFontSize = i - 2;
+			break;
+		}
+	}
+
+	// Create a new vertex buffer
+	mVertexBuffer = vertex_buffer_new("vertex:3f,tex_coord:2f,color:4f");
+
+	// Setup transform matrices
+	mat4_set_identity(&mModelMatrix);
+	mat4_set_identity(&mViewMatrix);
+	SIZE windowSize;
+	gOpenGLWindow->getWindowSize(windowSize);
+	mat4_set_orthographic(&mProjectionMatrix, 0, (float)windowSize.cx, 0, (float)windowSize.cy, -1, 1);
+}
+
+FontRenderer::~FontRenderer()
+{
+	FontMapType::iterator it;
+	for (it = mFonts.begin(); it != mFonts.end(); it++)
+	{
+		if (it->second)
+		{
+			texture_font_delete(it->second);
+			it->second = NULL;
+		}
+	}
+
+	if (mVertexBuffer)
+	{
+		vertex_buffer_delete(mVertexBuffer);
+		mVertexBuffer = NULL;
+	}
+}
+
+bool FontRenderer::render(wstring& inString, int inFontSize, TVector2f inPen, TVector4f inColor)
+{
+	int fontSize = inFontSize;
+
+	// We only maintain fonts with size kMinFontSize, kMinFontSize+2, kMinFontSize+4, etc.
+	constrain(fontSize, kMinFontSize, mLargestFontSize);
+
+	FontMapType::iterator it = mFonts.find(fontSize);
+	if (it == mFonts.end())
+	{
+		// If we don't find the font size go up one size if possible, otherwise go down one size.
+		if (fontSize < mLargestFontSize - 1)
+			fontSize++;
+		else
+			fontSize--;
+		it = mFonts.find(fontSize);
+	}
+	if (it == mFonts.end())
+	{
+		LOG(ERROR) << "Font: " << mFontName << " " << inFontSize << " is not available.";
+		return false;
+	}
+
+	// Clear the vertex buffer
+	vertex_buffer_clear(mVertexBuffer);
+
+	size_t numGlyphsRendered = 0;
+	texture_font_t* font = it->second;
+	float r = inColor.x, g = inColor.y, b = inColor.z, a = inColor.w;
+	for (size_t i = 0; i < inString.length(); ++i)
+	{
+		texture_glyph_t* glyph = texture_font_get_glyph(font, inString[i]);
 		if (glyph != NULL)
 		{
 			float kerning = 0.0f;
 			if (i > 0)
 			{
-				kerning = texture_glyph_get_kerning(glyph, text[i - 1]);
+				kerning = texture_glyph_get_kerning(glyph, inString[i - 1]);
 			}
-			pen->x += kerning;
-			int x0 = (int)(pen->x + glyph->offset_x);
-			int y0 = (int)(pen->y + glyph->offset_y);
+			inPen.x += kerning;
+			int x0 = (int)(inPen.x + glyph->offset_x);
+			int y0 = (int)(inPen.y + glyph->offset_y);
 			int x1 = (int)(x0 + glyph->width);
 			int y1 = (int)(y0 - glyph->height);
 			float s0 = glyph->s0;
@@ -42,214 +169,44 @@ void add_text(vertex_buffer_t * buffer, texture_font_t * font, wchar_t * text, v
 			float s1 = glyph->s1;
 			float t1 = glyph->t1;
 			GLuint indices[6] = { 0, 1, 2, 0, 2, 3 };
-			vertex_t vertices[4] = {	{ x0, y0, 0, s0, t0, r, g, b, a },
-										{ x0, y1, 0, s0, t1, r, g, b, a },
-										{ x1, y1, 0, s1, t1, r, g, b, a },
-										{ x1, y0, 0, s1, t0, r, g, b, a } };
-			vertex_buffer_push_back(buffer, vertices, 4, indices, 6);
-			pen->x += glyph->advance_x;
+			vertex_t vertices[4] = { { x0, y0, 0, s0, t0, r, g, b, a },
+									 { x0, y1, 0, s0, t1, r, g, b, a },
+									 { x1, y1, 0, s1, t1, r, g, b, a },
+									 { x1, y0, 0, s1, t0, r, g, b, a } };
+			vertex_buffer_push_back(mVertexBuffer, vertices, 4, indices, 6);
+			inPen.x += glyph->advance_x;
+
+			numGlyphsRendered++;
 		}
 	}
-}
 
-FontFactory::FontFactory()
-{
-	// Freetype library one-time initialization
-	if (FT_Init_FreeType(&m_Ft))
-	{
-		LOG(ERROR) << "Failed to initialize Freetype library.";
-		return;
-	}
-
-	size_t i;
-	texture_font_t *font = 0;
-	texture_atlas_t *atlas = texture_atlas_new(512, 512, 1);
-
-	//	const char* filename = "fonts/Vera.ttf";
-	string fontFileName = getSystemFontFile("Verdana");
-	if (fontFileName.length() == 0)
-		return;
-	const char* filename = fontFileName.c_str();
-
-	wchar_t *theText = L"A Quick Brown Fox Jumps Over The Lazy Dog 0123456789";
-	buffer = vertex_buffer_new("vertex:3f,tex_coord:2f,color:4f");
-	vec2 pen = { { 200, 800 } };
-	vec4 white = { { 1, 1, 1, 1 } };
-	for (i = 7; i < 27; ++i)
-	{
-		font = texture_font_new_from_file(atlas, i, filename);
-		pen.x = 5;
-		pen.y -= font->height;
-		texture_font_load_glyphs(font, theText);
-		add_text(buffer, font, theText, &white, &pen);
-		texture_font_delete(font);
-	}
-	glBindTexture(GL_TEXTURE_2D, atlas->id);
-
-	shader = shader_load("shaders/v3f-t2f-c4f.vert", "shaders/v3f-t2f-c4f.frag");
-	mat4_set_identity(&projection);
-	mat4_set_identity(&model);
-	mat4_set_identity(&view);
-
-
-/*
-	string fontFileName = getSystemFontFile("Verdana");
-	if (fontFileName.length() == 0)
-		return;
-
-	if (FT_New_Face(m_Ft, fontFileName.c_str(), 0, &face))
-	{
-		LOG(ERROR) << "Freetype library failed to open " << fontFileName;
-		return;
-	}
-	g = face->glyph;
-	FT_Set_Pixel_Sizes(face, 0, 30);
-	
-	glActiveTexture(GL_TEXTURE0);
-	glGenTextures(1, &tex);
-
-	glBindTexture(GL_TEXTURE_2D, tex);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-//	glTexImage2D(
-//		GL_TEXTURE_2D,
-//		0,
-//		GL_ALPHA,
-//		g->bitmap.width,
-//		g->bitmap.rows,
-//		0,
-//		GL_ALPHA,
-//		GL_UNSIGNED_BYTE,
-//		g->bitmap.buffer
-//		);
-*/
-}
-
-FontFactory::~FontFactory()
-{
-}
-
-
-
-
-void FontFactory::render_text(SIZE inWindowSize)
-//void FontFactory::render_text(const char *text, float x, float y, float sx, float sy)
-{
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_TEXTURE_2D);
-/*
-	GLfloat x = 100;
-	GLfloat y = 600;
-	GLfloat size = 512;
-	glBegin(GL_QUADS);
-	glTexCoord2f(0, 0); glVertex2f(x, y);
-	glTexCoord2f(0, 1); glVertex2f(x, y - size);
-	glTexCoord2f(1, 1); glVertex2f(x + size, y - size);
-	glTexCoord2f(1, 0); glVertex2f(x + size, y);
-	glEnd();
-*/
+	glBindTexture(GL_TEXTURE_2D, mAtlas->id);
 
-	mat4_set_orthographic(&projection, 0, inWindowSize.cx, 0, inWindowSize.cy, -1, 1);
-
-	glUseProgram(shader);
+	glUseProgram(FontFactory::sShader);
 	{
-		glUniform1i(glGetUniformLocation(shader, "texture"), 0);
-		glUniformMatrix4fv(glGetUniformLocation(shader, "model"), 1, 0, model.data);
-		glUniformMatrix4fv(glGetUniformLocation(shader, "view"), 1, 0, view.data);
-		glUniformMatrix4fv(glGetUniformLocation(shader, "projection"), 1, 0, projection.data);
-		vertex_buffer_render(buffer, GL_TRIANGLES);
+		glUniform1i(glGetUniformLocation(FontFactory::sShader, "texture"), 0);
+		glUniformMatrix4fv(glGetUniformLocation(FontFactory::sShader, "model"), 1, 0, mModelMatrix.data);
+		glUniformMatrix4fv(glGetUniformLocation(FontFactory::sShader, "view"), 1, 0, mViewMatrix.data);
+		glUniformMatrix4fv(glGetUniformLocation(FontFactory::sShader, "projection"), 1, 0, mProjectionMatrix.data);
+		vertex_buffer_render(mVertexBuffer, GL_TRIANGLES);
+		glUseProgram(0);
 	}
 
 	glDisable(GL_TEXTURE_2D);
 	glDisable(GL_BLEND);
+
+	return (numGlyphsRendered == inString.length());
 }
 
-/*
-void FontFactory::render_text(const char *text, float x, float y, float sx, float sy)
-{
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glEnable(GL_TEXTURE_2D);
-
-	const char *p;
-
-	for (p = text; *p; p++)
-	{
-		if (FT_Load_Char(face, *p, FT_LOAD_RENDER))
-			continue;
-
-		glTexImage2D(
-			GL_TEXTURE_2D,
-			0,
-			GL_ALPHA,
-			g->bitmap.width,
-			g->bitmap.rows,
-			0,
-			GL_ALPHA,
-			GL_UNSIGNED_BYTE,
-			g->bitmap.buffer
-			);
-
-		float x2 = x + g->bitmap_left * sx;
-		float y2 = -y - g->bitmap_top * sy;
-		float w = g->bitmap.width * sx;
-		float h = g->bitmap.rows * sy;
-
-		glBegin(GL_TRIANGLE_STRIP);
-		glTexCoord2f(0, 0); glVertex2f(x2, -y2);
-		glTexCoord2f(1, 0); glVertex2f(x2 + w, -y2);
-		glTexCoord2f(0, 1); glVertex2f(x2, -y2 - h);
-		glTexCoord2f(1, 1); glVertex2f(x2 + w, -y2 - h);
-		glEnd();
-
-		x += (g->advance.x >> 6) * sx;
-		y += (g->advance.y >> 6) * sy;
-	}
-
-	glDisable(GL_TEXTURE_2D);
-}
-
-void FontFactory::renderString(string inString)
-{
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	float x = 100;
-	float y = 100;
-	float sx = 1;
-	float sy = 1;
-
-	float x2 = x + g->bitmap_left * sx;
-	float y2 = -y - g->bitmap_top * sy;
-	float w = g->bitmap.width * sx;
-	float h = g->bitmap.rows * sy;
-
-	glEnable(GL_TEXTURE_2D);
-	
-	glBegin(GL_TRIANGLE_STRIP);
-		glTexCoord2f(0, 0); glVertex2f(x2,     -y2);
-		glTexCoord2f(1, 0); glVertex2f(x2 + w, -y2);
-		glTexCoord2f(0, 1); glVertex2f(x2,     -y2 - h);
-		glTexCoord2f(1, 1); glVertex2f(x2 + w, -y2 - h);
-	glEnd();
-
-	glDisable(GL_TEXTURE_2D);
-}
-*/
-
-string FontFactory::getSystemFontFile(const string &faceName)
+string FontRenderer::getSystemFontFile(const string &inFontName) const
 {
 	static const LPWSTR fontRegistryPath = L"Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts";
 	HKEY hKey;
 	LONG result;
-	std::wstring wsFaceName(faceName.begin(), faceName.end());
+	std::wstring wsFaceName(inFontName.begin(), inFontName.end());
 
 	// Open Windows font registry key
 	result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, fontRegistryPath, 0, KEY_READ, &hKey);

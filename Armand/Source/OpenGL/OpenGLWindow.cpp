@@ -799,26 +799,13 @@ void OpenGLWindow::renderCoordinateAxes() const
 		glVertex3i(0, 0, kAxisSize);
 	glEnd();
 
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-
-	gluOrtho2D(0, mWindowSize.cx, 0, mWindowSize.cy);
-
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glLoadIdentity();
-
-	// Freetype library testing
+	// FontFactory testing
+	string fontName("Verdana");
+	int fontSize = 30;
+	wstring text(L"Hello");
 	FontFactory* ff = FontFactory::instance();
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-//	ff->render_text("The Quick Brown Fox Jumps Over The Lazy Dog.", 200, 200, 1.0f, 1.0f);
-	ff->render_text(mWindowSize);
-
-	glPopMatrix();
-
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+	FontRenderer* fontRenderer = ff->getFontRenderer(fontName);
+	fontRenderer->render(text, fontSize, TVector2f(100, 500), TVector4f(1.0f, 1.0f, 1.0f, 1.0f));
 }
 
 void OpenGLWindow::getGazeAngles(double& ioAzimuth, double& ioAltitude) const
