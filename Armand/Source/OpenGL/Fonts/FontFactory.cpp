@@ -4,7 +4,6 @@
 #include "OpenGL/OpenGLWindow.h"
 
 extern OpenGLWindow* gOpenGLWindow;
-GLuint FontFactory::sShader = 0;
 
 const int kMinFontSize = 10;	// Font smaller than this are pretty difficult to read
 
@@ -16,8 +15,9 @@ typedef struct {
 
 FontFactory::FontFactory()
 {
-	// TODO: Going to need a more general shader load
-	sShader = shader_load("shaders/v3f-t2f-c4f.vert", "shaders/v3f-t2f-c4f.frag");
+	// TODO: Going to need a more general shader loading mechanism
+	// We load this here because we only want to attempt to load it once.
+	mShader = shader_load("shaders/v3f-t2f-c4f.vert", "shaders/v3f-t2f-c4f.frag");
 }
 
 FontFactory::~FontFactory()
@@ -32,6 +32,8 @@ FontFactory::~FontFactory()
 			it->second = NULL;
 		}
 	}
+
+	// TODO: Cleanup mShader
 }
 
 FontRenderer* FontFactory::getFontRenderer(string& inFaceName)
@@ -44,7 +46,7 @@ FontRenderer* FontFactory::getFontRenderer(string& inFaceName)
 	if (it == mRenderers.end())
 	{
 		// Create the renderer
-		FontRenderer* newRenderer = new FontRenderer(inFaceName);
+		FontRenderer* newRenderer = new FontRenderer(inFaceName, mShader);
 		if (newRenderer)
 		{
 			mRenderers[inFaceName] = newRenderer;
@@ -57,9 +59,10 @@ FontRenderer* FontFactory::getFontRenderer(string& inFaceName)
 	return result;
 }
 
-FontRenderer::FontRenderer(string& inFontName) : mAtlas(NULL),
-												 mVertexBuffer(NULL),
-												 mLargestFontSize(0)
+FontRenderer::FontRenderer(string& inFontName, GLuint inShader) : mAtlas(NULL),
+																  mVertexBuffer(NULL),
+																  mLargestFontSize(0),
+																  mShader(inShader)
 {
 	// Locate system font file
 	string fontFileName = getSystemFontFile(inFontName);
@@ -206,12 +209,12 @@ bool FontRenderer::render(wstring& inString, int inFontSize, TVector2f& inPen, T
 	glBindTexture(GL_TEXTURE_2D, mAtlas->id);
 
 	// Activate the font shader
-	glUseProgram(FontFactory::sShader);
+	glUseProgram(mShader);
 	{
-		glUniform1i(glGetUniformLocation(FontFactory::sShader, "texture"), 0);
-		glUniformMatrix4fv(glGetUniformLocation(FontFactory::sShader, "model"), 1, 0, mModelMatrix.data);
-		glUniformMatrix4fv(glGetUniformLocation(FontFactory::sShader, "view"), 1, 0, mViewMatrix.data);
-		glUniformMatrix4fv(glGetUniformLocation(FontFactory::sShader, "projection"), 1, 0, mProjectionMatrix.data);
+		glUniform1i(glGetUniformLocation(mShader, "texture"), 0);
+		glUniformMatrix4fv(glGetUniformLocation(mShader, "model"), 1, 0, mModelMatrix.data);
+		glUniformMatrix4fv(glGetUniformLocation(mShader, "view"), 1, 0, mViewMatrix.data);
+		glUniformMatrix4fv(glGetUniformLocation(mShader, "projection"), 1, 0, mProjectionMatrix.data);
 		vertex_buffer_render(mVertexBuffer, GL_TRIANGLES);
 
 		// Deactivate the shader

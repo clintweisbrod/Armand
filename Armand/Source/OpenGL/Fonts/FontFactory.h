@@ -11,7 +11,7 @@ typedef map<int, texture_font_t*> FontMapType;
 class FontRenderer
 {
 	public:
-		FontRenderer(string& inFontName);
+		FontRenderer(string& inFontName, GLuint inShader);
 		virtual ~FontRenderer();
 
 		bool render(wstring& inString, int inFontSize, TVector2f& inPen, TVector4f& inColor, float inRotationInDegrees = 0);
@@ -25,9 +25,11 @@ class FontRenderer
 		vertex_buffer_t*		mVertexBuffer;
 		int						mLargestFontSize;
 
+		// Transformation matrices used to transform every vertex passing through shader
 		mat4					mModelMatrix;
 		mat4					mViewMatrix;
 		mat4					mProjectionMatrix;
+		GLuint					mShader;
 };
 
 typedef map<string, FontRenderer*> FontRendererMapType;
@@ -36,8 +38,6 @@ class FontFactory : public TSingleton<FontFactory>
 	friend class TSingleton<FontFactory>;
 
 	public:
-		static GLuint		sShader;
-
 		FontRenderer* getFontRenderer(string& inFaceName);
 		void render_text(SIZE inWindowSize);
 
@@ -46,6 +46,6 @@ class FontFactory : public TSingleton<FontFactory>
 		virtual ~FontFactory();
 
 	private:
-
+		GLuint				mShader;	// Used by all FontRenderer instances
 		FontRendererMapType	mRenderers;
 };
