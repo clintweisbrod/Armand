@@ -40,6 +40,9 @@
     <Filter Include="Header Files\OpenGL\Fonts">
       <UniqueIdentifier>{5c120bc0-5aba-4318-a704-c7b76823d439}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Utilities">
+      <UniqueIdentifier>{199fa3a7-1f51-466a-a725-81a380362f09}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
