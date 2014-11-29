@@ -30,6 +30,7 @@
 //	2005/12/13	CLW			5.8.0		Added mathematical operations
 //
 //----------------------------------------------------------------------
+
 template<class T>
 class TVector2Template
 {
@@ -48,8 +49,22 @@ class TVector2Template
 		inline void Normalize();
 		inline T Length() const;
 		inline T LengthSquared() const;
-		
-		T x, y;
+
+		// Use union to alias the members
+		union
+		{
+			T data[2];
+			struct
+			{
+				T x;
+				T y;
+			};
+			struct
+			{
+				T s;
+				T t;
+			};
+		};
 };
 
 template<class T> TVector2Template<T>::TVector2Template() : x(0), y(0)
@@ -190,8 +205,24 @@ class TVector3Template
 		inline void Normalize();
 		inline T Length() const;
 		inline T LengthSquared() const;
-		
-		T x, y, z;
+
+		// Use union to alias the members
+		union
+		{
+			T data[3];
+			struct
+			{
+				T x;
+				T y;
+				T z;
+			};
+			struct
+			{
+				T r;
+				T g;
+				T b;
+			};
+		};
 };
 
 template<class T> TVector3Template<T>::TVector3Template() : x(0), y(0), z(0)
@@ -372,8 +403,33 @@ class TVector4Template
 
 		inline TVector4Template operator-() const;
 		inline TVector4Template operator+() const;
-		
-		T x, y, z, w;
+
+		// Use union to alias the members
+		union
+		{
+			T data[4];
+			struct
+			{
+				T x;
+				T y;
+				T z;
+				T w;
+			};
+			struct
+			{
+				T r;
+				T g;
+				T b;
+				T a;
+			};
+			struct
+			{
+				T s;
+				T t;
+				T p;
+				T q;
+			};
+		};
 };
 
 template<class T> TVector4Template<T>::TVector4Template() : x(0), y(0), z(0), w(0)
