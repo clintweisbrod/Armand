@@ -32,6 +32,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 
 	// Load logging configuration from file
 	el::Configurations conf("Resources/logging.cfg");
+	el::Loggers::reconfigureLogger("default", conf);
 	el::Loggers::reconfigureAllLoggers(conf);
 
 	LOG(INFO) << "Armand is starting...";
