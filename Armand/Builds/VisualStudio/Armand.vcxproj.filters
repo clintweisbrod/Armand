@@ -111,6 +111,9 @@
     <ClInclude Include="..\..\Source\Utilities\easylogging++.h">
       <Filter>Header Files\Utilities</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Source\Math\MiscTemplates.h">
+      <Filter>Header Files\Math</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\Main\Armand.cpp">
