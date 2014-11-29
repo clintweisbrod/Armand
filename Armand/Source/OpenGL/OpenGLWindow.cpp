@@ -801,11 +801,11 @@ void OpenGLWindow::renderCoordinateAxes() const
 
 	// FontFactory testing
 	string fontName("Verdana");
-	int fontSize = 30;
-	wstring text(L"Hello");
+	int fontSize = 16;
+	wstring text(L"A quick brown fox jumped over the lazy dog! !@#$%^&*()-=+{}[];:'<>,.?/`~");
 	FontFactory* ff = FontFactory::instance();
 	FontRenderer* fontRenderer = ff->getFontRenderer(fontName);
-	fontRenderer->render(text, fontSize, TVector2f(100, 500), TVector4f(1.0f, 1.0f, 1.0f, 1.0f));
+	fontRenderer->render(text, fontSize, TVector2f(100, 100), TVector4f(1.0f, 1.0f, 1.0f, 1.0f), 90);
 }
 
 void OpenGLWindow::getGazeAngles(double& ioAzimuth, double& ioAltitude) const
