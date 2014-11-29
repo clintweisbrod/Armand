@@ -1,0 +1,7 @@
+# Exclude the build directories
+Armand/Builds/*
+ 
+# Exclude Visual Studio project user data
+*.vcxproj.user
+*.suo
+*.sdf
