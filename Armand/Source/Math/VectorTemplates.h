@@ -1,23 +1,25 @@
-//----------------------------------------------------------------------
-//	Copyright © 1990-2005 by Simulation Curriculum Corp., All rights reserved.
+// ----------------------------------------------------------------------------
+// Copyright (C) 2014 Clint Weisbrod. All rights reserved.
 //
-//	File:		VectorTemplates.h
+// VectorTemplates.h
 //
-//	Contains:	Templated vector data types.
-//					
-//	Authors:	Clint Weisbrod
+// Templated vector math.
 //
-//	Date		Initials	Version		Comments
-//  ----------	---------	----------	---------------------------
-//	2005/03/07	CLW			5.0.2		first release
-//	2005/12/13	CLW			5.8.0		Added mathematical operations
-//
-//----------------------------------------------------------------------
+// THIS SOFTWARE IS PROVIDED BY CLINT WEISBROD "AS IS" AND ANY EXPRESS OR
+// IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+// MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+// EVENT SHALL CLINT WEISBROD OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+// THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// ----------------------------------------------------------------------------
 
 #pragma once
 
 #include <gl/GL.h>
-
 
 //----------------------------------------------------------------------
 //	Template:	TVector2Template
@@ -1057,7 +1059,7 @@ template<class T> TPolar3Template<T>::TPolar3Template(const TVector3Template<T>&
 		fLatitude = 0.0;
 	else
 		fLatitude = asin(theZ/fRadius);
-	fLongitude = atan2(theY, theX);	// TPolar not handle based so we don't care if FullArcTan moves mem
+	fLongitude = atan2(theY, theX);
 }
 
 // Typedefs we need so far

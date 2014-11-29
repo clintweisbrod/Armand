@@ -1,4 +1,25 @@
+// ----------------------------------------------------------------------------
+// Copyright (C) 2014 Clint Weisbrod. All rights reserved.
+//
+// OpenGLWindow.cpp
+//
+// Class encapsulating a window containing an OpenGL context.
+//
+// THIS SOFTWARE IS PROVIDED BY CLINT WEISBROD "AS IS" AND ANY EXPRESS OR
+// IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+// MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+// EVENT SHALL CLINT WEISBROD OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+// THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// ----------------------------------------------------------------------------
+
 #include "stdafx.h"
+
+#include <random>
 #include "OpenGLWindow.h"
 #include "Fonts/FontFactory.h"
 
@@ -801,11 +822,34 @@ void OpenGLWindow::renderCoordinateAxes() const
 
 	// FontFactory testing
 	string fontName("Verdana");
-	int fontSize = 16;
-	wstring text(L"A quick brown fox jumped over the lazy dog! !@#$%^&*()-=+{}[];:'<>,.?/`~");
+	wstring text(L"A quick brown fox jumped over the lazy dog. !@#$%^&*()-=+{}[];:'<>,.?/`~");
 	FontFactory* ff = FontFactory::instance();
 	FontRenderer* fontRenderer = ff->getFontRenderer(fontName);
-	fontRenderer->render(text, fontSize, TVector2f(100, 100), TVector4f(1.0f, 1.0f, 1.0f, 1.0f), 90);
+
+	// The code below renders the text string above 1000 times with random positions, sizes
+	// and angles. On my 2010 Macbook Pro, framerate was 26.6 fps. Pretty damn good
+	// under normal circumstances far fewer than 1000 text items will be rendered per frame
+	// and each item will certainly be much smaller than the 72-char string we're using.
+/*
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_int_distribution<> xDis(0, mWindowSize.cx);
+	std::uniform_int_distribution<> yDis(0, mWindowSize.cy);
+	std::uniform_int_distribution<> sizeDis(10, 36);
+	std::uniform_int_distribution<> angleDis(0, 359);
+	TVector2f position;
+	int fontSize;
+	float angle;
+	for (int n = 0; n < 1000; ++n)
+	{
+		position.x = xDis(gen);
+		position.y = yDis(gen);
+		fontSize = sizeDis(gen);
+		angle = (float)angleDis(gen);
+		fontRenderer->render(text, fontSize, position, TVector4f(1.0f, 1.0f, 1.0f, 1.0f), angle);
+	}
+*/
+	fontRenderer->render(text, 30, TVector2f(100, 100), TVector4f(1.0f, 1.0f, 1.0f, 1.0f), 90);
 }
 
 void OpenGLWindow::getGazeAngles(double& ioAzimuth, double& ioAltitude) const
