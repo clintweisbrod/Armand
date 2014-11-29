@@ -16,11 +16,13 @@ typedef struct {
 
 FontFactory::FontFactory()
 {
+	// TODO: Going to need a more general shader load
 	sShader = shader_load("shaders/v3f-t2f-c4f.vert", "shaders/v3f-t2f-c4f.frag");
 }
 
 FontFactory::~FontFactory()
 {
+	// Release all the FontRenderer instances
 	FontRendererMapType::iterator it;
 	for (it = mRenderers.begin(); it != mRenderers.end(); it++)
 	{
@@ -59,33 +61,41 @@ FontRenderer::FontRenderer(string& inFontName) : mAtlas(NULL),
 												 mVertexBuffer(NULL),
 												 mLargestFontSize(0)
 {
+	// Locate system font file
 	string fontFileName = getSystemFontFile(inFontName);
 	if (fontFileName.length() == 0)
 	{
+		LOG(ERROR) << "Unable to locate font: " << inFontName << ".";
 		return;
 	}
 
+	// Build texture atlas
 	mFontName = inFontName;
 	mAtlas = texture_atlas_new(512, 512, 1);
 	if (mAtlas == NULL)
 	{
+		LOG(ERROR) << "Unable to create texture font atlas for font: " << inFontName << ".";
 		return;
 	}
 
-	// TODO: Fill theGlyphs with all reasonable characters that might be used. 
-	wchar_t* theGlyphs = L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+	// Fill theGlyphs with all reasonable characters that might be used.
+	wstring glyphBuf;
+	for (wchar_t i = 32; i <= 126; i++)
+		glyphBuf.append(1, i);
+	glyphBuf.append(1, 167);	// Degree symbol
 
-	// Populate 
+	// Populate mFonts
 	const char* filename = fontFileName.c_str();
 	const int kMaxFontSize = 50;	// Highly unlikely we will get around to this font size.
 	for (int i = kMinFontSize; i <= kMaxFontSize; i += 2)
 	{
 		texture_font_t* font = texture_font_new_from_file(mAtlas, (float)i, filename);
-		if (texture_font_load_glyphs(font, theGlyphs) == 0)
+		if (texture_font_load_glyphs(font, glyphBuf.c_str()) == 0)
 			mFonts[i] = font;
 		else
 		{
 			mLargestFontSize = i - 2;
+			LOG(INFO) << "Texture font atlas contains fonts up to size " << mLargestFontSize << ".";
 			break;
 		}
 	}
@@ -103,6 +113,7 @@ FontRenderer::FontRenderer(string& inFontName) : mAtlas(NULL),
 
 FontRenderer::~FontRenderer()
 {
+	// Release font texture
 	FontMapType::iterator it;
 	for (it = mFonts.begin(); it != mFonts.end(); it++)
 	{
@@ -113,6 +124,7 @@ FontRenderer::~FontRenderer()
 		}
 	}
 
+	// Release vertex buffer
 	if (mVertexBuffer)
 	{
 		vertex_buffer_delete(mVertexBuffer);
@@ -120,7 +132,7 @@ FontRenderer::~FontRenderer()
 	}
 }
 
-bool FontRenderer::render(wstring& inString, int inFontSize, TVector2f inPen, TVector4f inColor)
+bool FontRenderer::render(wstring& inString, int inFontSize, TVector2f& inPen, TVector4f& inColor, float inRotationInDegrees)
 {
 	int fontSize = inFontSize;
 
@@ -146,9 +158,11 @@ bool FontRenderer::render(wstring& inString, int inFontSize, TVector2f inPen, TV
 	// Clear the vertex buffer
 	vertex_buffer_clear(mVertexBuffer);
 
+	// Generate new vertex buffer
+	float xPos = 0;
 	size_t numGlyphsRendered = 0;
 	texture_font_t* font = it->second;
-	float r = inColor.x, g = inColor.y, b = inColor.z, a = inColor.w;
+	float r = inColor.r, g = inColor.g, b = inColor.b, a = inColor.a;
 	for (size_t i = 0; i < inString.length(); ++i)
 	{
 		texture_glyph_t* glyph = texture_font_get_glyph(font, inString[i]);
@@ -156,14 +170,13 @@ bool FontRenderer::render(wstring& inString, int inFontSize, TVector2f inPen, TV
 		{
 			float kerning = 0.0f;
 			if (i > 0)
-			{
 				kerning = texture_glyph_get_kerning(glyph, inString[i - 1]);
-			}
-			inPen.x += kerning;
-			int x0 = (int)(inPen.x + glyph->offset_x);
-			int y0 = (int)(inPen.y + glyph->offset_y);
-			int x1 = (int)(x0 + glyph->width);
-			int y1 = (int)(y0 - glyph->height);
+			xPos += kerning;
+
+			float x0 = xPos + glyph->offset_x;
+			float y0 = (float)glyph->offset_y;
+			float x1 = x0 + glyph->width;
+			float y1 = y0 - glyph->height;
 			float s0 = glyph->s0;
 			float t0 = glyph->t0;
 			float s1 = glyph->s1;
@@ -174,17 +187,25 @@ bool FontRenderer::render(wstring& inString, int inFontSize, TVector2f inPen, TV
 									 { x1, y1, 0, s1, t1, r, g, b, a },
 									 { x1, y0, 0, s1, t0, r, g, b, a } };
 			vertex_buffer_push_back(mVertexBuffer, vertices, 4, indices, 6);
-			inPen.x += glyph->advance_x;
 
+			xPos += glyph->advance_x;
 			numGlyphsRendered++;
 		}
 	}
 
+	// Apply rotation and translation transformations
+	mat4_set_rotation(&mModelMatrix, inRotationInDegrees, 0, 0, 1);
+	mat4_set_translation(&mViewMatrix, inPen.x, inPen.y, 0);
+
+	// Enable blending and blend function
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	// Enable texturing and bind to atlas texture
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, mAtlas->id);
 
+	// Activate the font shader
 	glUseProgram(FontFactory::sShader);
 	{
 		glUniform1i(glGetUniformLocation(FontFactory::sShader, "texture"), 0);
@@ -192,6 +213,8 @@ bool FontRenderer::render(wstring& inString, int inFontSize, TVector2f inPen, TV
 		glUniformMatrix4fv(glGetUniformLocation(FontFactory::sShader, "view"), 1, 0, mViewMatrix.data);
 		glUniformMatrix4fv(glGetUniformLocation(FontFactory::sShader, "projection"), 1, 0, mProjectionMatrix.data);
 		vertex_buffer_render(mVertexBuffer, GL_TRIANGLES);
+
+		// Deactivate the shader
 		glUseProgram(0);
 	}
 
