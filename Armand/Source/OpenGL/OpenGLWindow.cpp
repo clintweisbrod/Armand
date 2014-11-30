@@ -616,7 +616,7 @@ void OpenGLWindow::render()								// Here's where we do all the drawing
 	TVector2f position;
 	int fontSize;
 	float angle;
-	for (int n = 0; n < 1000; ++n)
+	for (int n = 0; n < 50; ++n)
 	{
 	position.x = (GLfloat)xDis(gen);
 	position.y = (GLfloat)yDis(gen);
@@ -625,7 +625,7 @@ void OpenGLWindow::render()								// Here's where we do all the drawing
 	fontRenderer->render(text, fontSize, position, TVector4f(1.0f, 1.0f, 1.0f, 1.0f), angle);
 	}
 */
-	fontRenderer->render(text, 30, TVector2f(100, 100), TVector4f(1.0f, 1.0f, 1.0f, 1.0f), 30);
+	fontRenderer->render(text, 30, Vec2f(100, 100), Vec4f(1.0f, 1.0f, 1.0f, 1.0f), 30);
 
 	SwapBuffers(mhDC);									// Swap buffers (double buffering)
 	mFrameCount++;
@@ -650,7 +650,7 @@ void OpenGLWindow::render()								// Here's where we do all the drawing
 
 void OpenGLWindow::setClearColor(const GLfloat inRed, const GLfloat inGreen, const GLfloat inBlue)
 {
-	mClearColor = TVector3f(inRed, inGreen, inBlue);
+	mClearColor = Vec3f(inRed, inGreen, inBlue);
 	glClearColor(mClearColor.x, mClearColor.y, mClearColor.z, 1.0f);
 }
 

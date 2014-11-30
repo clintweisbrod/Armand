@@ -157,12 +157,12 @@ FontRenderer::~FontRenderer()
 	}
 }
 
-bool FontRenderer::render(wstring& inString, int inFontSize, TVector2f& inPen, TVector4f& inColor, float inRotationInDegrees)
+bool FontRenderer::render(wstring& inString, int inFontSize, Vec2f& inPen, Vec4f& inColor, float inRotationInDegrees)
 {
 	int fontSize = inFontSize;
 
 	// We only maintain fonts with size kMinFontSize, kMinFontSize+2, kMinFontSize+4, etc.
-	constrain(fontSize, kMinFontSize, mLargestFontSize);
+	Mathi::constrain(fontSize, kMinFontSize, mLargestFontSize);
 
 	FontMapType::iterator it = mFonts.find(fontSize);
 	if (it == mFonts.end())

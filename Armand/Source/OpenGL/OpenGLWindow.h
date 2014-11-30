@@ -99,7 +99,7 @@ class OpenGLWindow
 
 		// Mouse input
 		double			mLastMouseMoveSeconds;
-		TVector2i		mLastMousePosition;
+		Vec2i			mLastMousePosition;
 
-		TVector3f		mClearColor;
+		Vec3f			mClearColor;
 };

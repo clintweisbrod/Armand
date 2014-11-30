@@ -34,7 +34,7 @@ class FontRenderer
 		FontRenderer(string& inFontName, GLuint inShader);
 		virtual ~FontRenderer();
 
-		bool render(wstring& inString, int inFontSize, TVector2f& inPen, TVector4f& inColor, float inRotationInDegrees = 0);
+		bool render(wstring& inString, int inFontSize, Vec2f& inPen, Vec4f& inColor, float inRotationInDegrees = 0);
 
 	private:
 		string getSystemFontFile(const string &inFontName) const;

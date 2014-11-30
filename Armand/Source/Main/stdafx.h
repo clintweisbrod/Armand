@@ -40,6 +40,5 @@ using namespace std;		// Use the STL namespace; std
 //#include <gl/gl.h>			// Header file for the OpenGL32 library
 //#include <gl/glu.h>			// Header file for the GLu32 library
 
-#include "Math/MiscTemplates.h"
-#include "Math/VectorTemplates.h"
-
+#include "Math/mathlib.h"
+#include "Math/vecmath.h"
