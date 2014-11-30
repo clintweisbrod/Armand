@@ -102,7 +102,7 @@ FontRenderer::FontRenderer(string& inFontName, GLuint inShader) : mAtlas(NULL),
 	wstring glyphBuf;
 	for (wchar_t i = 32; i <= 126; i++)
 		glyphBuf.append(1, i);
-	glyphBuf.append(1, 167);	// Degree symbol
+	glyphBuf.append(1, 176);	// Degree symbol
 
 	// Populate mFonts
 	const char* filename = fontFileName.c_str();
