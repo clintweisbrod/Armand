@@ -159,6 +159,9 @@
     <ClInclude Include="..\..\Source\Math\constants.h">
       <Filter>Header Files\Math</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Source\OpenGL\VertexBufferStructs.h">
+      <Filter>Header Files\OpenGL</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\Main\Armand.cpp">

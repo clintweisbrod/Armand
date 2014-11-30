@@ -598,7 +598,7 @@ void OpenGLWindow::render()								// Here's where we do all the drawing
 
 	// FontFactory testing
 	string fontName("Verdana");
-	wstring text(L"A quick brown fox jumped over the lazy dog. !@#$%^&*()-=+{}[];:'<>,.?/`~");
+	wstring text(L"\260 A quick brown fox jumped over the lazy dog. !@#$%^&*()-=+{}[];:'<>,.?/`~");
 	FontFactory* ff = FontFactory::instance();
 	FontRenderer* fontRenderer = ff->getFontRenderer(fontName);
 

@@ -22,16 +22,11 @@
 
 #include "OpenGL/Fonts/FontFactory.h"
 #include "OpenGL/OpenGLWindow.h"
+#include "OpenGL/VertexBufferStructs.h"
 
 extern OpenGLWindow* gOpenGLWindow;
 
 const int kMinFontSize = 10;	// Font smaller than this are pretty difficult to read
-
-typedef struct {
-	float x, y, z;    // position
-	float s, t;       // texture
-	float r, g, b, a; // color
-} vertex_t;
 
 FontFactory::FontFactory()
 {
@@ -207,10 +202,10 @@ bool FontRenderer::render(wstring& inString, int inFontSize, Vec2f& inPen, Vec4f
 			float s1 = glyph->s1;
 			float t1 = glyph->t1;
 			GLuint indices[6] = { 0, 1, 2, 0, 2, 3 };
-			vertex_t vertices[4] = { { x0, y0, 0, s0, t0, r, g, b, a },
-									 { x0, y1, 0, s0, t1, r, g, b, a },
-									 { x1, y1, 0, s1, t1, r, g, b, a },
-									 { x1, y0, 0, s1, t0, r, g, b, a } };
+			v3f_t2f_c4f vertices[4] = { { x0, y0, 0, s0, t0, r, g, b, a },
+										{ x0, y1, 0, s0, t1, r, g, b, a },
+										{ x1, y1, 0, s1, t1, r, g, b, a },
+										{ x1, y0, 0, s1, t0, r, g, b, a } };
 			vertex_buffer_push_back(mVertexBuffer, vertices, 4, indices, 6);
 
 			xPos += glyph->advance_x;
