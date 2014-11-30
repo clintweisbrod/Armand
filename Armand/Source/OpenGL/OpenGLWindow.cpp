@@ -37,10 +37,7 @@ OpenGLWindow::OpenGLWindow() : mCreated(false),
 							   mFrameCount(0),
 							   mAverageRenderedFrameRate(1.0/60.0),
 							   mLastKeyboardResponseSeconds(0.0),
-							   mLastMouseMoveSeconds(0.0),
-							   mGazePolar(1.0, 0.0, 0.0),
-							   mLightPolar(1.0, 0.0, kHalfPi),
-							   mShowCoordinateAxes(true)
+							   mLastMouseMoveSeconds(0.0)
 {
 	// Get the high resolution counter's accuracy
 	QueryPerformanceFrequency(&mTicksPerSecond);
@@ -61,65 +58,24 @@ void OpenGLWindow::mouseEvent(WORD inXPos, WORD inYPos, bool inCtrlDown, bool in
 	const double kMaxMouseEventInterval = 0.25;
 	double currentSeconds = getCurrentSeconds();
 	double mouseEventInterval = currentSeconds - mLastMouseMoveSeconds;
-//	if (mouseEventInterval < kMaxMouseEventInterval)
-	{
-		const double kPixelsPerRadian = 700;	// This controls sensitivity of mouse input
-
-		if (inLeftDown)
-		{
-			// Handle gaze change
-			mGazePolar.fLongitude += ((double)(mLastMousePosition.x - inXPos) / kPixelsPerRadian);
-			mGazePolar.fLatitude += ((double)(mLastMousePosition.y - inYPos) / kPixelsPerRadian);
-
-			// Constrain gaze altitude to +/- kHalfPi
-			if (mGazePolar.fLatitude > kHalfPi)
-				mGazePolar.fLatitude = kHalfPi;
-			if (mGazePolar.fLatitude < -kHalfPi)
-				mGazePolar.fLatitude = -kHalfPi;
-		}
-		if (inRightDown)
-		{
-			// Handle light direction change
-			mLightPolar.fLongitude += ((double)(mLastMousePosition.x - inXPos) / kPixelsPerRadian);
-			mLightPolar.fLatitude += ((double)(mLastMousePosition.y - inYPos) / kPixelsPerRadian);
-
-			// Constrain gaze altitude to +/- kHalfPi
-			if (mLightPolar.fLatitude > kHalfPi)
-				mLightPolar.fLatitude = kHalfPi;
-			if (mLightPolar.fLatitude < -kHalfPi)
-				mLightPolar.fLatitude = -kHalfPi;
-		}
-	}
 
 	mLastMouseMoveSeconds = currentSeconds;
 	mLastMousePosition.x = inXPos;
 	mLastMousePosition.y = inYPos;
-
-
-	// Dispatch mouse event to OpenGLRender module
-//	mouseEventCallback((unsigned int)inXPos, (unsigned int)inYPos, inCtrlDown, inShiftDown, inLeftDown, inMiddleDown, inRightDown);
 }
 
 void OpenGLWindow::mouseWheelEvent(double inWheelDelta)
 {
-	// Dispatch mouse wheel event to OpenGLRender module
-//	mouseWheelEventCallback(inWheelDelta);
 }
 
 void OpenGLWindow::keyboardKeyDown(WPARAM inKey)
 {
 	mKeys[inKey] = true;
-
-	// Dispatch keyboard event to OpenGLRender module
-//	keyboardEventCallback((char)inKey, true);
 }
 
 void OpenGLWindow::keyboardKeyUp(WPARAM inKey)
 {
 	mKeys[inKey] = false;
-
-	// Dispatch keyboard event to OpenGLRender module
-//	keyboardEventCallback((char)inKey, false);
 }
 
 void OpenGLWindow::handleKeys()
@@ -130,78 +86,11 @@ void OpenGLWindow::handleKeys()
 	double timeSinceLastResponse = mFrameStartTime - mLastKeyboardResponseSeconds;
 	if (timeSinceLastResponse > kKeyboardResponseInterval)
 	{
-		// Map cursor keys to Euler angles
-		const double kMaxCursorAngleIncrement = 0.02;
-		const double kGazeAccelFactor = 0.1;
-		if (mKeys[VK_LEFT])
-			mGazeSpeed.x -= (kMaxCursorAngleIncrement * kGazeAccelFactor);
-		if (mKeys[VK_RIGHT])
-			mGazeSpeed.x += (kMaxCursorAngleIncrement * kGazeAccelFactor);
-		if (mKeys[VK_UP])
-			mGazeSpeed.y += (kMaxCursorAngleIncrement * kGazeAccelFactor);
-		if (mKeys[VK_DOWN])
-			mGazeSpeed.y -= (kMaxCursorAngleIncrement * kGazeAccelFactor);
-
-		// Map W,S,A and D to forward, backward, left and right, respectively.
-		const double kMaxMovementSpeed = 0.1;
-		const double kMovementAccelFactor = 0.1;
-		if (mKeys['W'])
-			mViewerSpeed.x -= (kMaxMovementSpeed * kMovementAccelFactor);
-		if (mKeys['S'])
-			mViewerSpeed.x += (kMaxMovementSpeed * kMovementAccelFactor);
-		if (mKeys['D'])
-			mViewerSpeed.y -= (kMaxMovementSpeed * kMovementAccelFactor);
-		if (mKeys['A'])
-			mViewerSpeed.y += (kMaxMovementSpeed * kMovementAccelFactor);
-
-		// Update the gaze by the current gaze speed
-		mGazePolar.fLongitude += mGazeSpeed.x;
-		mGazePolar.fLatitude += mGazeSpeed.y;
-		if (mGazePolar.fLatitude > kHalfPi)
-			mGazePolar.fLatitude = kHalfPi;
-		if (mGazePolar.fLatitude < -kHalfPi)
-			mGazePolar.fLatitude = -kHalfPi;
-
-		// Update the position by the current viewer speed
-		TVector3d forwardVector = mGazeVector * mViewerSpeed.x;
-		TVector3d strafeDirection = getStrafeVector() * mViewerSpeed.y;
-		mViewerLocation += forwardVector;
-		mViewerLocation += strafeDirection;
-
-		// Decrease the speed every frame
-		const double kBrakingFactor = 0.05;
-		DecelerateFunction(mGazeSpeed, kBrakingFactor);
-		DecelerateFunction(mViewerSpeed, kBrakingFactor);
+		//
+		// Process keys here
+		//
 
 		mLastKeyboardResponseSeconds = mFrameStartTime;
-	}
-}
-
-void OpenGLWindow::DecelerateFunction(TVector2d& ioVector, const double inBrakingFactor)
-{
-	if (ioVector.x > 0.0)
-	{
-		ioVector.x -= (ioVector.x * inBrakingFactor);
-		if (ioVector.x < 0.0)
-			ioVector.x = 0.0;
-	}
-	else if (ioVector.x < 0.0)
-	{
-		ioVector.x -= (ioVector.x * inBrakingFactor);
-		if (ioVector.x > 0.0)
-			ioVector.x = 0.0;
-	}
-	if (ioVector.y > 0.0)
-	{
-		ioVector.y -= (ioVector.y * inBrakingFactor);
-		if (ioVector.y < 0.0)
-			ioVector.y = 0.0;
-	}
-	else if (ioVector.y < 0.0)
-	{
-		ioVector.y -= (ioVector.y * inBrakingFactor);
-		if (ioVector.y > 0.0)
-			ioVector.y = 0.0;
 	}
 }
 
@@ -629,32 +518,6 @@ void OpenGLWindow::initGL()								// All setup for OpenGL goes here
 		glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST);
 	}
 
-	// Lighting
-	GLfloat mat_ambient[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	GLfloat mat_diffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	GLfloat mat_emission[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-	GLfloat mat_specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	GLfloat mat_shininess[] = { 10.0f };
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, mat_ambient);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mat_diffuse);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, mat_emission);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_specular);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mat_shininess);
-
-	GLfloat light_ambient[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-	GLfloat light_diffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	GLfloat light_specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
-	glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
-
-	GLfloat lmodel_ambient[] = { 0.2f, 0.2f, 0.2f, 1.0f };
-	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
-	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
-
-	// Dispatch init event to OpenGLRender module
-//	openGLInitialization();
-
 	mGLInitialized = true;
 }
 
@@ -730,95 +593,8 @@ void OpenGLWindow::render()								// Here's where we do all the drawing
 	// Handle any keyboard input
 	handleKeys();
 
-	// Compute gaze vector from our Euler angles
-	// This computation assumes that zero Euler angles give gaze down -z axis, which is the default
-	// OpenGL view transformation
-	mGazeVector.x = cos(mGazePolar.fLatitude) * sin(-mGazePolar.fLongitude);
-	mGazeVector.z = cos(mGazePolar.fLatitude) * cos(-mGazePolar.fLongitude);
-	mGazeVector.y = sin(mGazePolar.fLatitude);
-
-	// Compute light vector from our Euler angles
-	// This computation assumes that zero Euler angles give gaze down -z axis, which is the default
-	// OpenGL view transformation
-	mLightVector.x = (GLfloat)(cos(mLightPolar.fLatitude) * sin(-mLightPolar.fLongitude));
-	mLightVector.z = (GLfloat)(cos(mLightPolar.fLatitude) * cos(-mLightPolar.fLongitude));
-	mLightVector.y = (GLfloat)sin(mLightPolar.fLatitude);
-
 	// Clear screen and modelview matrix
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	// Clear screen and depth buffer
-
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();									// Reset the current modelview matrix
-
-	GLfloat lightPosition[] = {0.0f, 0.0f, 0.0f, 1.0f};	// directional
-	glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
-
-	// Rotate to observer's view
-	glRotated(mGazePolar.fLatitude * kDegPerRadian, 1.0f, 0.0f, 0.0f);
-	glRotated(mGazePolar.fLongitude * kDegPerRadian, 0.0f, 1.0f, 0.0f);
-
-	// Translate to observer's position
-	glTranslated(-mViewerLocation.x, -mViewerLocation.y, -mViewerLocation.z);
-
-	// Call the render function
-//	openGLRenderCallback();
-
-	// Draw coordinate axes
-	if (mShowCoordinateAxes)
-		renderCoordinateAxes();
-
-	SwapBuffers(mhDC);									// Swap buffers (double buffering)
-	mFrameCount++;
-
-	// Average the frame render time over 50 frames
-	const double kNumberOfFramesToAverageOver = 50.0;
-	double frameRenderTime = getCurrentSeconds() - mFrameStartTime;
-	mAverageRenderedFrameRate -= 1.0 / kNumberOfFramesToAverageOver * mAverageRenderedFrameRate;
-	mAverageRenderedFrameRate += 1.0 / kNumberOfFramesToAverageOver * frameRenderTime;
-
-	// Report frames per second in window caption ever 60 frames, which with VSYNC enabled should give
-	// an update frequency on 1 Hz.
-	if (!mFullscreen && ((mFrameCount % 60) == 0))
-	{
-		double fps = 1.0 / mAverageRenderedFrameRate;
-		wstringstream fpsStream;
-		fpsStream << mWindowTitle << " FPS: " << fps;
-		wstring fpsString = fpsStream.str();
-		SetWindowText(mhWnd, fpsString.c_str());
-	}
-}
-
-void OpenGLWindow::renderCoordinateAxes() const
-{
-	glLineWidth(3.0f);
-
-	// Draw coordinate axis
-	const GLint kAxisSize = 5;
-	glBegin(GL_LINES);
-		glColor3f(0.25f, 0.0f, 0.0f);
-		glVertex3i(-kAxisSize, 0, 0);
-		glVertex3i(0, 0, 0);
-
-		glColor3f(1.0f, 0.0f, 0.0f);
-		glVertex3i(0, 0, 0);
-		glVertex3i(kAxisSize, 0, 0);
-
-		glColor3f(0.0f, 0.25f, 0.0f);
-		glVertex3i(0, -kAxisSize, 0);
-		glVertex3i(0, 0, 0);
-
-		glColor3f(0.0f, 1.0f, 0.0f);
-		glVertex3i(0, 0, 0);
-		glVertex3i(0, kAxisSize, 0);
-
-		glColor3f(0.0f, 0.0f, 0.25f);
-		glVertex3i(0, 0, -kAxisSize);
-		glVertex3i(0, 0, 0);
-
-		glColor3f(0.0f, 0.0f, 1.0f);
-		glVertex3i(0, 0, 0);
-		glVertex3i(0, 0, kAxisSize);
-	glEnd();
 
 	// FontFactory testing
 	string fontName("Verdana");
@@ -842,38 +618,34 @@ void OpenGLWindow::renderCoordinateAxes() const
 	float angle;
 	for (int n = 0; n < 1000; ++n)
 	{
-		position.x = xDis(gen);
-		position.y = yDis(gen);
-		fontSize = sizeDis(gen);
-		angle = (float)angleDis(gen);
-		fontRenderer->render(text, fontSize, position, TVector4f(1.0f, 1.0f, 1.0f, 1.0f), angle);
+	position.x = (GLfloat)xDis(gen);
+	position.y = (GLfloat)yDis(gen);
+	fontSize = sizeDis(gen);
+	angle = (float)angleDis(gen);
+	fontRenderer->render(text, fontSize, position, TVector4f(1.0f, 1.0f, 1.0f, 1.0f), angle);
 	}
 */
-	fontRenderer->render(text, 30, TVector2f(100, 100), TVector4f(1.0f, 1.0f, 1.0f, 1.0f), 90);
-}
+	fontRenderer->render(text, 30, TVector2f(100, 100), TVector4f(1.0f, 1.0f, 1.0f, 1.0f), 30);
 
-void OpenGLWindow::getGazeAngles(double& ioAzimuth, double& ioAltitude) const
-{
-	ioAzimuth = mGazePolar.fLongitude * kDegPerRadian;
-	ioAltitude = mGazePolar.fLatitude * kDegPerRadian;
-}
+	SwapBuffers(mhDC);									// Swap buffers (double buffering)
+	mFrameCount++;
 
-TVector3d OpenGLWindow::getStrafeVector() const
-{
-	return (mGazeVector ^ TVector3d(0.0, 1.0, 0.0));
-}
+	// Average the frame render time over 50 frames
+	const double kNumberOfFramesToAverageOver = 50.0;
+	double frameRenderTime = getCurrentSeconds() - mFrameStartTime;
+	mAverageRenderedFrameRate -= 1.0 / kNumberOfFramesToAverageOver * mAverageRenderedFrameRate;
+	mAverageRenderedFrameRate += 1.0 / kNumberOfFramesToAverageOver * frameRenderTime;
 
-void OpenGLWindow::setViewerDirection(const TVector3d inViewerDirection)
-{
-	mGazePolar.fRadius = inViewerDirection.Length();
-	if (mGazePolar.fRadius == 0.0)
-		mGazePolar.fRadius = 1.0;
-	mGazePolar.fLatitude = -asin(inViewerDirection.y / mGazePolar.fRadius);
-
-	if ((inViewerDirection.x == 0.0) && (inViewerDirection.z == 0.0))
-		mGazePolar.fLongitude = 0.0;
-	else
-		mGazePolar.fLongitude = atan2(inViewerDirection.x, -inViewerDirection.z);
+	// Report frames per second in window caption ever 60 frames, which with VSYNC enabled should give
+	// an update frequency on 1 Hz.
+	if (!mFullscreen && ((mFrameCount % 60) == 0))
+	{
+		double fps = 1.0 / mAverageRenderedFrameRate;
+		wstringstream fpsStream;
+		fpsStream << mWindowTitle << " FPS: " << fps;
+		wstring fpsString = fpsStream.str();
+		SetWindowText(mhWnd, fpsString.c_str());
+	}
 }
 
 void OpenGLWindow::setClearColor(const GLfloat inRed, const GLfloat inGreen, const GLfloat inBlue)

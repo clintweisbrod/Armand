@@ -60,16 +60,7 @@ class OpenGLWindow
 		void			keyboardKeyUp(WPARAM inKey);
 		bool*			getKeys() { return mKeys; };
 		
-		// Viewer state
-		void			getGazeAngles(double& ioAzimuth, double& ioAltitude) const;
-		TVector3d		getGazeVector() const { return mGazeVector; };
-		TVector3d		getStrafeVector() const;
-		TVector3d		getViewerLocation() const { return mViewerLocation; };
-		void			setViewerLocation(const TVector3d inViewerLocation) { mViewerLocation = inViewerLocation; };
-		void			setViewerDirection(const TVector3d inViewerDirection);
-
 		// Harness state
-		void			showCoordinateAxes(bool inShow) { mShowCoordinateAxes = inShow; };
 		void			setClearColor(const GLfloat inRed, const GLfloat inGreen, const GLfloat inBlue);
 
 	protected:
@@ -80,10 +71,8 @@ class OpenGLWindow
 		bool			setupOpenGLForWindow(GLuint inPixelFormat, PIXELFORMATDESCRIPTOR* inPFD);
 		GLuint			selectBestPixelFormatUsingWGL(HDC hDC);
 		void			initGL();
-		void			renderCoordinateAxes() const;
 		double			getCurrentSeconds() const;
 		void			handleKeys();
-		void			DecelerateFunction(TVector2d& ioVector, const double inBrakingFactor);
 
 		bool			mCreated;
 		bool			mGLInitialized;
@@ -107,19 +96,10 @@ class OpenGLWindow
 		// Keyboard input
 		bool			mKeys[256];		// Array used for the keyboard routine
 		double			mLastKeyboardResponseSeconds;
-		TVector2d		mGazeSpeed;
-		TVector2d		mViewerSpeed;
 
 		// Mouse input
 		double			mLastMouseMoveSeconds;
 		TVector2i		mLastMousePosition;
-		TPolar3d		mGazePolar;
-		TVector3d		mGazeVector;
-		TPolar3d		mLightPolar;
-		TVector3f		mLightVector;
 
-		TVector3d		mViewerLocation;
-
-		bool			mShowCoordinateAxes;
 		TVector3f		mClearColor;
 };
