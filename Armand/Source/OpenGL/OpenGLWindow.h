@@ -19,19 +19,6 @@
 
 #pragma once
 
-// TODO: Move these some place more logical
-#define			kPiDefine				3.14159265358979323846	// pi base unit used to calculate others
-const double	kPi						= kPiDefine;
-const double	kOneOverPi				= 1.0/kPiDefine;
-const double	kTwicePi				= 2.0*kPiDefine;
-const double	kOneOverTwicePi			= 1.0/(2.0*kPiDefine);
-const double	kOneOverFourPi			= 1.0/(4.0*kPiDefine);
-const double	kHalfPi					= kPiDefine/2.0;
-const double	kPiBy4					= kPiDefine/4.0;
-const double	k3PiBy2					= 3.0*kPiDefine/2.0;
-const double	kRadPerDegree			= kPiDefine/180.0;
-const double	kDegPerRadian			= 180.0/kPiDefine;
-
 class OpenGLWindow
 {
 	public:

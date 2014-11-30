@@ -20,8 +20,6 @@
 #include <cmath>
 #include <stdlib.h>
 
-#define PI 3.14159265358979323846
-
 template<class T> class Math
 {
 public:
