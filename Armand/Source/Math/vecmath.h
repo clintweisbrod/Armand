@@ -282,7 +282,7 @@ typedef Matrix3<float>	Mat3f;
 typedef Matrix3<double>	Mat3d;
 
 typedef ttmath::Int<2>	Int128;					// 128-bit signed integer. // On x64 we need 2 values to represent 128 bits.
-typedef Vector3_ttmath<Int128> Vec3i128;		// Vector using 128-bit signed integers components. Cool.
+typedef Vector3_ttmath<Int128> Vec3i128;		// Vector using 128-bit signed integers components. See comments in vecmath.cpp.
 void Vec3i128toVec3d(Vec3i128& in, Vec3d& out);	// Function converts a 128-bit integer vec to floating point equivalent.
 
 ///////////////////////////////////////////////////////////////////////

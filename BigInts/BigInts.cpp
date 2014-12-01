@@ -18,8 +18,9 @@ a number in integer format is:
 bits = log(4.7e29)/log(2) = 98.6, rounded up to 99 bits, + 1 for signed.
      = 100 bits.
 
-128 bits is therefore more than adequate to represent any object in the Universe with
-millimetre precision. Cool!
+128 bits is therefore more than adequate to represent any object's position in the
+Universe with millimetre precision. In fact, the extra 28 bits allows us to position
+objects down to the millimeter in a universe 360 million times larger than our own!
 
 ------
 
