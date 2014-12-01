@@ -19,6 +19,8 @@
 
 #include <cmath>
 
+#include "ttmath/ttmath.h"
+
 template<class T> class Point2
 {
 public:
@@ -126,6 +128,28 @@ public:
 			T b;
 		};
 	};
+};
+
+// I'm basically redefining a stripped down version of Vector3 here which will be used with ttmath 128-bit integers.
+template<class T> class Vector3_ttmath
+{
+public:
+	inline Vector3_ttmath();
+	inline Vector3_ttmath(const Vector3_ttmath<T>&);
+	inline Vector3_ttmath(const T, const T, const T);
+	inline Vector3_ttmath(T* v);
+
+	inline Vector3_ttmath& operator+=(const Vector3_ttmath<T>&);
+	inline Vector3_ttmath& operator-=(const Vector3_ttmath<T>&);
+	inline Vector3_ttmath& operator*=(T);
+	inline Vector3_ttmath& operator/=(T);
+	inline Vector3_ttmath operator-() const;
+	inline Vector3_ttmath operator+() const;
+
+	inline T length() const;
+	inline T lengthSquared() const;
+
+	T x, y, z;
 };
 
 template<class T> class Vector4
@@ -257,6 +281,12 @@ typedef Matrix4<double>	Mat4d;
 typedef Matrix3<float>	Mat3f;
 typedef Matrix3<double>	Mat3d;
 
+typedef ttmath::Int<2>	Int128;					// 128-bit signed integer. // On x64 we need 2 values to represent 128 bits.
+typedef Vector3_ttmath<Int128> Vec3i128;		// Vector using 128-bit signed integers components. Cool.
+void Vec3i128toVec3d(Vec3i128& in, Vec3d& out);	// Function converts a 128-bit integer vec to floating point equivalent.
+
+///////////////////////////////////////////////////////////////////////
+
 template<class T> Point2<T>::Point2() : x(0), y(0)
 {
 }
@@ -274,6 +304,8 @@ template<class T> bool operator!=(const Point2<T>& a, const Point2<T>& b)
 {
 	return a.x != b.x || a.y != b.y;
 }
+
+///////////////////////////////////////////////////////////////////////
 
 template<class T> Point3<T>::Point3() : x(0), y(0), z(0)
 {
@@ -374,6 +406,8 @@ template<class T> T Point3<T>::distanceFromOriginSquared() const
 	return x * x + y * y + z * z;
 }
 
+///////////////////////////////////////////////////////////////////////
+
 template<class T> Vector2<T>::Vector2() : x(0), y(0)
 {
 }
@@ -391,6 +425,8 @@ template<class T> bool operator!=(const Vector2<T>& a, const Vector2<T>& b)
 {
 	return a.x != b.x || a.y != b.y;
 }
+
+///////////////////////////////////////////////////////////////////////
 
 template<class T> Vector3<T>::Vector3() : x(0), y(0), z(0)
 {
@@ -436,7 +472,6 @@ template<class T> Vector3<T> Vector3<T>::operator+() const
 {
     return *this;
 }
-
 
 template<class T> Vector3<T> operator+(const Vector3<T>& a, const Vector3<T>& b)
 {
@@ -523,6 +558,133 @@ template<class T> Vector3<T> operator-(const Point3<T>& a, const Point3<T>& b)
     return Vector3<T>(a.x - b.x, a.y - b.y, a.z - b.z);
 }
 
+///////////////////////////////////////////////////////////////////////
+// Vector3_ttmath
+///////////////////////////////////////////////////////////////////////
+
+template<class T> Vector3_ttmath<T>::Vector3_ttmath() : x(0), y(0), z(0)
+{
+}
+
+template<class T> Vector3_ttmath<T>::Vector3_ttmath(const Vector3_ttmath<T>& v) : x(v.x), y(v.y), z(v.z)
+{
+}
+
+template<class T> Vector3_ttmath<T>::Vector3_ttmath(T _x, T _y, T _z) : x(_x), y(_y), z(_z)
+{
+}
+
+template<class T> Vector3_ttmath<T>::Vector3_ttmath(T* v) : x(v[0]), y(v[1]), z(v[2])
+{
+}
+
+template<class T> Vector3_ttmath<T>& Vector3_ttmath<T>::operator+=(const Vector3_ttmath<T>& a)
+{
+	x += a.x; y += a.y; z += a.z;
+	return *this;
+}
+
+template<class T> Vector3_ttmath<T>& Vector3_ttmath<T>::operator-=(const Vector3_ttmath<T>& a)
+{
+	x -= a.x; y -= a.y; z -= a.z;
+	return *this;
+}
+
+template<class T> Vector3_ttmath<T>& Vector3_ttmath<T>::operator*=(T s)
+{
+	x *= s; y *= s; z *= s;
+	return *this;
+}
+
+template<class T> Vector3_ttmath<T> Vector3_ttmath<T>::operator-() const
+{
+	return Vector3_ttmath<T>(-x, -y, -z);
+}
+
+template<class T> Vector3_ttmath<T> Vector3_ttmath<T>::operator+() const
+{
+	return *this;
+}
+
+template<class T> Vector3_ttmath<T> operator+(const Vector3_ttmath<T>& a, const Vector3_ttmath<T>& b)
+{
+	return Vector3_ttmath<T>(a.x + b.x, a.y + b.y, a.z + b.z);
+}
+
+template<class T> Vector3_ttmath<T> operator-(const Vector3_ttmath<T>& a, const Vector3_ttmath<T>& b)
+{
+	return Vector3_ttmath<T>(a.x - b.x, a.y - b.y, a.z - b.z);
+}
+
+template<class T> Vector3_ttmath<T> operator*(T s, const Vector3_ttmath<T>& v)
+{
+	return Vector3_ttmath<T>(s * v.x, s * v.y, s * v.z);
+}
+
+template<class T> Vector3_ttmath<T> operator*(const Vector3_ttmath<T>& v, T s)
+{
+	return Vector3_ttmath<T>(s * v.x, s * v.y, s * v.z);
+}
+
+// dot product
+template<class T> T operator*(const Vector3_ttmath<T>& a, const Vector3_ttmath<T>& b)
+{
+	return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+// cross product
+template<class T> Vector3_ttmath<T> operator^(const Vector3_ttmath<T>& a, const Vector3_ttmath<T>& b)
+{
+	return Vector3_ttmath<T>(a.y * b.z - a.z * b.y,
+		a.z * b.x - a.x * b.z,
+		a.x * b.y - a.y * b.x);
+}
+
+template<class T> bool operator==(const Vector3_ttmath<T>& a, const Vector3_ttmath<T>& b)
+{
+	return a.x == b.x && a.y == b.y && a.z == b.z;
+}
+
+template<class T> bool operator!=(const Vector3_ttmath<T>& a, const Vector3_ttmath<T>& b)
+{
+	return a.x != b.x || a.y != b.y || a.z != b.z;
+}
+
+template<class T> Vector3_ttmath<T> operator/(const Vector3_ttmath<T>& v, T s)
+{
+	T is = 1 / s;
+	return Vector3<T>(is * v.x, is * v.y, is * v.z);
+}
+
+template<class T> T dot(const Vector3_ttmath<T>& a, const Vector3_ttmath<T>& b)
+{
+	return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+template<class T> Vector3_ttmath<T> cross(const Vector3_ttmath<T>& a, const Vector3_ttmath<T>& b)
+{
+	return Vector3<T>(a.y * b.z - a.z * b.y,
+		a.z * b.x - a.x * b.z,
+		a.x * b.y - a.y * b.x);
+}
+
+template<class T> T Vector3_ttmath<T>::length() const
+{
+	return (T)sqrt(x * x + y * y + z * z);
+}
+
+template<class T> T Vector3_ttmath<T>::lengthSquared() const
+{
+	return x * x + y * y + z * z;
+}
+
+template<class T> Vector3_ttmath<T> operator-(const Point3<T>& a, const Point3<T>& b)
+{
+	return Vector3_ttmath<T>(a.x - b.x, a.y - b.y, a.z - b.z);
+}
+
+///////////////////////////////////////////////////////////////////////
+
 template<class T> Vector4<T>::Vector4() : x(0), y(0), z(0), w(0)
 {
 }
@@ -608,6 +770,8 @@ template<class T> T dot(const Vector4<T>& a, const Vector4<T>& b)
     return a * b;
 }
 
+///////////////////////////////////////////////////////////////////////
+
 template<class T> Polar3<T>::Polar3() : fRadius(1), fLongitude(0), fLatitude(0)
 {
 }
@@ -643,6 +807,8 @@ template<class T> Matrix3<T>::Matrix3()
     r[1] = Vector3<T>(0, 0, 0);
     r[2] = Vector3<T>(0, 0, 0);
 }
+
+///////////////////////////////////////////////////////////////////////
 
 template<class T> Matrix3<T>::Matrix3(const Vector3<T>& r0,
                                       const Vector3<T>& r1,
@@ -692,7 +858,6 @@ template<class T> Matrix3<T>& Matrix3<T>::operator*=(T s)
     return *this;
 }
 
-
 // pre-multiply column vector by a 3x3 matrix
 template<class T> Vector3<T> operator*(const Matrix3<T>& m, const Vector3<T>& v)
 {
@@ -700,7 +865,6 @@ template<class T> Vector3<T> operator*(const Matrix3<T>& m, const Vector3<T>& v)
 		      m.r[1].x * v.x + m.r[1].y * v.y + m.r[1].z * v.z,
 		      m.r[2].x * v.x + m.r[2].y * v.y + m.r[2].z * v.z);
 }
-
 
 // post-multiply row vector by a 3x3 matrix
 template<class T> Vector3<T> operator*(const Vector3<T>& v, const Matrix3<T>& m)
@@ -710,7 +874,6 @@ template<class T> Vector3<T> operator*(const Vector3<T>& v, const Matrix3<T>& m)
                       m.r[0].z * v.x + m.r[1].z * v.y + m.r[2].z * v.z);
 }
 
-
 // pre-multiply column point by a 3x3 matrix
 template<class T> Point3<T> operator*(const Matrix3<T>& m, const Point3<T>& p)
 {
@@ -719,7 +882,6 @@ template<class T> Point3<T> operator*(const Matrix3<T>& m, const Point3<T>& p)
                      m.r[2].x * p.x + m.r[2].y * p.y + m.r[2].z * p.z);
 }
 
-
 // post-multiply row point by a 3x3 matrix
 template<class T> Point3<T> operator*(const Point3<T>& p, const Matrix3<T>& m)
 {
@@ -727,7 +889,6 @@ template<class T> Point3<T> operator*(const Point3<T>& p, const Matrix3<T>& m)
 		     m.r[0].y * p.x + m.r[1].y * p.y + m.r[2].y * p.z,
 		     m.r[0].z * p.x + m.r[1].z * p.y + m.r[2].z * p.z);
 }
-
 
 template<class T> Matrix3<T> operator*(const Matrix3<T>& a,
                                        const Matrix3<T>& b)
@@ -739,7 +900,6 @@ template<class T> Matrix3<T> operator*(const Matrix3<T>& a,
 #undef MATMUL
 }
 
-
 template<class T> Matrix3<T> operator+(const Matrix3<T>& a,
                                        const Matrix3<T>& b)
 {
@@ -748,7 +908,6 @@ template<class T> Matrix3<T> operator+(const Matrix3<T>& a,
                       a.r[2] + b.r[2]);
 }
 
-
 template<class T> Matrix3<T> Matrix3<T>::identity()
 {
     return Matrix3<T>(Vector3<T>(1, 0, 0),
@@ -756,14 +915,12 @@ template<class T> Matrix3<T> Matrix3<T>::identity()
                       Vector3<T>(0, 0, 1));
 }
 
-
 template<class T> Matrix3<T> Matrix3<T>::transpose() const
 {
     return Matrix3<T>(Vector3<T>(r[0].x, r[1].x, r[2].x),
                       Vector3<T>(r[0].y, r[1].y, r[2].y),
                       Vector3<T>(r[0].z, r[1].z, r[2].z));
 }
-
 
 template<class T> T det2x2(T a, T b, T c, T d)
 {
@@ -779,7 +936,6 @@ template<class T> T Matrix3<T>::determinant() const
             r[0].x * r[1].z * r[2].y -
             r[0].y * r[1].x * r[2].z);
 }
-
 
 template<class T> Matrix3<T> Matrix3<T>::inverse() const
 {
@@ -800,7 +956,6 @@ template<class T> Matrix3<T> Matrix3<T>::inverse() const
     return adjoint;
 }
 
-
 template<class T> Matrix3<T> Matrix3<T>::xrotation(T angle)
 {
     T c = (T) cos(angle);
@@ -810,7 +965,6 @@ template<class T> Matrix3<T> Matrix3<T>::xrotation(T angle)
                       Vector3<T>(0, c, -s),
                       Vector3<T>(0, s, c));
 }
-
 
 template<class T> Matrix3<T> Matrix3<T>::yrotation(T angle)
 {
@@ -822,7 +976,6 @@ template<class T> Matrix3<T> Matrix3<T>::yrotation(T angle)
                       Vector3<T>(-s, 0, c));
 }
 
-
 template<class T> Matrix3<T> Matrix3<T>::zrotation(T angle)
 {
     T c = (T) cos(angle);
@@ -833,7 +986,6 @@ template<class T> Matrix3<T> Matrix3<T>::zrotation(T angle)
                       Vector3<T>(0, 0, 1));
 }
 
-
 template<class T> Matrix3<T> Matrix3<T>::scaling(const Vector3<T>& scale)
 {
     return Matrix3<T>(Vector3<T>(scale.x, 0, 0),
@@ -841,11 +993,12 @@ template<class T> Matrix3<T> Matrix3<T>::scaling(const Vector3<T>& scale)
                       Vector3<T>(0, 0, scale.z));
 }
 
-
 template<class T> Matrix3<T> Matrix3<T>::scaling(T scale)
 {
     return scaling(Vector3<T>(scale, scale, scale));
 }
+
+///////////////////////////////////////////////////////////////////////
 
 template<class T> Matrix4<T>::Matrix4()
 {

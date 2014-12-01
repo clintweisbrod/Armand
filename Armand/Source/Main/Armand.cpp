@@ -46,6 +46,32 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
+/*
+	// This stuff works!!!!
+
+	// Testing 128-bit integer math
+	Vec3i128 bigVec1(100, 200, 56), bigVec2(4, 5, 6);
+	Int128 s(55);
+	Vec3i128 scalarMult = bigVec1 * s;
+	Vec3i128 sum = bigVec1 + bigVec2;;
+	Vec3i128 diff = bigVec1 - bigVec2;;
+
+	// Compute the largest value possible with signed 128-bit integer.
+	Int128 a, b;
+	a = 2;
+	b = 127;
+	ttmath::uint result = a.Pow(b);	// result should be zero, meaning "no carry"
+
+	// We decrement because the maximum value is 2^127 - 1
+	a--;
+
+	// Construct a Vec3i128 object with largest possible components
+	Vec3i128 largeVec128(a, a, a);
+
+	// Convert the Vec3i128 to a Vec3d instance
+	Vec3d largeVec;
+	Vec3i128toVec3d(largeVec128, largeVec);
+*/
 	// Load logging configuration from file
 	el::Configurations conf("Resources/logging.cfg");
 	el::Loggers::reconfigureLogger("default", conf);

@@ -176,6 +176,9 @@
     <ClCompile Include="..\..\Source\OpenGL\Fonts\FontFactory.cpp">
       <Filter>Source Files\OpenGL\Fonts</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Source\Math\vecmath.cpp">
+      <Filter>Source Files\Math</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\Source\Main\Armand.ico">
