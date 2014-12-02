@@ -33,7 +33,7 @@ FontFactory::FontFactory()
 {
 	// TODO: Going to need a more general shader loading mechanism
 	// We load this here because we only want to attempt to load it once.
-	mShader = shader_load("shaders/v3f-t2f-c4f.vert", "shaders/v3f-t2f-c4f.frag");
+	mShader = shader_load("Shaders/v3f-t2f-c4f.vert", "Shaders/v3f-t2f-c4f.frag");
 }
 
 FontFactory::~FontFactory()
