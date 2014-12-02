@@ -27,6 +27,8 @@
 
 #include "Utilities/Singleton.h"
 
+#include "Math/vecmath.h"
+
 typedef map<int, texture_font_t*> FontMapType;
 class FontRenderer
 {

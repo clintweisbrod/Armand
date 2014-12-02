@@ -23,6 +23,7 @@
 #include "OpenGL/Fonts/FontFactory.h"
 #include "OpenGL/OpenGLWindow.h"
 #include "OpenGL/VertexBufferStructs.h"
+#include "Math/mathlib.h"
 
 extern OpenGLWindow* gOpenGLWindow;
 

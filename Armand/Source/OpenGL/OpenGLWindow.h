@@ -19,6 +19,11 @@
 
 #pragma once
 
+#include <GL/glew.h>
+#include <GL/wglew.h>
+
+#include "Math/vecmath.h"
+
 class OpenGLWindow
 {
 	public:
