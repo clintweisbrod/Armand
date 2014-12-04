@@ -29,7 +29,7 @@
 
 #include "Math/vecmath.h"
 
-typedef map<int, texture_font_t*> FontMapType;
+typedef map<int, texture_font_t*> FontMap_t;
 class FontRenderer
 {
 	public:
@@ -43,7 +43,7 @@ class FontRenderer
 
 		string					mFontName;
 		texture_atlas_t*		mAtlas;
-		FontMapType				mFonts;
+		FontMap_t				mFonts;
 		vertex_buffer_t*		mVertexBuffer;
 		int						mLargestFontSize;
 
@@ -51,10 +51,10 @@ class FontRenderer
 		mat4					mModelMatrix;
 		mat4					mViewMatrix;
 		mat4					mProjectionMatrix;
-		GLuint					mShader;
+		GLuint					mShaderHandle;
 };
 
-typedef map<string, FontRenderer*> FontRendererMapType;
+typedef map<string, FontRenderer*> FontRendererMap_t;
 class FontFactory : public TSingleton<FontFactory>
 {
 	friend class TSingleton<FontFactory>;
@@ -67,6 +67,6 @@ class FontFactory : public TSingleton<FontFactory>
 		virtual ~FontFactory();
 
 	private:
-		GLuint				mShader;	// Used by all FontRenderer instances
-		FontRendererMapType	mRenderers;
+		GLuint				mShaderHandle;	// Used by all FontRenderer instances
+		FontRendererMap_t	mRenderers;
 };

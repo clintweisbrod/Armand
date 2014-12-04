@@ -202,6 +202,7 @@ if not exist "$(OutDir)\Resources" mkdir "$(OutDir)\Resources"
     <ClInclude Include="..\..\Source\Math\vecmath.h" />
     <ClInclude Include="..\..\Source\OpenGL\Fonts\FontFactory.h" />
     <ClInclude Include="..\..\Source\OpenGL\OpenGLWindow.h" />
+    <ClInclude Include="..\..\Source\OpenGL\ShaderFactory.h" />
     <ClInclude Include="..\..\Source\OpenGL\VertexBufferStructs.h" />
     <ClInclude Include="..\..\Source\Utilities\easylogging++.h" />
     <ClInclude Include="..\..\Source\Utilities\Singleton.h" />
@@ -216,6 +217,7 @@ if not exist "$(OutDir)\Resources" mkdir "$(OutDir)\Resources"
     <ClCompile Include="..\..\Source\Math\vecmath.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\Fonts\FontFactory.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\OpenGLWindow.cpp" />
+    <ClCompile Include="..\..\Source\OpenGL\ShaderFactory.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\Source\Main\Armand.ico" />

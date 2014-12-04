@@ -21,6 +21,7 @@
 
 #include <random>
 #include "OpenGLWindow.h"
+#include "ShaderFactory.h"
 #include "Fonts/FontFactory.h"
 
 bool OpenGLWindow::sEnabledGLExtensions = false;
@@ -49,6 +50,13 @@ OpenGLWindow::OpenGLWindow() : mCreated(false),
 
 OpenGLWindow::~OpenGLWindow()
 {
+	// Release the FontFactory
+	FontFactory::destroy();
+
+	// Release the ShaderFactory
+	ShaderFactory::destroy();
+
+	// Clean up the resources for this window
 	destroy();
 }
 
@@ -599,7 +607,7 @@ void OpenGLWindow::render()								// Here's where we do all the drawing
 	// FontFactory testing
 	string fontName("Verdana");
 	wstring text(L"\260 A quick brown fox jumped over the lazy dog. !@#$%^&*()-=+{}[];:'<>,.?/`~");
-	FontFactory* ff = FontFactory::instance();
+	FontFactory* ff = FontFactory::inst();
 	FontRenderer* fontRenderer = ff->getFontRenderer(fontName);
 
 	// The code below renders the text string above 1000 times with random positions, sizes

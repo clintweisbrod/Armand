@@ -24,6 +24,7 @@
 #include "OpenGL/OpenGLWindow.h"
 #include "OpenGL/VertexBufferStructs.h"
 #include "Math/mathlib.h"
+#include "OpenGL/ShaderFactory.h"
 
 extern OpenGLWindow* gOpenGLWindow;
 
@@ -31,15 +32,17 @@ const int kMinFontSize = 10;	// Font smaller than this are pretty difficult to r
 
 FontFactory::FontFactory()
 {
-	// TODO: Going to need a more general shader loading mechanism
-	// We load this here because we only want to attempt to load it once.
-	mShader = shader_load("Shaders/v3f-t2f-c4f.vert", "Shaders/v3f-t2f-c4f.frag");
+	// Load the shader program we will use to draw fonts
+	mShaderHandle = 0;
+	ShaderProgram* shaderProg = ShaderFactory::inst()->getShaderProgram("Shaders/v3f-t2f-c4f.vert", "Shaders/v3f-t2f-c4f.frag");
+	if (shaderProg)
+		mShaderHandle = shaderProg->getHandle();
 }
 
 FontFactory::~FontFactory()
 {
 	// Release all the FontRenderer instances
-	FontRendererMapType::iterator it;
+	FontRendererMap_t::iterator it;
 	for (it = mRenderers.begin(); it != mRenderers.end(); it++)
 	{
 		if (it->second)
@@ -49,20 +52,24 @@ FontFactory::~FontFactory()
 		}
 	}
 
-	// TODO: Cleanup mShader
+	// Clean up the shader we've used.
+	if (mShaderHandle)
+		ShaderFactory::inst()->deleteShaderProgram(mShaderHandle);
 }
 
 FontRenderer* FontFactory::getFontRenderer(string& inFaceName)
 {
+	if (mShaderHandle == 0)
+		return NULL;
 	if (inFaceName.length() == 0)
 		return NULL;
 
 	FontRenderer* result = NULL;
-	FontRendererMapType::iterator it = mRenderers.find(inFaceName);
+	FontRendererMap_t::iterator it = mRenderers.find(inFaceName);
 	if (it == mRenderers.end())
 	{
 		// Create the renderer
-		FontRenderer* newRenderer = new FontRenderer(inFaceName, mShader);
+		FontRenderer* newRenderer = new FontRenderer(inFaceName, mShaderHandle);
 		if (newRenderer)
 		{
 			mRenderers[inFaceName] = newRenderer;
@@ -80,7 +87,7 @@ FontRenderer* FontFactory::getFontRenderer(string& inFaceName)
 FontRenderer::FontRenderer(string& inFontName, GLuint inShader) : mAtlas(NULL),
 																  mVertexBuffer(NULL),
 																  mLargestFontSize(0),
-																  mShader(inShader)
+																  mShaderHandle(inShader)
 {
 	// Locate system font file
 	string fontFileName = getSystemFontFile(inFontName);
@@ -135,7 +142,7 @@ FontRenderer::FontRenderer(string& inFontName, GLuint inShader) : mAtlas(NULL),
 FontRenderer::~FontRenderer()
 {
 	// Release font texture
-	FontMapType::iterator it;
+	FontMap_t::iterator it;
 	for (it = mFonts.begin(); it != mFonts.end(); it++)
 	{
 		if (it->second)
@@ -160,7 +167,7 @@ bool FontRenderer::render(wstring& inString, int inFontSize, Vec2f& inPen, Vec4f
 	// We only maintain fonts with size kMinFontSize, kMinFontSize+2, kMinFontSize+4, etc.
 	Mathi::constrain(fontSize, kMinFontSize, mLargestFontSize);
 
-	FontMapType::iterator it = mFonts.find(fontSize);
+	FontMap_t::iterator it = mFonts.find(fontSize);
 	if (it == mFonts.end())
 	{
 		// If we don't find the font size go up one size if possible, otherwise go down one size.
@@ -227,12 +234,12 @@ bool FontRenderer::render(wstring& inString, int inFontSize, Vec2f& inPen, Vec4f
 	glBindTexture(GL_TEXTURE_2D, mAtlas->id);
 
 	// Activate the font shader
-	glUseProgram(mShader);
+	glUseProgram(mShaderHandle);
 	{
-		glUniform1i(glGetUniformLocation(mShader, "texture"), 0);
-		glUniformMatrix4fv(glGetUniformLocation(mShader, "model"), 1, 0, mModelMatrix.data);
-		glUniformMatrix4fv(glGetUniformLocation(mShader, "view"), 1, 0, mViewMatrix.data);
-		glUniformMatrix4fv(glGetUniformLocation(mShader, "projection"), 1, 0, mProjectionMatrix.data);
+		glUniform1i(glGetUniformLocation(mShaderHandle, "texture"), 0);
+		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "model"), 1, 0, mModelMatrix.data);
+		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "view"), 1, 0, mViewMatrix.data);
+		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "projection"), 1, 0, mProjectionMatrix.data);
 		vertex_buffer_render(mVertexBuffer, GL_TRIANGLES);
 
 		// Deactivate the shader

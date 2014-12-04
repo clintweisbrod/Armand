@@ -23,7 +23,7 @@ template <typename T>
 class TSingleton
 {
 	public:
-		static T* instance()
+		static T* inst()
 		{
 			if (fInstance == NULL)
 				fInstance = new T;
@@ -31,7 +31,7 @@ class TSingleton
 			return fInstance;
 		};
 
-		static void destroyInstance()
+		static void destroy()
 		{
 			if (fInstance != NULL)
 			{
