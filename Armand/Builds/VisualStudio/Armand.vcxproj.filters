@@ -46,6 +46,12 @@
     <Filter Include="Source Files\Math">
       <UniqueIdentifier>{a76707eb-904b-41ec-8c6d-61484f70c4b4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Models">
+      <UniqueIdentifier>{a496e70b-25ed-4d73-b5cd-d0d24316e2c1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Models">
+      <UniqueIdentifier>{81e41224-fe56-4b5c-9843-dd667f8e2046}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -165,6 +171,18 @@
     <ClInclude Include="..\..\Source\OpenGL\ShaderFactory.h">
       <Filter>Header Files\OpenGL</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Source\Models\3ds.h">
+      <Filter>Header Files\Models</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Utilities\File.h">
+      <Filter>Header Files\Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Utilities\StringUtils.h">
+      <Filter>Header Files\Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Utilities\ConfigReader.h">
+      <Filter>Header Files\Utilities</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\Main\Armand.cpp">
@@ -184,6 +202,15 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\OpenGL\ShaderFactory.cpp">
       <Filter>Source Files\OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Models\3ds.cpp">
+      <Filter>Source Files\Models</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Utilities\File.cpp">
+      <Filter>Source Files\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Utilities\ConfigReader.cpp">
+      <Filter>Source Files\Utilities</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

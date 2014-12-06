@@ -200,12 +200,16 @@ if not exist "$(OutDir)\Resources" mkdir "$(OutDir)\Resources"
     <ClInclude Include="..\..\Source\Math\ttmath\ttmathuint_x86.h" />
     <ClInclude Include="..\..\Source\Math\ttmath\ttmathuint_x86_64.h" />
     <ClInclude Include="..\..\Source\Math\vecmath.h" />
+    <ClInclude Include="..\..\Source\Models\3ds.h" />
     <ClInclude Include="..\..\Source\OpenGL\Fonts\FontFactory.h" />
     <ClInclude Include="..\..\Source\OpenGL\OpenGLWindow.h" />
     <ClInclude Include="..\..\Source\OpenGL\ShaderFactory.h" />
     <ClInclude Include="..\..\Source\OpenGL\VertexBufferStructs.h" />
+    <ClInclude Include="..\..\Source\Utilities\ConfigReader.h" />
     <ClInclude Include="..\..\Source\Utilities\easylogging++.h" />
+    <ClInclude Include="..\..\Source\Utilities\File.h" />
     <ClInclude Include="..\..\Source\Utilities\Singleton.h" />
+    <ClInclude Include="..\..\Source\Utilities\StringUtils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\Main\Armand.cpp" />
@@ -215,9 +219,12 @@ if not exist "$(OutDir)\Resources" mkdir "$(OutDir)\Resources"
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\..\Source\Math\vecmath.cpp" />
+    <ClCompile Include="..\..\Source\Models\3ds.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\Fonts\FontFactory.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\OpenGLWindow.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\ShaderFactory.cpp" />
+    <ClCompile Include="..\..\Source\Utilities\ConfigReader.cpp" />
+    <ClCompile Include="..\..\Source\Utilities\File.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\Source\Main\Armand.ico" />
