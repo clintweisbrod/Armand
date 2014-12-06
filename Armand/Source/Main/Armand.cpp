@@ -18,8 +18,10 @@
 // ----------------------------------------------------------------------------
 
 #include "stdafx.h"
+#include <algorithm>
 #include "Main/Armand.h"
 #include "OpenGL/OpenGLWindow.h"
+#include "Models/3ds.h"
 
 #define MAX_LOADSTRING 100
 
@@ -29,6 +31,7 @@ TCHAR szTitle[MAX_LOADSTRING];					// The title bar text
 TCHAR szWindowClass[MAX_LOADSTRING];			// the main window class name
 OpenGLWindow* gOpenGLWindow;
 bool gActive = true;		// Window active flag set to true by default
+string gAppFolder;
 
 _INITIALIZE_EASYLOGGINGPP
 
@@ -78,6 +81,44 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	el::Loggers::reconfigureAllLoggers(conf);
 
 	LOG(INFO) << "Armand is starting...";
+
+	// Initialize gAppFolder
+	TCHAR buffer[MAX_PATH];
+	if (GetModuleFileName(NULL, buffer, MAX_PATH) > 0)
+	{
+		wstring moduleName(buffer);
+		wstring::size_type pos = moduleName.find_last_of(L"\\/");
+		wstring path = moduleName.substr(0, pos);
+		gAppFolder = string(path.begin(), path.end());
+
+		// First replace all '\\' with '/'.
+		std::replace(gAppFolder.begin(), gAppFolder.end(), '\\', '/');
+
+		// Now remove any "/../" with correct symantics
+		string::size_type pos2 = gAppFolder.rfind("/../");
+		while (pos2 != string::npos)
+		{
+			string::size_type pos1 = gAppFolder.rfind("/", pos2 - 1);
+			if (pos1 != string::npos)
+				gAppFolder.erase(pos1, pos2 - pos1 + 3);
+
+			pos2 = gAppFolder.rfind("/../");
+		}
+	}
+
+
+	// Test area
+
+
+	// Testing 3DS model loading
+//	string modelPath("data/models/Apollo_3rdStage.3ds");
+//	File modelFile(modelPath);
+//	T3DSModel* model = T3DSModelFactory::inst()->get(modelFile);
+//	if (model)
+//		T3DSModelFactory::inst()->RemoveAll();
+
+
+
 
  	// TODO: Place code here.
 	MSG msg;

@@ -23,6 +23,7 @@
 #include "OpenGLWindow.h"
 #include "ShaderFactory.h"
 #include "Fonts/FontFactory.h"
+#include "Models/3ds.h"
 
 bool OpenGLWindow::sEnabledGLExtensions = false;
 
@@ -55,6 +56,9 @@ OpenGLWindow::~OpenGLWindow()
 
 	// Release the ShaderFactory
 	ShaderFactory::destroy();
+
+	// Release the model factory
+	T3DSModelFactory::destroy();
 
 	// Clean up the resources for this window
 	destroy();

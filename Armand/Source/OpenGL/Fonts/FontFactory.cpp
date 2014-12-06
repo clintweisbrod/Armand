@@ -61,7 +61,7 @@ FontRenderer* FontFactory::getFontRenderer(string& inFaceName)
 {
 	if (mShaderHandle == 0)
 		return NULL;
-	if (inFaceName.length() == 0)
+	if (inFaceName.empty())
 		return NULL;
 
 	FontRenderer* result = NULL;
@@ -91,7 +91,7 @@ FontRenderer::FontRenderer(string& inFontName, GLuint inShader) : mAtlas(NULL),
 {
 	// Locate system font file
 	string fontFileName = getSystemFontFile(inFontName);
-	if (fontFileName.length() == 0)
+	if (fontFileName.empty())
 	{
 		LOG(ERROR) << "Unable to locate font: " << inFontName << ".";
 		return;
@@ -257,7 +257,7 @@ string FontRenderer::getSystemFontFile(const string &inFontName) const
 	static const LPWSTR fontRegistryPath = L"Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts";
 	HKEY hKey;
 	LONG result;
-	std::wstring wsFaceName(inFontName.begin(), inFontName.end());
+	wstring wsFaceName(inFontName.begin(), inFontName.end());
 
 	// Open Windows font registry key
 	result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, fontRegistryPath, 0, KEY_READ, &hKey);
@@ -273,7 +273,7 @@ string FontRenderer::getSystemFontFile(const string &inFontName) const
 	LPWSTR valueName = new WCHAR[maxValueNameSize];
 	LPBYTE valueData = new BYTE[maxValueDataSize];
 	DWORD valueNameSize, valueDataSize, valueType;
-	std::wstring wsFontFile;
+	wstring wsFontFile;
 
 	// Look for a matching font name
 	do

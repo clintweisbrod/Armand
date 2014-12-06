@@ -162,6 +162,7 @@ public:
 	inline Vector4& operator+=(const Vector4&);
 	inline Vector4& operator-=(const Vector4&);
 	inline Vector4& operator*=(T);
+	inline Vector4& operator/=(T);
 
 	inline Vector4 operator-() const;
 	inline Vector4 operator+() const;
@@ -267,19 +268,19 @@ template<class T> class Matrix4
     Vector4<T> r[4];
 };
 
-typedef Vector3<float>	Vec3f;
-typedef Vector3<double>	Vec3d;
-typedef Point3<float>	Point3f;
-typedef Point3<double>	Point3d;
-typedef Vector2<int>	Vec2i;
-typedef Vector2<float>	Vec2f;
-typedef Point2<float>	Point2f;
-typedef Vector4<float>	Vec4f;
-typedef Vector4<double>	Vec4d;
-typedef Matrix4<float>	Mat4f;
-typedef Matrix4<double>	Mat4d;
-typedef Matrix3<float>	Mat3f;
-typedef Matrix3<double>	Mat3d;
+typedef Vector3<float_t>	Vec3f;
+typedef Vector3<double_t>	Vec3d;
+typedef Point3<float_t>		Point3f;
+typedef Point3<double_t>	Point3d;
+typedef Vector2<int>		Vec2i;
+typedef Vector2<float_t>	Vec2f;
+typedef Point2<float_t>		Point2f;
+typedef Vector4<float_t>	Vec4f;
+typedef Vector4<double_t>	Vec4d;
+typedef Matrix4<float_t>	Mat4f;
+typedef Matrix4<double_t>	Mat4d;
+typedef Matrix3<float_t>	Mat3f;
+typedef Matrix3<double_t>	Mat3d;
 
 typedef ttmath::Int<2>	Int128;					// 128-bit signed integer. // On x64 we need 2 values to represent 128 bits.
 typedef Vector3_ttmath<Int128> Vec3i128;		// Vector using 128-bit signed integers components. See comments in vecmath.cpp.
@@ -445,6 +446,38 @@ template<class T> Vector3<T>::Vector3(T* v) : x(v[0]), y(v[1]), z(v[2])
 {
 }
 
+template<class T> Vector3<T>::Vector3(const std::string& a)
+{
+	x = 0;
+	y = 0;
+	z = 0;
+
+	if (a.empty())
+		return;
+
+	// Types could be a problem here
+	char* dataStr = new char[a.length() + 1];
+	if (dataStr)
+	{
+		strcpy_s(dataStr, a.length() + 1, a.c_str());
+
+		const char* delims = "{}[](), \t";
+		char* context = NULL;
+		char* value = NULL;
+		value = strtok_s(dataStr, delims, &context);
+		if (value)
+			x = (T)atof(value);
+		value = strtok_s(NULL, delims, &context);
+		if (value)
+			y = (T)atof(value);
+		value = strtok_s(NULL, delims, &context);
+		if (value)
+			z = (T)atof(value);
+
+		delete[] dataStr;
+	}
+}
+
 template<class T> Vector3<T>& Vector3<T>::operator+=(const Vector3<T>& a)
 {
     x += a.x; y += a.y; z += a.z;
@@ -461,6 +494,12 @@ template<class T> Vector3<T>& Vector3<T>::operator*=(T s)
 {
     x *= s; y *= s; z *= s;
     return *this;
+}
+
+template<class T> Vector3<T>& Vector3<T>::operator/=(T s)
+{
+	x /= s; y /= s; z /= s;
+	return *this;
 }
 
 template<class T> Vector3<T> Vector3<T>::operator-() const
@@ -596,6 +635,12 @@ template<class T> Vector3_ttmath<T>& Vector3_ttmath<T>::operator*=(T s)
 	return *this;
 }
 
+template<class T> Vector3_ttmath<T>& Vector3_ttmath<T>::operator/=(T s)
+{
+	x /= s; y /= s; z /= s;
+	return *this;
+}
+
 template<class T> Vector3_ttmath<T> Vector3_ttmath<T>::operator-() const
 {
 	return Vector3_ttmath<T>(-x, -y, -z);
@@ -727,6 +772,12 @@ template<class T> Vector4<T>& Vector4<T>::operator*=(T s)
 {
     x *= s; y *= s; z *= s; w *= s;
     return *this;
+}
+
+template<class T> Vector4<T>& Vector4<T>::operator/=(T s)
+{
+	x /= s; y /= s; z /= s; w /= s;
+	return *this;
 }
 
 template<class T> Vector4<T> Vector4<T>::operator-() const

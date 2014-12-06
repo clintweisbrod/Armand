@@ -1,0 +1,2442 @@
+// ----------------------------------------------------------------------------
+// Copyright (C) 2014 Clint Weisbrod. All rights reserved.
+//
+// 3ds.cpp
+//
+// Handles loading and rendering 3DS models.
+//
+// THIS SOFTWARE IS PROVIDED BY CLINT WEISBROD "AS IS" AND ANY EXPRESS OR
+// IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+// MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+// EVENT SHALL CLINT WEISBROD OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+// THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// ----------------------------------------------------------------------------
+
+#include "stdafx.h"
+
+#include <assert.h>
+#include <math.h>
+
+#include "3ds.h"
+#include "Math/constants.h"
+#include "Utilities/ConfigReader.h"
+
+#define INITIAL_BUFFER_SIZE	2000000
+
+//----------------------------------------------------------------------
+//	T3DSNormalInfo::T3DSNormalInfo
+//
+//	Purpose:	Constructor.					
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	05/12/13	CLW			5.0.0		first release
+//
+//----------------------------------------------------------------------
+T3DSNormalInfo::T3DSNormalInfo() :	mNormal(0.0f, 0.0f, 0.0f),
+									mSharedCount(0)
+{
+}
+
+//----------------------------------------------------------------------
+//	T3DSVertex::T3DSVertex
+//
+//	Purpose:	Constructor.					
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	05/12/13	CLW			5.0.0		first release
+//
+//----------------------------------------------------------------------
+T3DSVertex::T3DSVertex() :	mVertex(0.0f, 0.0f, 0.0f),
+							mSmoothingGroups(0)
+{
+}
+
+//----------------------------------------------------------------------
+//	T3DSMaterialInfo::T3DSMaterialInfo
+//
+//	Purpose:	Constructor.					
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	05/12/13	CLW			5.0.0		first release
+//
+//----------------------------------------------------------------------
+T3DSMaterialInfo::T3DSMaterialInfo() :	/*fTexture(NULL),*/
+										mShininess(0.0f),
+										mUScale(1.0f),
+										mVScale(1.0f),
+										mUOffset(0.0f),
+										mVOffset(0.0f)
+{
+	mAmbientColor[0] = mAmbientColor[1] = mAmbientColor[2] = 0.0f; mAmbientColor[3] = 1.0f;
+	mDiffuseColor[0] = mDiffuseColor[1] = mDiffuseColor[2] = 0.0f; mDiffuseColor[3] = 1.0f;
+	mSpecularColor[0] = mSpecularColor[1] = mSpecularColor[2] = 0.0f; mSpecularColor[3] = 1.0f;
+}
+
+T3DSFace::T3DSFace()
+{
+	mVertIndex[0] = mVertIndex[1] = mVertIndex[2] = 0;
+	mCoordIndex[0] = mCoordIndex[1] = mCoordIndex[2] = 0;
+	mSmoothingGroup = 0;
+	mMaterialID = -1;
+}
+
+//----------------------------------------------------------------------
+//	T3DSObject::T3DSObject
+//
+//	Purpose:	Constructor.					
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	05/12/13	CLW			5.0.0		first release
+//
+//----------------------------------------------------------------------
+T3DSObject::T3DSObject() :	mNumVertices(0),
+							mNumFaces(0),
+							mNumTexCoords(0),
+							mVertices(NULL),
+							mTexCoords(NULL),
+							mHasSmoothingInfo(false),
+							mPerVertexNormals(false)
+{
+}
+
+//----------------------------------------------------------------------
+//	T3DSModel::T3DSModel
+//
+//	Purpose:	Constructor.					
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	05/12/13	CLW			5.0.0		first release
+//
+//----------------------------------------------------------------------
+T3DSModel::T3DSModel()
+{
+	mModelDataLoaded = false;
+	mMetaDataLoaded = false;
+
+    try {
+        mBuffer = new uint32_t[INITIAL_BUFFER_SIZE];
+        mBufferSize = INITIAL_BUFFER_SIZE;
+    } catch (bad_alloc) {
+        mBuffer = NULL;
+        mBufferSize = 0;
+    }
+
+	mDisplayList = 0;
+	mRenderAtmosphere = false;
+	mRenderCoordinateAxes = false;
+	mConvolvedTextureID = 0;
+	mExpansionIterations = 5;
+	mConvolutionIterations = 10;
+
+    // 1 meter by default instead of 0 so that's it's a bit more reasonable.
+	mPhysicalRadius = 1*kAuPerMetre;	// Is only possibly set by associated .meta file.
+	mModelUpVector = Vec3f(0.0f, 1.0f, 0.0f);	// The default OpenGL up vector
+	mRotationRateInRadiansPerCentury = 0.0;
+	mInclinationAngleInDegrees = 0.0;
+}
+
+//----------------------------------------------------------------------
+//	T3DSModel::~T3DSModel
+//
+//	Purpose:	Destructor.					
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	05/12/13	CLW			5.0.0		first release
+//
+//----------------------------------------------------------------------
+T3DSModel::~T3DSModel()
+{
+	// Go through all the objects in the scene
+	T3DSObjectVec::iterator object;
+	for (object = mObjects.begin(); object != mObjects.end(); object++)
+	{
+		// Free the faces, normals, vertices, and texture coordinates.
+		object->mFaces.clear();
+		if (object->mVertices)
+			delete [] object->mVertices;
+		if (object->mTexCoords)
+			delete [] object->mTexCoords;
+	}
+	
+	// Free any textures
+//	TModelTextureMap::iterator texture;
+//	for (texture = fTextureMap.begin(); texture != fTextureMap.end(); texture++)
+//	{
+//		if (texture->second != NULL)
+//		{
+//			delete texture->second;
+//			texture->second = NULL;
+//		}
+//	}
+	
+	if (mBuffer)
+		delete [] mBuffer;
+	
+	if (mDisplayList)
+		glDeleteLists(mDisplayList, 1);
+}
+
+//----------------------------------------------------------------------
+//	T3DSModel::Load
+//
+//	Purpose:	Given a LFile reference of a 3DS model file, loads the model.
+//
+//	Inputs:		inModelFS - LFile of 3DS model
+//				inIsAUserModel - true if model was chosen by user
+//
+//	Outputs:	return true if model is successfully loaded.					
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	05/12/13	CLW			5.0.0		first release
+//
+//----------------------------------------------------------------------
+bool T3DSModel::Load(File& inModelFile, bool inLoadMetaOnly, bool inIsAUserModel)
+{
+	bool bResult = true;
+
+	// Store a copy of the supplied file for possible logging events
+	mFile = inModelFile;
+	
+	// Store the file name without extension. This is the texture sub-folder name
+	mTextureFolderName = mFile.getFileNameWithoutExtension();
+	
+	// Don't load the model data if we only want the meta data
+	if (!inLoadMetaOnly && !mModelDataLoaded)
+	{
+		// Now attempt to load the model
+		try
+		{
+			T3DSChunk currentChunk = {0};
+			
+			// Open the 3DS file
+			FILE* theFileHandle = inModelFile.getCRTFileHandle("rb");
+			if (!theFileHandle) 
+			{
+				LOG(ERROR) << "Unable to find the file: " << inModelFile.getFullPath() << ".";
+				return false;
+			}
+
+			// Once we have the file open, we need to read the very first data chunk
+			// to see if it's a 3DS file.  That way we don't read an invalid file.
+			// If it is a 3DS file, then the first chunk ID will be equal to PRIMARY (some hex num)
+
+			// Read the first chuck of the file to see if it's a 3DS file
+			ReadChunk(theFileHandle, &currentChunk);
+
+			// Make sure this is a 3DS file
+			if (currentChunk.mID != M3D_PRIMARY)
+			{
+				LOG(ERROR) << "Unable to recognize file as 3DS format: " << inModelFile.getFullPath() << ".";
+				return false;
+			}
+
+			// Now we actually start reading in the data.  ProcessNextChunk() is recursive
+
+			// Begin loading objects, by calling this recursive function
+			ProcessNextChunk(theFileHandle, &currentChunk);
+			
+			// Clean up after everything, regardless if there was an error (still need to close file)
+			fclose(theFileHandle);
+			CleanUp();
+		
+			// For each T3DSObject in mObjects, sort the T3DSFace instances in mFaces by descending opacity so that
+			// at render time, we minimize state changes and transparent materials are rendered after opaque materials.
+
+			// CLW: Nov 13, 2014: For some reason I haven't been able to track down, this call is fugging up
+			// the vertex indices of a face and causing really poor render results. Clearly, this has something
+			// to do with T3DSFaceComparator used by the std::sort() call made in SortFaces(), but I'm unable
+			// to determine any violations of the strict weak ordering in the comparator.
+			// Oddly, this is only an issue on Mac.
+			SortFaces();
+
+			// We need to know the bounding radius of the model so we can render it at the correct physical size
+			ComputeBoundingRadius();
+			
+			// After we have read the whole 3DS file, we want to calculate our own vertex normals.
+			ComputeNormals();
+			
+			// Try to load any textures that this model uses
+//			LoadTextures(inIsAUserModel);
+
+			// Adjust any texture coordinates by their material scaling and offset params
+			AdjustTextureCoordinates();
+			
+			mModelDataLoaded = true;
+		}
+		catch (...)
+		{
+			bResult = false;
+		}
+	}
+	
+	// Load model meta data, which will be found in same folder as the model.
+	if (!mMetaDataLoaded)
+		LoadMetaData(inModelFile);
+
+	return bResult;
+}
+
+//----------------------------------------------------------------------
+//	T3DSModel::SortFaces
+//
+//	Purpose:	After model is loaded, we need to sort the faces in each
+//				object by descending opacity.
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	2014/06/05	CLW			7.0.0		Reading all of chunk 4130
+//
+//----------------------------------------------------------------------
+void T3DSModel::SortFaces()
+{
+	// If there are no objects, we can skip this part
+	if (mObjects.size() <= 0)
+		return;
+
+	// Iterate over each object
+	T3DSObjectVec::iterator object;
+	for (object = mObjects.begin(); object != mObjects.end(); object++)
+		std::sort(object->mFaces.begin(), object->mFaces.end(), T3DSFaceComparator(this));
+}
+
+//----------------------------------------------------------------------
+//	T3DSModel::ComputeBoundingRadius
+//
+//	Purpose:	After model is loaded, we need to know the radius of the
+//				smallest sphere that would completely enclose the model.
+//
+//				The difficulty is that the vertex coordinates don't necessarily need
+//				to be centered at origin. So we first have to compute a center vector
+//				which we translate all vertices by to move the model center to the origin.
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	05/12/13	CLW			5.0.0		first release
+//
+//----------------------------------------------------------------------
+void T3DSModel::ComputeBoundingRadius()
+{
+	mModelBoundingRadius = 0.0;
+	
+	// If there are no objects, we can skip this part
+	if (mObjects.size() <= 0)
+		return;
+	
+	// After inspecting various models with my ModelViewer, it is clear that 3DS models DO NOT
+	// necessarily cluster around the origin. So we have to compute the center of the model. But
+	// How to define "center" of model. This could be the done by summing the position of all
+	// vertices, and dividing by the number of vertices to determine the average, but this does not
+	// work very well with the concept of bounding radius since the computed center is a weighted
+	// distribution of vertex complexity. In other words, the computed center will be skewed toward
+	// higher vertex densities.
+	// Instead, we will compute a bounding box for the model and then use the center of the box.
+	
+	// Compute bounding box around model
+	int i;
+	const GLfloat kBigFloat = 1e9f;
+	Vec3f maxPt(-kBigFloat, -kBigFloat, -kBigFloat);
+	Vec3f minPt(kBigFloat, kBigFloat, kBigFloat);
+	T3DSObjectVec::iterator object;
+	for (object = mObjects.begin(); object != mObjects.end(); object++)
+	{
+		// Get Steve Sanders to remove these objects from his models
+		if (object->mName == "Plane")
+			continue;
+
+		// Find maximum and minimum ordinate values.
+		for (i = 0; i < object->mNumVertices; i++)
+		{
+			if (object->mVertices[i].mVertex.x > maxPt.x)
+				maxPt.x = object->mVertices[i].mVertex.x;
+			if (object->mVertices[i].mVertex.y > maxPt.y)
+				maxPt.y = object->mVertices[i].mVertex.y;
+			if (object->mVertices[i].mVertex.z > maxPt.z)
+				maxPt.z = object->mVertices[i].mVertex.z;
+
+			if (object->mVertices[i].mVertex.x < minPt.x)
+				minPt.x = object->mVertices[i].mVertex.x;
+			if (object->mVertices[i].mVertex.y < minPt.y)
+				minPt.y = object->mVertices[i].mVertex.y;
+			if (object->mVertices[i].mVertex.z < minPt.z)
+				minPt.z = object->mVertices[i].mVertex.z;
+		}
+	}
+
+	// Now compute the vector to the center of the bounding box
+	Vec3f diagonal = maxPt - minPt;
+	Vec3f halfDiagonal(diagonal);
+	halfDiagonal /= 2;
+	Vec3f centerVec = minPt + halfDiagonal;
+	
+	// Translate all vertices to center of bounding volume and determine the length of the largest vertex vector
+	float maxLengthSquared = 0.0f;
+	for (object = mObjects.begin(); object != mObjects.end(); object++)
+	{
+		// Go though all of the vertices
+		for (i=0; i < object->mNumVertices; i++)
+		{
+			// Translate each vertex by the center vector so that our model is always centered at origin
+			object->mVertices[i].mVertex -= centerVec;
+			
+			// Find the vertex furthest from center. We can skip the sqrt() until we're finished.
+			float lengthSquared = object->mVertices[i].mVertex.lengthSquared();
+			if (lengthSquared > maxLengthSquared)
+				maxLengthSquared = lengthSquared;
+		}
+	}
+	
+	mModelBoundingRadius = sqrt(maxLengthSquared);
+}
+
+//----------------------------------------------------------------------
+//	T3DSModel::LoadTextures
+//
+//	Purpose:	After model is loaded, we need to load any external textures
+//				that the model references. The external textures are assumed
+//				to be located in a subfolder with the same name of the model
+//				file (less the extension).
+//
+//	Inputs:		inIsAUserModel - true if model was chosen by user
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	05/12/13	CLW			5.0.0		first release
+//
+//----------------------------------------------------------------------
+/*
+void T3DSModel::LoadTextures(bool inIsAUserModel)
+{
+	//	We want to use a "default" texture if the conditions are right. Conditions under
+	//	which the default texture is used are as follows:
+	//
+	//		- The model has only one object
+	//		- The model has no material definitions
+	//		- The model has texture coordinates defined
+	//		- The number of texture coordinates is equal to the number of vertices
+	//		- A file called "default.jpg" exists in the models texture folder
+	//	
+	//	These conditions will typically apply to planet-type objects, which is what we want.
+	if ((mObjects.size() == 1) && (mMaterials.size() == 0))
+	{
+		T3DSObject* theObject = &mObjects[0];
+		if ((theObject->mNumTexCoords > 0) && (theObject->mNumTexCoords == theObject->mNumVertices))
+		{
+			// Create a new T3DSMaterialInfo object and add it to mMaterials
+			T3DSMaterialInfo theMaterial;
+			
+			theMaterial.mName = "default texture";
+			theMaterial.mFilename = "default.png";
+			memset(theMaterial.mDiffuseColor, 0, sizeof(theMaterial.mDiffuseColor));
+			mMaterials.push_back(theMaterial);
+		}
+	}
+	
+	// Go through all the materials
+	TMaterialVec::iterator material;
+	for (material = mMaterials.begin(); material != mMaterials.end(); material++)
+	{
+		// Check to see if there is a file name to load in this material
+		if (!material->mFilename.empty())
+		{
+			// Now look in the texture map to see if we already have this texture
+			TModelTextureMap::iterator it = fTextureMap.find(material->mFilename);
+			if (it != fTextureMap.end())
+			{
+				// The texture has already been loaded for another material so we just set the pointer
+				material->fTexture = it->second;
+			}
+			else
+			{
+				// We didn't find the texture in the map so we need to create the texture and add it
+				// to the map.
+
+				// Create a LFile for the file containing the texture.
+				// Rather than pollute the Sky Date/Models folder with a whole wack of texture files for various
+				// models, we require all external texture files to be located in a sub-folder under Models. The
+				// name of the folder is the name of the 3DS file (less the .3ds extension). So for HST.3ds, we
+				// require a "HST" folder in the Models folder.
+
+				// If this is a 'user' added model, it will be located in the prefs folder and so will the textures!
+				UOptions::EFileLocation theFileLocation = UOptions::kLocatedInData;
+				if (inIsAUserModel)
+					theFileLocation = UOptions::kLocatedInPrefs;
+					
+				LStr255 relativeFolderPath("STRx_PlanetExtras", "3DSModelFolder");
+				LFile::AddFolderSeparator(relativeFolderPath);
+				relativeFolderPath.Append(mTextureFolderName.c_str());
+					
+				LFile textureFile;
+				OSErr theErr = UOptions::CreateLFile(theFileLocation, relativeFolderPath, LStr255(material->mFilename.c_str()), textureFile, false);
+				if (theErr == noErr)
+				{
+					TOGLTexture* newTexture = NEW TOGLTexture();
+					if (newTexture)
+					{
+						if (!newTexture->Load(textureFile))
+						{
+							// If we fail to load the texture, delete the TOGLTexture object
+							delete newTexture;
+							newTexture = NULL;
+						}
+						else
+						{
+							// The new texture is successfully created so we can add it to the texture map
+							// and point this material at it.
+							fTextureMap[material->mFilename] = newTexture;
+							material->fTexture = newTexture;
+							
+							// Set clamping mode to repeat for 3DS model textures
+							 
+							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+						}
+					}
+				}
+				else if (theErr == fnfErr)
+				{
+					// The model needs a texture file we do not have, report which file is missing
+					string errorString = "Missing 3DS model external texture file; ";
+					errorString.append(material->mFilename);
+					errorString.append(" while loading ");
+					errorString.append(mFilename);
+					errorString.append(1, '.');
+					SignalString_(errorString.c_str());
+				}
+			}
+		}
+	}
+}
+*/
+
+//----------------------------------------------------------------------
+//	T3DSModel::LoadMetaData
+//
+//	Purpose:	Given full path to model, attempts to read an associated
+//				meta data file containing info not stored in 3DS file.
+//
+//	Inputs:		inModelFullPath - full path to model
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	2007/12/13	CLW			6.2.0		first release
+//
+//----------------------------------------------------------------------
+void T3DSModel::LoadMetaData(File& inModelFile)
+{
+	string metaFilePath = inModelFile.getRelativePath();
+	size_t dotPos = metaFilePath.find_last_of('.');
+	if (dotPos != string::npos)
+	{
+		metaFilePath.erase(dotPos + 1);
+		metaFilePath.append("meta");
+
+		ConfigFileReader metaConfig(metaFilePath);
+		if (metaConfig.hasValues())
+		{
+			if (metaConfig.getConfigValue("PhysicalRadius", mPhysicalRadius))
+				mPhysicalRadius *= kAuPerMetre;	// We store radius in AU
+
+			metaConfig.getConfigValue("ModelUpVector", mModelUpVector);
+			metaConfig.getConfigValue("InclinationAngleInDegrees", mInclinationAngleInDegrees);
+
+			if (metaConfig.getConfigValue("RotationPeriodInDays", mRotationRateInRadiansPerCentury))
+			{
+				// For convenience to user, we store period, but we need rate.
+				if (mRotationRateInRadiansPerCentury)
+					mRotationRateInRadiansPerCentury = kTwicePi * kDaysPerCentury / mRotationRateInRadiansPerCentury;
+			}
+
+			mMetaDataLoaded = true;
+		}
+	}
+}
+
+//----------------------------------------------------------------------
+//	T3DSModel::AdjustTextureCoordinates
+//
+//	Purpose:	Applies material scaling and offset parameters to
+//				texture coordinates used in materials.
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	2007/08/01	CLW			6.0.7		
+//
+//----------------------------------------------------------------------
+void T3DSModel::AdjustTextureCoordinates()
+{
+	// Iterate over objects
+	T3DSObjectVec::iterator object;
+	for (object = mObjects.begin(); object != mObjects.end(); object++)
+	{
+		// Shit happens
+		if (object->mNumFaces == 0)
+			continue;
+
+		// Skip object if it has no texture coords
+		if (object->mTexCoords == NULL)
+			continue;
+
+		// Iterate over each face in the object
+		for (int face = 0; face < object->mNumFaces; face++)
+		{
+			T3DSFace* theFace = &(object->mFaces[face]);
+
+			// Obtain the material for the face
+			if (theFace->mMaterialID >= 0)
+			{
+				T3DSMaterialInfo* theMaterial = &mMaterials[theFace->mMaterialID];
+				
+				// Scale values of zero are illegal
+				if ((theMaterial->mUScale != 0.0f) && (theMaterial->mVScale != 0.0f))
+				{
+					// If scaling and translations params are different from 1 and 0, respectively,
+					// then apply the parameters to each texture coordinate
+					if ((theMaterial->mUScale != 1.0f) || ((theMaterial->mVScale != 1.0f)) ||
+						(theMaterial->mUOffset != 0.0f) || ((theMaterial->mVOffset != 0.0f)))
+					{
+						// Iterate over each triangle composing the face
+						for (int whichVertex = 0; whichVertex < 3; whichVertex++)
+						{
+							// Get the index for each point of the face
+							int index = theFace->mVertIndex[whichVertex];
+
+							// How to use mUScale, mVScale, mUOffset and mVOffset in material definition?
+							// Taking a guess until some model with non-default info proves me wrong
+							object->mTexCoords[index].x = (object->mTexCoords[index].x / theMaterial->mUScale) + theMaterial->mUOffset;
+							object->mTexCoords[index].y = (object->mTexCoords[index].y / theMaterial->mVScale) + theMaterial->mVOffset;
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+void T3DSModel::SetFBOSize(GLuint inWidth, GLuint inHeight)
+{
+	mFBOSize.x = (GLint)inWidth;
+	mFBOSize.y = (GLint)inHeight;
+}
+
+/*
+//----------------------------------------------------------------------
+//	T3DSModel::SetupOpenGLMaterialState
+//
+//	Purpose:	While rendering, is called anytime the a new material is
+//				to be used.
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	2014/06/05	CLW			7.0.0		Reading all of chunk 4130
+//
+//----------------------------------------------------------------------
+bool T3DSModel::SetupOpenGLMaterialState(TOGLDrawer* inOpenGL, int inMaterialID, bool& ioIsTexturing)
+{
+	const GLfloat kDefaultMaterialShininess = 0.1f * 128.0f;
+	const GLfloat kZeroLight[] = {0.0f, 0.0f, 0.0f, 1.0f};
+	const GLfloat kWhiteLight[] = {1.0f, 1.0f, 1.0f, 1.0f};
+
+	// Does this object have a material?
+	T3DSMaterialInfo* theMaterial = NULL;
+	if (inMaterialID >= 0)
+	{
+		theMaterial = &mMaterials[inMaterialID];
+					
+		// If the alpha values for diffuse and specular color are zero, we don't render it.
+		// Why? Because the polygon will just appear black and will not respond to any lighting.
+		// Our model of Cassini happens to use this material definition and it looks nutty.
+		if ((theMaterial->mDiffuseColor[3] == 0.0f) && (theMaterial->mSpecularColor[3] == 0.0f))
+			return false;
+					
+		// Check to see if this object has a texture map, if so bind the texture to it.
+		if (theMaterial->fTexture)
+		{
+			// Turn on texture mapping and bind the texture map to the object by it's mMaterialID
+			inOpenGL->StateSetTexturingOn(theMaterial->fTexture->GetTextureID());
+		}
+		else
+		{
+			// Turn off texture mapping
+			inOpenGL->StateSetTexturingOff();
+		}
+					
+		// Set ambient material color
+		// We're overriding ambient material color so that we have a consistent ambient lighing effect for all models.
+		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, kZeroLight);
+
+		// Set diffuse material color
+		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, theMaterial->mDiffuseColor);
+					
+		// Set specular material color
+		if ((theMaterial->mSpecularColor[0] == 0.0f) && (theMaterial->mSpecularColor[1] == 0.0f) && (theMaterial->mSpecularColor[2] == 0.0f))
+		{
+			float zeroVal = 0.0f;
+			glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, kZeroLight);
+			glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, &zeroVal);
+		}
+		else
+		{
+			float matSpecular[4] = { theMaterial->mSpecularColor[0], theMaterial->mSpecularColor[1], theMaterial->mSpecularColor[2], 1.0f };
+			glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, matSpecular);
+			glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, &theMaterial->mShininess);
+		}
+								
+		// If material has opacity less than 1.0, we must enable blending
+		if (theMaterial->mDiffuseColor[3] < 1.0f)
+		{
+			// Because objects are sorted by material opacity, we can safely leave blending on at this point.
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		}
+		else
+			glDisable(GL_BLEND);
+	}
+	else
+	{
+		// YIKES!! No material definition. Bummer. Default to white material with default shininess.
+					
+		// Turn off texture mapping
+		inOpenGL->StateSetTexturingOff();
+
+		// Turn off blending.
+		glDisable(GL_BLEND);
+						
+		// Set default material properties
+		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, kWhiteLight);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, kWhiteLight);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, kWhiteLight);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, &kDefaultMaterialShininess);
+	}
+
+	ioIsTexturing = (theMaterial != NULL) && (theMaterial->fTexture != NULL);
+
+	return true;
+}
+*/
+
+//----------------------------------------------------------------------
+//	T3DSModel::Render
+//
+//	Purpose:	Renders the model.
+//
+//	Comments:	We have a model that has a certain amount of objects and textures.  We want 
+//				to go through each object in the model, bind it's texture map or set it's
+//				material properties, and then render it.
+//				To render the current object, we go through all of it's faces (polygons).  
+//				A face (in this case) is just a triangle of the object.
+//				For instance, a cube has 12 faces because each side has 2 triangles.
+//				You might be thinking.  Well, if there are 12 faces in a cube, that makes
+//				36 vertices that we need to read in for that object.  Not really true because
+//				a lot of the vertices are the same, since they share sides, we only need to save
+//				8 vertices, and ignore the duplicates.  Then, you have an array of all the
+//				unique vertices in that object.  No 2 vertices will be the same.  This cuts down
+//				on memory.  Then, another array is saved, which is the index numbers for each face,
+//				which index in to that array of vertices.  That might sound silly, but it is better
+//				than saving tons of duplicate vertices.  The same thing happens for UV coordinates.
+//				You don't save duplicate UV coordinates, you just save the unique ones, then an array
+//				that index's into them.  This might be confusing, but most 3D files use this format.
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	05/12/13	CLW			5.0.0		first release
+//----------------------------------------------------------------------
+void T3DSModel::Render(/* TOGLDrawer* inOpenGL */)
+{
+	if (mDisplayList == 0)
+	{		
+		mDisplayList = glGenLists(1);
+		if (mDisplayList != 0)
+		{
+			// Start compiling the display list
+			glNewList(mDisplayList, GL_COMPILE);
+			
+			T3DSObjectVec::iterator object;
+			for (object = mObjects.begin(); object != mObjects.end(); object++)
+			{
+				// Shit happens
+				if (object->mNumFaces == 0)
+					continue;
+
+				// Go through all of the faces (polygons) of the object and draw them
+				int currentMaterialID = -1;
+				bool hasTexture = false;
+				for (int face = 0; face < object->mNumFaces; face++)
+				{
+					T3DSFace* theFace = &(object->mFaces[face]);
+					if (theFace->mMaterialID != currentMaterialID)
+					{
+						if (face > 0)
+							glEnd();
+
+						// Setup OpenGL state for this object
+//						if (!SetupOpenGLMaterialState(inOpenGL, theFace->mMaterialID, hasTexture))
+//						{
+//							glBegin(GL_TRIANGLES);
+//							continue;
+//						}
+
+						// Don't perform texturing if for some reason the texcoords are not present
+						hasTexture = hasTexture && (object->mTexCoords != NULL);
+
+						currentMaterialID = theFace->mMaterialID;
+
+						glBegin(GL_TRIANGLES);
+					}
+
+					// Go through each corner of the triangle and draw it.
+					for (int whichVertex = 0; whichVertex < 3; whichVertex++)
+					{
+						// Get the index for each point of the face
+						int index = theFace->mVertIndex[whichVertex];
+						uint32_t smoothingGroup = theFace->mSmoothingGroup;
+				
+						// Give OpenGL the normal for this vertex.
+						Vec3f* theNormal;
+						if (object->mPerVertexNormals && smoothingGroup)
+							theNormal = &object->mVertices[index].mNormalMap[smoothingGroup].mNormal;
+						else
+							theNormal = &theFace->mNormal;
+						glNormal3f(theNormal->x, theNormal->y, theNormal->z);
+					
+						// If the object has a texture associated with it and texture coords, give this vertex texture coordinate.
+						if (hasTexture)
+							glTexCoord2f(object->mTexCoords[index].x, object->mTexCoords[index].y);
+
+						// Pass in the current vertex of the object (Corner of current face)
+						glVertex3f(object->mVertices[index].mVertex.x, object->mVertices[index].mVertex.y, object->mVertices[index].mVertex.z);
+					}
+				}
+				
+				glEnd();	// End the drawing
+			}
+			
+			// We're done compiling the display list
+			glEndList();
+		}
+	}
+
+	// If we have a display list, render it.
+	if (mDisplayList != 0)
+	{
+		glCallList(mDisplayList);
+
+//		if (mRenderAtmosphere)
+//			RenderAtmosphere();
+
+		// In rendering the display list, we will have messed up our OpenGL state
+//		inOpenGL->StateSet(TOGLDrawer::kDefault);
+	}
+
+	// Draw the model's coordinate axes
+	if (mRenderCoordinateAxes)
+	{
+		GLdouble axisLength = mModelBoundingRadius;
+//		inOpenGL->StateSet(TOGLDrawer::kOpaque);
+//		inOpenGL->StateSetTexturingOff();
+		glLineWidth(2.0f);
+		glBegin(GL_LINES);
+		glColor3f(1.0f, 0.0f, 0.0f);
+		glVertex3d(0.0, 0.0, 0.0);
+		glVertex3d(axisLength, 0.0, 0.0);
+
+		glColor3f(0.0f, 1.0f, 0.0f);
+		glVertex3d(0.0, 0.0, 0.0);
+		glVertex3d(0.0, axisLength, 0.0);
+
+		glColor3f(0.0f, 0.0f, 1.0f);
+		glVertex3d(0.0, 0.0, 0.0);
+		glVertex3d(0.0, 0.0, axisLength);
+		glEnd();
+	}
+}
+
+void T3DSModel::SetAtmosphereParameters(GLint inExpansionIterations, GLint inConvolutionIterations)
+{
+	mExpansionIterations = inExpansionIterations;
+	mConvolutionIterations = inConvolutionIterations;
+}
+
+/*
+//----------------------------------------------------------------------
+//	T3DSModel::RenderAtmosphere
+//
+//	Purpose:	Renders a hazy "atmosphere" around the model.
+//
+//	Comments:	David Bradstreet and Steve Sanders have created 3DS models
+//				for specific binary stars. However, without rendering an
+//				"atmosphere" around the star, the model render looks,
+//				well, not convincing.
+//				This code uses FBO textures and shaders to perform some
+//				post-processing on the model render to ultimately apply
+//				a nice haze around the model.
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	2014/11/31	CLW			7.1.1		Binary Star Atmospheres
+//----------------------------------------------------------------------
+void T3DSModel::RenderAtmosphere()
+{
+	mConvolvedTextureID = 0;
+	TRenderTextureFactory* theFBOInstance = TRenderTextureFactory::Instance();
+	if (theFBOInstance)
+	{
+		GLint fSavedViewport[4];
+		glGetIntegerv(GL_VIEWPORT, fSavedViewport);
+
+		// Change viewport to match FBO texture size
+		glViewport(0, 0, mFBOSize.x, mFBOSize.y);
+
+		const GLuint k3DSModelFBOName1 = 31;	// Some number likely not used elsewhere
+
+		// Render the model to a texture
+		if (theFBOInstance->BeginCapture(k3DSModelFBOName1, mFBOSize.x, mFBOSize.y, false, false, false, true))
+		{
+			glShadeModel(GL_SMOOTH);
+			glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			glCallList(mDisplayList);
+
+			theFBOInstance->EndCapture();
+
+			// We are now about to perform some image filtering using more FBO's and shaders. We need to modify
+			// the projection and modelview matrices for these operations
+			glMatrixMode(GL_PROJECTION);
+			glLoadIdentity();
+			gluOrtho2D(0.0, (GLdouble)mFBOSize.x, (GLdouble)mFBOSize.y, 0.0);
+			glMatrixMode(GL_MODELVIEW);
+			glLoadIdentity();
+
+			// We need to expand the image in the results of k3DSModelFBOName1 so that when we subseqently
+			// convolve the image, it is larger than the original, looking like atmosphere.
+			GLuint srcTex = theFBOInstance->GetTextureID(k3DSModelFBOName1, mFBOSize.x, mFBOSize.y, true);
+			GLuint expandedImage = PerformImageExpansion(srcTex, mExpansionIterations);
+
+			// Now perform separable convolution
+			mConvolvedTextureID = PerformConvolution(expandedImage, mConvolutionIterations);
+		}
+
+		// Restore the viewport
+		glViewport(fSavedViewport[0], fSavedViewport[1], fSavedViewport[2], fSavedViewport[3]);
+	}
+}
+
+// CLW: Oct 31, 2014: Just built this to compute coefficients for convolution shaders.
+void computeWeightsAndOffsets(int n)
+{
+	// Compute n'th line of binomial coefficients
+	vector<int> row(n + 1);
+
+	row[0] = 1; //First element is always 1
+	for (int i = 1; i<n / 2 + 1; i++){ //Progress up, until reaching the middle value
+		row[i] = row[i - 1] * (n - i + 1) / i;
+	}
+	for (int i = n / 2 + 1; i <= n; i++){ //Copy the inverse of the first part
+		row[i] = row[n - i];
+	}
+
+	int numDiscrete = (n + 1 - 4) / 2 + 1;
+	vector<int> dOffsets(numDiscrete);
+	for (int i = 0; i < numDiscrete; i++)
+		dOffsets[i] = i;
+
+	int dDenom = 0;
+	for (int i = 0; i < numDiscrete * 2 - 1; i++)
+		dDenom += row[2 + i];
+
+	vector<double> dWeights(numDiscrete);
+	int j = 0;
+	for (int i = 2 + numDiscrete - 1; i >= 2; i--)
+		dWeights[j++] = (double)row[i] / (double)dDenom;
+
+	int numLinear = numDiscrete / 2 + 1;
+	vector<double> lOffsets(numLinear);
+	vector<double> lWeights(numLinear);
+	lWeights[0] = dWeights[0];
+	lOffsets[0] = 0.0;
+	j = 1;
+	for (int i = 1; i < numLinear; i++)
+	{
+		lWeights[i] = dWeights[j] + dWeights[j + 1];
+		lOffsets[i] = (dOffsets[j] * dWeights[j] + dOffsets[j + 1] * dWeights[j + 1]) / lWeights[i];
+		j += 2;
+	}
+
+	int i = 0;
+	i++;
+}
+
+//----------------------------------------------------------------------
+//	T3DSModel::PerformImageExpansion
+//
+//	Purpose:	Enlarges the rendered areas in the given source texture.
+//
+//	Comments:	Prior to applying a convolution filter to the 3DS model,
+//				we need to expand the portions in the texture so that the
+//				blury haze extends beyond the edges of the model.
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	2014/11/31	CLW			7.1.1		Binary Star Atmospheres
+//----------------------------------------------------------------------
+GLuint T3DSModel::PerformImageExpansion(GLuint inSrcTextureID, int inIterations)
+{
+	TRenderTextureFactory* theFBOInstance = TRenderTextureFactory::Instance();
+	if (theFBOInstance == NULL)
+		return 0;
+
+	TGLSLProgramFactory* theGLSLProgramFactory = TGLSLProgramFactory::Instance();
+	if (theGLSLProgramFactory == NULL)
+		return 0;
+
+	TGLSLProgram* expandShader = theGLSLProgramFactory->GetInstance("Vertex/FixedFunc", NULL, "ImageProc/Expand");
+	if (expandShader == NULL)
+		return 0;
+
+	if (!expandShader->IsUsable())
+		return 0;
+
+	const GLuint kImageExpansionFBOName1 = 32;	// Some number likely not used elsewhere
+	const GLuint kImageExpansionFBOName2 = 33;	// Some number likely not used elsewhere
+
+	GLuint result = 0;
+
+	GLuint inputTextureID = inSrcTextureID;
+
+	int i = 0;
+	while (i < inIterations)
+	{
+		if (theFBOInstance->BeginCapture(kImageExpansionFBOName1, mFBOSize.x, mFBOSize.y, false, false, false, false))
+		{
+			if (expandShader->Activate())
+			{
+				expandShader->SetUniformSampler2D("uSourceImage", 0, inputTextureID);
+				expandShader->SetUniformVariable("uImageWidth", (GLfloat)mFBOSize.x);
+				expandShader->SetUniformVariable("uImageHeight", (GLfloat)mFBOSize.y);
+
+				glBegin(GL_QUADS);
+				glVertex2i(0, 0);
+				glVertex2i(0, mFBOSize.y);
+				glVertex2i(mFBOSize.x, mFBOSize.y);
+				glVertex2i(mFBOSize.x, 0);
+				glEnd();
+
+				expandShader->Deactivate();
+			}
+
+			theFBOInstance->EndCapture();
+
+			GLuint fbo2Tex = theFBOInstance->GetTextureID(kImageExpansionFBOName1, mFBOSize.x, mFBOSize.y, false);
+			i++;
+			if (i == inIterations)
+			{
+				result = fbo2Tex;
+				break;
+			}
+			
+			if (theFBOInstance->BeginCapture(kImageExpansionFBOName2, mFBOSize.x, mFBOSize.y, false, false, false, false))
+			{
+				if (expandShader->Activate())
+				{
+					expandShader->SetUniformSampler2D("uSourceImage", 0, fbo2Tex);
+					expandShader->SetUniformVariable("uImageWidth", (GLfloat)mFBOSize.x);
+					expandShader->SetUniformVariable("uImageHeight", (GLfloat)mFBOSize.y);
+
+					glBegin(GL_QUADS);
+					glVertex2i(0, 0);
+					glVertex2i(0, mFBOSize.y);
+					glVertex2i(mFBOSize.x, mFBOSize.y);
+					glVertex2i(mFBOSize.x, 0);
+					glEnd();
+
+					expandShader->Deactivate();
+				}
+
+				theFBOInstance->EndCapture();
+
+				result = theFBOInstance->GetTextureID(kImageExpansionFBOName2, mFBOSize.x, mFBOSize.y, false);
+			}
+		}
+
+		inputTextureID = result;
+		i++;
+	}
+
+	glActiveTexture(GL_TEXTURE0_ARB);
+
+	return result;
+}
+
+//----------------------------------------------------------------------
+//	T3DSModel::PerformConvolution
+//
+//	Purpose:	Applies a separable Gaussian blur to the source texture.
+//
+//	Comments:	
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	2014/11/31	CLW			7.1.1		Binary Star Atmospheres
+//----------------------------------------------------------------------
+GLuint T3DSModel::PerformConvolution(GLuint inSrcTextureID, int inIterations)
+{
+	TRenderTextureFactory* theFBOInstance = TRenderTextureFactory::Instance();
+	if (theFBOInstance == NULL)
+		return 0;
+
+	TGLSLProgramFactory* theGLSLProgramFactory = TGLSLProgramFactory::Instance();
+	if (theGLSLProgramFactory == NULL)
+		return 0;
+
+	TGLSLProgram* convHShader = theGLSLProgramFactory->GetInstance("Vertex/FixedFunc", NULL, "ImageProc/ConvH");
+	if (convHShader == NULL)
+		return 0;
+
+	if (!convHShader->IsUsable())
+		return 0;
+
+	TGLSLProgram* convVShader = theGLSLProgramFactory->GetInstance("Vertex/FixedFunc", NULL, "ImageProc/ConvV");
+	if (convVShader == NULL)
+		return 0;
+
+	if (!convVShader->IsUsable())
+		return 0;
+
+	const GLuint kHorizontalConvolveFBOName = 32;	// Some number likely not used elsewhere
+	const GLuint kVerticalConvolveFBOName = 33;		// Some number likely not used elsewhere
+
+	GLuint result = 0;
+
+	GLuint inputTextureID = inSrcTextureID;
+
+	for (int i = 0; i < inIterations; i++)
+	{
+		// Perform horizontal convolution
+		if (theFBOInstance->BeginCapture(kHorizontalConvolveFBOName, mFBOSize.x, mFBOSize.y, false, false, false, false))
+		{
+			if (convHShader->Activate())
+			{
+				convHShader->SetUniformSampler2D("uSourceImage", 0, inputTextureID);
+				convHShader->SetUniformVariable("uImageWidth", (GLfloat)mFBOSize.x);
+				convHShader->SetUniformVariable("uImageHeight", (GLfloat)mFBOSize.y);
+
+				glBegin(GL_QUADS);
+				glVertex2i(0, 0);
+				glVertex2i(0, mFBOSize.y);
+				glVertex2i(mFBOSize.x, mFBOSize.y);
+				glVertex2i(mFBOSize.x, 0);
+				glEnd();
+
+				convHShader->Deactivate();
+			}
+
+			theFBOInstance->EndCapture();
+
+			// Perform vertical convolution
+			GLuint fbo2Tex = theFBOInstance->GetTextureID(kHorizontalConvolveFBOName, mFBOSize.x, mFBOSize.y, false);
+			if (theFBOInstance->BeginCapture(kVerticalConvolveFBOName, mFBOSize.x, mFBOSize.y, false, false, false, false))
+			{
+				if (convVShader->Activate())
+				{
+					convVShader->SetUniformSampler2D("uSourceImage", 0, fbo2Tex);
+					convVShader->SetUniformVariable("uImageWidth", (GLfloat)mFBOSize.x);
+					convVShader->SetUniformVariable("uImageHeight", (GLfloat)mFBOSize.y);
+
+					glBegin(GL_QUADS);
+					glVertex2i(0, 0);
+					glVertex2i(0, mFBOSize.y);
+					glVertex2i(mFBOSize.x, mFBOSize.y);
+					glVertex2i(mFBOSize.x, 0);
+					glEnd();
+
+					convVShader->Deactivate();
+				}
+
+				theFBOInstance->EndCapture();
+
+				result = theFBOInstance->GetTextureID(kVerticalConvolveFBOName, mFBOSize.x, mFBOSize.y, false);
+			}
+
+			inputTextureID = result;
+		}
+	}
+
+	glActiveTexture(GL_TEXTURE0_ARB);
+
+	return result;
+}
+*/
+
+//----------------------------------------------------------------------
+//	T3DSModel::Cleanup
+//
+//	Purpose:	Deallocates all data needed to load the model.
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	05/12/13	CLW			5.0.0		first release
+//
+//----------------------------------------------------------------------
+void T3DSModel::CleanUp()
+{
+	if (mBuffer)
+	{
+		delete [] mBuffer;
+		mBuffer = NULL;
+		mBufferSize = 0;
+	}
+}
+
+//----------------------------------------------------------------------
+//	T3DSModel::ProcessNextChunk
+//
+//	Purpose:	This function reads the main sections of the 3DS file, then dives
+//				deeper with recursion.
+//
+//	Inputs:		ioPreviousChunk - Last chunk we read
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	05/12/13	CLW			5.0.0		first release
+//
+//----------------------------------------------------------------------
+void T3DSModel::ProcessNextChunk(FILE* inFileHandle, T3DSChunk* ioPreviousChunk)
+{
+	T3DSObject newObject;			// This is used to add to our object list
+	T3DSMaterialInfo newTexture;	// This is used to add to our material list
+
+	T3DSChunk currentChunk = {0};	// The current chunk to load
+	//T3DSChunk tempChunk = {0};		// A temp chunk for holding data
+
+	// Below we check our chunk ID each time we read a new chunk.  Then, if
+	// we want to extract the information from that chunk, we do so.
+	// If we don't want a chunk, we just read past it.  
+
+	// Continue to read the sub chunks until we have reached the length.
+	// After we read ANYTHING we add the bytes read to the chunk and then check
+	// check against the length.
+	while (ioPreviousChunk->mBytesRead < ioPreviousChunk->mLength)
+	{
+		// Read next Chunk
+		ReadChunk(inFileHandle, &currentChunk);
+
+		// Check the chunk ID
+		switch (currentChunk.mID)
+		{
+		case M3D_CHUNKTYPE_VERSION:							// This holds the version of the file
+			// If the file was made in 3D Studio Max, this chunk has an int that 
+			// holds the file version. Since there might be new additions to the 3DS file
+			// format in 4.0, we give a warning to that problem.
+			// However, if the file wasn't made by 3D Studio Max, we don't 100% what the
+			// version length will be so we'll simply ignore the value
+
+			// Read the file version and add the bytes read to our mBytesRead variable
+			currentChunk.mBytesRead += Read(inFileHandle, 1, currentChunk.mLength - currentChunk.mBytesRead);
+
+			// If the file version is over 3, give a warning that there could be a problem
+			if ((currentChunk.mLength - currentChunk.mBytesRead == 4) && (mBuffer[0] > 0x03))
+				LOG(WARNING) << "3DS file version greater than 3. Not expected.";
+			break;
+
+		case M3D_CHUNKTYPE_OBJECTINFO:						// This holds the version of the mesh
+			// This chunk holds the version of the mesh.  It is also the head of the MATERIAL
+			// and OBJECT chunks.  From here on we start reading in the material and object info.
+			ProcessNextChunk(inFileHandle, &currentChunk);
+			break;
+			
+		case M3D_CHUNKTYPE_MATERIAL:							// This holds the material information
+			// This chunk is the header for the material info chunks
+
+			// Add a empty texture structure to our texture list.
+			// If you are unfamiliar with STL's "vector" class, all push_back()
+			// does is add a new node onto the list.  I used the vector class
+			// so I didn't need to write my own link list functions.  
+			mMaterials.push_back(newTexture);
+
+			// Proceed to the material loading function
+			ProcessNextMaterialChunk(inFileHandle, &currentChunk);
+			break;
+
+		case M3D_CHUNKTYPE_OBJECT:							// This holds the name of the object being read
+		{
+			// This chunk is the header for the object info chunks.  It also
+			// holds the name of the object.
+
+			mObjects.push_back(newObject);
+			
+			// Get the name of the object and store it, then add the read bytes to our byte counter.
+			currentChunk.mBytesRead += ReadString(inFileHandle, mObjects[mObjects.size() - 1].mName);
+			
+			// Now proceed to read in the rest of the object information
+			ProcessNextObjectChunk(inFileHandle, &(mObjects[mObjects.size() - 1]), &currentChunk);
+
+			// Testing smoothing without smoothing groups
+			// (CLW) - Oct 5, 2006
+			// It appears reasonable and acceptable to assume that all faces composing an object can
+			// belong to the same smoothing group. This will obviously introduce some unwanted lighting
+			// artifacts, but the visual results are usually better than not forcing per-vertex
+			// lighting normal calculations. 
+			T3DSObject* theObject = &(mObjects[mObjects.size() - 1]);
+			if ((theObject->mNumFaces > 0) && (theObject->mHasSmoothingInfo == false))
+			{
+				for (int i = 0; i < theObject->mNumFaces; i++)
+					theObject->mFaces[i].mSmoothingGroup = 1;
+
+				theObject->mHasSmoothingInfo = true;
+			}
+			
+			break;
+		}
+
+		case M3D_EDITKEYFRAME:
+			//ProcessNextKeyFrameChunk(currentChunk);
+
+			// Read past this chunk and add the bytes read to the byte counter
+			currentChunk.mBytesRead += Read(inFileHandle, 1, currentChunk.mLength - currentChunk.mBytesRead);
+			break;
+
+		default: 
+			// If we didn't care about a chunk, then we get here.  We still need
+			// to read past the unknown or ignored chunk and add the bytes read to the byte counter.
+			currentChunk.mBytesRead += Read(inFileHandle, 1, currentChunk.mLength - currentChunk.mBytesRead);
+            if (currentChunk.mBytesRead == 0) {
+                // Need to bail out here or else we get caught in a tight loop
+                ioPreviousChunk->mBytesRead = ioPreviousChunk->mLength;
+            }
+			break;
+		}
+
+		// Add the bytes read from the last chunk to the previous chunk passed in.
+		ioPreviousChunk->mBytesRead += currentChunk.mBytesRead;
+	}
+}
+
+//----------------------------------------------------------------------
+//	T3DSModel::ProcessNextObjectChunk
+//
+//	Purpose:	This function handles all the information about the objects in the file.
+//				It is also recursive.
+//
+//	Inputs:		ioObject - The T3dsObject we are reading
+//				ioPreviousChunk - Last chunk we read
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	05/12/13	CLW			5.0.0		first release
+//
+//----------------------------------------------------------------------
+void T3DSModel::ProcessNextObjectChunk(FILE* inFileHandle, T3DSObject* ioObject, T3DSChunk* ioPreviousChunk)
+{
+	// The current chunk to work with
+	T3DSChunk currentChunk = {0};
+
+	// Continue to read these chunks until we read the end of this sub chunk
+	while (ioPreviousChunk->mBytesRead < ioPreviousChunk->mLength)
+	{
+		// Read the next chunk
+		ReadChunk(inFileHandle, &currentChunk);
+
+		// Check which chunk we just read
+		switch (currentChunk.mID)
+		{
+		case M3D_OBJECT_MESH:					// This lets us know that we are reading a new object
+			// We found a new object, so let's read in it's info using recursion
+			ProcessNextObjectChunk(inFileHandle, ioObject, &currentChunk);
+			break;
+
+		case M3D_OBJECT_VERTICES:				// This is the objects vertices
+			ReadVertices(inFileHandle, ioObject, &currentChunk);
+			break;
+
+		case M3D_OBJECT_FACES:					// This is the objects face information
+			ReadVertexIndices(inFileHandle, ioObject, &currentChunk);
+			break;
+
+		case M3D_OBJECT_MATERIAL:				// This holds the material name that the object has
+			// This chunk holds the name of the material that the object has assigned to it.
+			// This could either be just a color or a texture map.  This chunk also holds
+			// the faces that the texture is assigned to (In the case that there is multiple
+			// textures assigned to one object, or it just has a texture on a part of the object.
+			// Since most of my game objects just have the texture around the whole object, and 
+			// they aren't multitextured, I just want the material name.
+
+			// We now will read the name of the material assigned to this object
+			ReadObjectMaterial(inFileHandle, ioObject, &currentChunk);			
+			break;
+
+		case M3D_OBJECT_UV:						// This holds the UV texture coordinates for the object
+			// This chunk holds all of the UV coordinates for our object.  Let's read them in.
+			ReadUVCoordinates(inFileHandle, ioObject, &currentChunk);
+			break;
+			
+		case M3D_OBJECT_SMOOTHING_GROUP:
+			// This chunk contains smoothing group information.
+			ReadSmoothingGroups(inFileHandle, ioObject, &currentChunk);
+			break;
+			
+		case M3D_OBJECT_TRANSLATION_MATRIX:
+			ReadTranslationMatrix(inFileHandle, ioObject, &currentChunk);
+			break;
+
+		default:  
+			// Read past the ignored or unknown chunks
+			currentChunk.mBytesRead += Read(inFileHandle, 1, currentChunk.mLength - currentChunk.mBytesRead);
+			break;
+		}
+
+		// Add the bytes read from the last chunk to the previous chunk passed in.
+		ioPreviousChunk->mBytesRead += currentChunk.mBytesRead;
+        
+		if (ioPreviousChunk->mBytesRead > ioPreviousChunk->mLength)
+			LOG(ERROR) << "3DS Model load: Read PAST the end of a chunk! " << mFile.getFullPath();
+	}
+}
+
+//----------------------------------------------------------------------
+//	T3DSModel::ProcessNextMaterialChunk
+//
+//	Purpose:	This function handles all the information about the material.
+//
+//	Inputs:		ioPreviousChunk - Last chunk we read
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	05/12/13	CLW			5.0.0		first release
+//
+//----------------------------------------------------------------------
+void T3DSModel::ProcessNextMaterialChunk(FILE* inFileHandle, T3DSChunk* ioPreviousChunk)
+{
+	bool specularDefined = false;
+	
+	// The current chunk to work with
+	T3DSChunk currentChunk = {0};
+
+	// Continue to read these chunks until we read the end of this sub chunk
+	while (ioPreviousChunk->mBytesRead < ioPreviousChunk->mLength)
+	{
+		// Read the next chunk
+		ReadChunk(inFileHandle, &currentChunk);
+
+		// Check which chunk we just read in
+		T3DSMaterialInfo* currentMaterial = &mMaterials[mMaterials.size() - 1];
+		switch (currentChunk.mID)
+		{
+		case M3D_MATERIAL_NAME:							// This chunk holds the name of the material
+			currentChunk.mBytesRead += ReadString(inFileHandle, currentMaterial->mName);
+			break;
+			
+		case M3D_MATERIAL_AMBIENT:						// This holds the R G B color of our object
+			ReadColorChunk(inFileHandle, currentMaterial->mAmbientColor, &currentChunk);
+			break;
+
+		case M3D_MATERIAL_DIFFUSE:						// This holds the R G B color of our object
+			ReadColorChunk(inFileHandle, currentMaterial->mDiffuseColor, &currentChunk);
+			break;
+			
+		case M3D_MATERIAL_SPECULAR:
+			ReadColorChunk(inFileHandle, currentMaterial->mSpecularColor, &currentChunk);
+			specularDefined = true;
+			break;
+			
+		case M3D_MATERIAL_SHININESS:
+		{
+			float shininessPercent = 0.0;
+			ReadPercentageChunk(inFileHandle, &shininessPercent, &currentChunk);
+			if (specularDefined && (shininessPercent == 0.0f))
+				shininessPercent = 0.75f;
+			currentMaterial->mShininess = shininessPercent * 128.0f;
+			break;
+		}
+			
+		case M3D_MATERIAL_TRANSPARENCY:
+		{
+			float transparencyPercent = 0.0;
+			ReadPercentageChunk(inFileHandle, &transparencyPercent, &currentChunk);
+			currentMaterial->mDiffuseColor[3] = 1.0f - transparencyPercent;
+			currentMaterial->mSpecularColor[3] = 1.0f - transparencyPercent;
+			break;
+		}
+
+		case M3D_MATERIAL_MAP:							// This is the header for the texture info
+			// Proceed to read in the material information
+			ProcessNextMaterialChunk(inFileHandle, &currentChunk);
+			break;
+
+		case M3D_MATERIAL_FILE:						// This stores the file name of the material
+			// Here we read in the material's file name
+			currentChunk.mBytesRead += ReadString(inFileHandle, currentMaterial->mFilename);
+			break;
+		
+		case M3D_MATERIAL_MAP_USCALE:
+			currentChunk.mBytesRead += ReadFloat(inFileHandle, &currentMaterial->mUScale);
+			break;
+			
+		case M3D_MATERIAL_MAP_VSCALE:
+			currentChunk.mBytesRead += ReadFloat(inFileHandle, &currentMaterial->mVScale);
+			break;
+
+		case M3D_MATERIAL_MAP_UOFFSET:
+			currentChunk.mBytesRead += ReadFloat(inFileHandle, &currentMaterial->mUOffset);
+			break;
+
+		case M3D_MATERIAL_MAP_VOFFSET:
+			currentChunk.mBytesRead += ReadFloat(inFileHandle, &currentMaterial->mVOffset);
+			break;
+
+		default:  
+			// Read past the ignored or unknown chunks
+			currentChunk.mBytesRead += Read(inFileHandle, 1, currentChunk.mLength - currentChunk.mBytesRead);
+            if (currentChunk.mBytesRead == 0) {
+                // Need to bail out here or else we get caught in a tight loop
+                ioPreviousChunk->mBytesRead = ioPreviousChunk->mLength;
+            }
+			break;
+		}
+
+		// Add the bytes read from the last chunk to the previous chunk passed in.
+		ioPreviousChunk->mBytesRead += currentChunk.mBytesRead;
+	}
+}
+
+//----------------------------------------------------------------------
+//	T3DSModel::ReadChunk
+//
+//	Purpose:	This function reads in a chunk ID and it's length in bytes.
+//
+//	Inputs:		outChunk - The chunk to read
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	05/12/13	CLW			5.0.0		first release
+//
+//----------------------------------------------------------------------
+void T3DSModel::ReadChunk(FILE* inFileHandle, T3DSChunk* outChunk)
+{
+	// This reads the chunk ID which is 2 bytes.
+	// The chunk ID is like OBJECT or MATERIAL.  It tells what data is
+	// able to be read in within the chunks section.
+	outChunk->mBytesRead = Read(inFileHandle, sizeof(outChunk->mID), 1, &outChunk->mID);
+    
+    if (outChunk->mID == 0)
+		LOG(ERROR) << "This is a problem: outChunk->mID = " << outChunk->mID;
+
+	// Then, we read the length of the chunk which is 4 bytes.
+	// This is how we know how much to read in, or read past.
+	outChunk->mBytesRead += Read(inFileHandle, sizeof(outChunk->mLength), 1, &outChunk->mLength);
+    if (outChunk->mLength <= 0 )
+        outChunk->mLength = 0;
+    
+    if ((outChunk->mLength <= 0 ) || (outChunk->mLength > 5000000))
+		LOG(ERROR) << "This is a problem: outChunk->mLength = " << outChunk->mLength;
+    
+    if (outChunk->mLength == 65536)
+		LOG(ERROR) << "VERY Strange chunk that is exactly USHRT_MAX 65536 long outChunk->mLength" << outChunk->mLength;
+}
+
+//——————————————————————————————————————————————————————————————————————
+//	T3DSModel::Read
+//
+//	Purpose:	do a fread(), but checks if the destination buffer is big enough or not
+//				Only for the freads that use the global buffer
+//					
+//	Inputs:		inSize
+//				inCount
+//					
+//	Outputs:	bytes read
+//
+//	Date		Initials	Version		Comments
+//	——————————	—————————	——————————	———————————————————————————
+//	05/10/25	IPA			5.7.1		New
+//
+//——————————————————————————————————————————————————————————————————————
+size_t T3DSModel::Read(FILE* inFileHandle, size_t inSize, size_t inCount)
+{
+	size_t bytesRead = 0;
+
+	// check if buffer is big enough
+	if (inCount > mBufferSize)
+	{
+		if (mBuffer)
+		{
+			delete[] mBuffer;
+            mBuffer = NULL;
+            mBufferSize = 0;
+        }
+				
+		try
+		{
+			mBuffer = new uint32_t[inCount];
+            mBufferSize = inCount;
+		} catch (bad_alloc)
+		{
+            mBuffer = NULL;
+            mBufferSize = 0;
+        }
+	}
+	
+	// read the data
+	if (mBuffer && inFileHandle)
+		bytesRead = fread(mBuffer, inSize, inCount, inFileHandle) * inSize;
+	
+	return bytesRead;
+}
+
+//----------------------------------------------------------------------
+//	T3DSModel::Read
+//
+//	Purpose:	Wraps fread, returning bytes read.
+//
+//	Inputs:		ioFloatValue - The floating point value that is read in.
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	2014/06/08	CLW			7.0.0		Reading all of chunk 4130
+//
+//----------------------------------------------------------------------
+size_t T3DSModel::Read(FILE* inFileHandle, size_t inSize, size_t inCount, void* ioBuf)
+{
+	size_t bytesRead = 0;
+
+	// read the data
+	if (inFileHandle)
+		bytesRead = fread(ioBuf, inSize, inCount, inFileHandle) * inSize;
+	
+	return bytesRead;
+}
+
+//----------------------------------------------------------------------
+//	T3DSModel::ReadFloat
+//
+//	Purpose:	Uses fread to read a 32-bit floating point value. Corrects
+//				for endianess since all 3DS files are written using little
+//				endian format.
+//
+//	Inputs:		ioFloatValue - The floating point value that is read in.
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	05/12/13	CLW			5.0.0		first release
+//
+//----------------------------------------------------------------------
+size_t T3DSModel::ReadFloat(FILE* inFileHandle, GLfloat* ioFloatValue)
+{
+	size_t bytesRead = 0;
+	uint32_t value;
+
+	if (inFileHandle)
+	{
+		bytesRead = Read(inFileHandle, sizeof(value), 1, &value);
+		memcpy(ioFloatValue, &value, 4);
+	}
+
+	return bytesRead;
+}
+
+//----------------------------------------------------------------------
+//	T3DSModel::ReadString
+//
+//	Purpose:	This function reads in a string of characters using fread().
+//
+//	Inputs:		outString - The string value that is read in.
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	05/12/13	CLW			5.0.0		first release
+//
+//----------------------------------------------------------------------
+size_t T3DSModel::ReadString(FILE* inFileHandle, string& outString)
+{
+	size_t result = 0;
+	char buffer[260];
+
+	// Loop until we get NULL
+	const int kMaxStringLen = 256;
+	int index = -1;
+	do
+	{
+		index++;
+
+		// Read in a character at a time until we hit NULL.
+		result += Read(inFileHandle, sizeof(char), 1, &buffer[index]);
+
+	} while ((buffer[index] != '\0') && (index < kMaxStringLen));
+
+	if (index > 200)
+		LOG(WARNING) << "3DS string may be too long.";
+    
+	if (buffer[index] != '\0')
+		buffer[index] = '\0';
+
+	outString = buffer;
+
+	// Return the total bytes read
+	return result;
+}
+
+//----------------------------------------------------------------------
+//	T3DSModel::ReadColorChunk
+//
+//	Purpose:	This function reads in the RGB color data which could be specified
+//				using either 8-bit integers or 32-bit floats per channel.
+//
+//	Inputs:		outString - The string value that is read in.
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	05/12/13	CLW			5.0.0		first release
+//
+//----------------------------------------------------------------------
+void T3DSModel::ReadColorChunk(FILE* inFileHandle, float* ioColor, T3DSChunk* ioChunk)
+{
+	T3DSChunk tempChunk = {0};
+
+	// Read the color chunk info
+	ReadChunk(inFileHandle, &tempChunk);
+	
+	if (tempChunk.mID == M3D_CHUNKTYPE_COLOR_24)
+	{
+		// Read in the R G B color (3 bytes - 0 through 255)
+		uint8_t color24[3];
+		tempChunk.mBytesRead += Read(inFileHandle, sizeof(uint8_t), 3, color24);
+
+		// Add the bytes read to our chunk
+		ioChunk->mBytesRead += tempChunk.mBytesRead;
+		
+		// Convert to OpenGL color
+		ioColor[0] = (float)color24[0] / 255.0f;
+		ioColor[1] = (float)color24[1] / 255.0f;
+		ioColor[2] = (float)color24[2] / 255.0f;
+	}
+	else if (tempChunk.mID == M3D_CHUNKTYPE_COLOR_FLOAT)
+	{
+		tempChunk.mBytesRead += ReadFloat(inFileHandle, &ioColor[0]);
+		tempChunk.mBytesRead += ReadFloat(inFileHandle, &ioColor[1]);
+		tempChunk.mBytesRead += ReadFloat(inFileHandle, &ioColor[2]);
+		
+		// Convert to OpenGL color
+		ioColor[0] /= 255.0f;
+		ioColor[1] /= 255.0f;
+		ioColor[2] /= 255.0f;
+	}
+}
+
+//----------------------------------------------------------------------
+//	T3DSModel::ReadPercentageChunk
+//
+//	Purpose:	This function reads in the percentage values.
+//
+//	Inputs:		outString - The string value that is read in.
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	05/12/13	CLW			5.0.0		first release
+//
+//----------------------------------------------------------------------
+void T3DSModel::ReadPercentageChunk(FILE* inFileHandle, float* ioPercent, T3DSChunk* ioChunk)
+{
+	T3DSChunk tempChunk = {0};
+
+	// Read the shininess chunk info
+	ReadChunk(inFileHandle, &tempChunk);
+	
+	if (tempChunk.mID == M3D_CHUNKTYPE_INT_PCT)
+	{
+		uint16_t percent;
+		tempChunk.mBytesRead += Read(inFileHandle, sizeof(percent), 1, &percent);
+		*ioPercent = (float)percent / 100.0f;
+	}
+	else if (tempChunk.mID == M3D_CHUNKTYPE_FLOAT_PCT)
+		tempChunk.mBytesRead += ReadFloat(inFileHandle, ioPercent);
+
+	// Add the bytes read to our chunk
+	ioChunk->mBytesRead += tempChunk.mBytesRead;
+}
+
+//----------------------------------------------------------------------
+//	T3DSModel::ReadVertexIndices
+//
+//	Purpose:	This function reads in the indices for the vertex array.
+//
+//	Inputs:		ioObject - The object that holds the data to read in
+//				ioPreviousChunk - The previously read chunk
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	05/12/13	CLW			5.0.0		first release
+//
+//----------------------------------------------------------------------
+void T3DSModel::ReadVertexIndices(FILE* inFileHandle, T3DSObject* ioObject, T3DSChunk* ioPreviousChunk)
+{
+	unsigned short index = 0;	// This is used to read in the current face index
+	
+	// In order to read in the vertex indices for the object, we need to first
+	// read in the number of them, then read them in.  Remember,
+	// we only want 3 of the 4 values read in for each face.  The fourth is
+	// a visibility flag for 3D Studio Max that doesn't mean anything to us.
+
+	// Read in the number of faces that are in this object (int)
+	ioPreviousChunk->mBytesRead += Read(inFileHandle, sizeof(ioObject->mNumFaces), 1, &ioObject->mNumFaces);
+	if (ioObject->mNumFaces > 0)
+	{
+		ioObject->mFaces.clear();
+
+		// Go through all of the faces in this object
+		int i;
+		for (i = 0; i < ioObject->mNumFaces; i++)
+		{
+			T3DSFace newFace;
+
+			// Next, we read in the A then B then C index for the face, but ignore the 4th value.
+			// The fourth value is a visibility flag for 3D Studio Max, we don't care about this.
+			for (int j = 0; j < 4; j++)
+			{
+				// Read the first vertex index for the current face 
+				ioPreviousChunk->mBytesRead += Read(inFileHandle, sizeof(index), 1, &index);
+
+				if (j < 3)
+				{
+					// Store the index in our face structure.
+					newFace.mVertIndex[j] = index;
+				}
+			}
+
+			// Store the face in the vector
+			ioObject->mFaces.push_back(newFace);
+		}
+
+		// When calculating per-vertex lighting normals, we need to know which faces a vertex belongs to.
+		// For each vertex, we maintain a list of face indices that identify every face the vertex is a member of.
+		// We are guaranteed that vertices will have already been loaded according to the 3DS file format specification,
+		// however, we should still make sure before we dereference the pointer in the following loop.
+
+		if (ioObject->mVertices)
+		{
+			for (i = 0; i < ioObject->mNumFaces; i++)
+			{
+				// Store the face index for each vertex. We need this for super-fast vertex lighting calculations
+				ioObject->mVertices[ioObject->mFaces[i].mVertIndex[0]].mFaceList.push_back(i);
+				ioObject->mVertices[ioObject->mFaces[i].mVertIndex[1]].mFaceList.push_back(i);
+				ioObject->mVertices[ioObject->mFaces[i].mVertIndex[2]].mFaceList.push_back(i);
+			}
+		}
+	}
+}
+
+//----------------------------------------------------------------------
+//	T3DSModel::ReadUVCoordinates
+//
+//	Purpose:	This function reads in the UV coordinates for the object.
+//
+//	Inputs:		ioObject - The object that holds the data to read in
+//				ioPreviousChunk - The previously read chunk
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	05/12/13	CLW			5.0.0		first release
+//
+//----------------------------------------------------------------------
+void T3DSModel::ReadUVCoordinates(FILE* inFileHandle, T3DSObject* ioObject, T3DSChunk* ioPreviousChunk)
+{
+	// In order to read in the UV indices for the object, we need to first
+	// read in the amount there are, then read them in.
+
+	// Read in the number of UV coordinates there are (int)
+	ioPreviousChunk->mBytesRead += Read(inFileHandle, sizeof(ioObject->mNumTexCoords), 1, &ioObject->mNumTexCoords);
+	if (ioObject->mNumTexCoords > 0)
+	{
+		// Allocate memory to hold the UV coordinates
+		ioObject->mTexCoords = new Vec2f[ioObject->mNumTexCoords];
+		if (ioObject->mTexCoords)
+		{
+			// Read in the texture coodinates (an array 2 float)
+			float u, v;
+			for (int i = 0; i < ioObject->mNumTexCoords; i++)
+			{
+				ioPreviousChunk->mBytesRead += ReadFloat(inFileHandle, &u);
+				ioPreviousChunk->mBytesRead += ReadFloat(inFileHandle, &v);
+
+				// OpenGL textures are upsidedown so we have to flip v
+				v = 1 - v;
+
+				ioObject->mTexCoords[i].x = u;
+				ioObject->mTexCoords[i].y = v;
+			}
+		}
+	}
+}
+
+//----------------------------------------------------------------------
+//	T3DSModel::ReadSmoothingGroups
+//
+//	Purpose:	This function reads in smoothing group information.
+//
+//	Inputs:		ioObject - The object that holds the data to read in
+//				ioPreviousChunk - The previously read chunk
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	05/12/13	CLW			5.0.0		first release
+//
+//----------------------------------------------------------------------
+void T3DSModel::ReadSmoothingGroups(FILE* inFileHandle, T3DSObject* ioObject, T3DSChunk* ioPreviousChunk)
+{
+	uint32_t value;
+	for (int i = 0; i < ioObject->mNumFaces; i++)
+	{
+		ioPreviousChunk->mBytesRead += Read(inFileHandle, sizeof(value), 1, &value);
+		ioObject->mFaces[i].mSmoothingGroup = value;
+	}
+	
+	if (ioObject->mNumFaces > 0)
+		ioObject->mHasSmoothingInfo = true;
+}
+
+//----------------------------------------------------------------------
+//	T3DSModel::ReadTranslationMatrix
+//
+//	Purpose:	This function reads in the translation matrix for an object.
+//
+//	Inputs:		ioObject - The object that holds the data to read in
+//				ioPreviousChunk - The previously read chunk
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	05/12/13	CLW			5.0.0		first release
+//
+//----------------------------------------------------------------------
+void T3DSModel::ReadTranslationMatrix(FILE* inFileHandle, T3DSObject* ioObject, T3DSChunk* ioPreviousChunk)
+{
+	ioPreviousChunk->mBytesRead += ReadFloat(inFileHandle, (GLfloat*)&ioObject->mTranslation[0].x);
+	ioPreviousChunk->mBytesRead += ReadFloat(inFileHandle, (GLfloat*)&ioObject->mTranslation[0].y);
+	ioPreviousChunk->mBytesRead += ReadFloat(inFileHandle, (GLfloat*)&ioObject->mTranslation[0].z);
+	ioPreviousChunk->mBytesRead += ReadFloat(inFileHandle, (GLfloat*)&ioObject->mTranslation[1].x);
+	ioPreviousChunk->mBytesRead += ReadFloat(inFileHandle, (GLfloat*)&ioObject->mTranslation[1].y);
+	ioPreviousChunk->mBytesRead += ReadFloat(inFileHandle, (GLfloat*)&ioObject->mTranslation[1].z);
+	ioPreviousChunk->mBytesRead += ReadFloat(inFileHandle, (GLfloat*)&ioObject->mTranslation[2].x);
+	ioPreviousChunk->mBytesRead += ReadFloat(inFileHandle, (GLfloat*)&ioObject->mTranslation[2].y);
+	ioPreviousChunk->mBytesRead += ReadFloat(inFileHandle, (GLfloat*)&ioObject->mTranslation[2].z);
+	
+	ioPreviousChunk->mBytesRead += ReadFloat(inFileHandle, &ioObject->mLocalCenter.x);
+	ioPreviousChunk->mBytesRead += ReadFloat(inFileHandle, &ioObject->mLocalCenter.y);
+	ioPreviousChunk->mBytesRead += ReadFloat(inFileHandle, &ioObject->mLocalCenter.z);
+}
+
+//----------------------------------------------------------------------
+//	T3DSModel::ReadVertices
+//
+//	Purpose:	This function reads in the vertices for an object.
+//
+//	Inputs:		ioObject - The object that holds the data to read in
+//				ioPreviousChunk - The previously read chunk
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	05/12/13	CLW			5.0.0		first release
+//
+//----------------------------------------------------------------------
+void T3DSModel::ReadVertices(FILE* inFileHandle, T3DSObject* ioObject, T3DSChunk* ioPreviousChunk)
+{
+	// Like most chunks, before we read in the actual vertices, we need
+	// to find out how many there are to read in.  Once we have that number
+	// we then fread() them into our vertice array.
+
+	// Read in the number of vertices (int)
+	ioPreviousChunk->mBytesRead += Read(inFileHandle, sizeof(ioObject->mNumVertices), 1, &(ioObject->mNumVertices));
+	if (ioObject->mNumVertices > 0)
+	{
+		// Allocate the memory for the verts and initialize the structure
+		ioObject->mVertices = new T3DSVertex[ioObject->mNumVertices];
+		if (ioObject->mVertices)
+		{
+			// Read in the array of vertices (an array of 3 floats)
+			for (int i=0; i < ioObject->mNumVertices; i++)
+			{
+				ioPreviousChunk->mBytesRead += ReadFloat(inFileHandle, &ioObject->mVertices[i].mVertex.x);
+				ioPreviousChunk->mBytesRead += ReadFloat(inFileHandle, &ioObject->mVertices[i].mVertex.y);
+				ioPreviousChunk->mBytesRead += ReadFloat(inFileHandle, &ioObject->mVertices[i].mVertex.z);
+			}
+
+			// Now we should have all of the vertices read in.  Because 3D Studio Max
+			// Models with the Z-Axis pointing up (strange and ugly I know!), we need
+			// to flip the y values with the z values in our vertices.  That way it
+			// will be normal, with Y pointing up.  If you prefer to work with Z pointing
+			// up, then just delete this next loop.  Also, because we swap the Y and Z
+			// we need to negate the Z to make it come out correctly.
+/*
+			// Go through all of the vertices that we just read and swap the Y and Z values
+			for (int i = 0; i < ioObject->mNumVertices; i++)
+			{
+				// Store off the Y value
+				float fTempY = ioObject->mVertices[i].mVertex.y;
+
+				// Set the Y value to the Z value
+				ioObject->mVertices[i].mVertex.y = ioObject->mVertices[i].mVertex.z;
+
+				// Set the Z value to the Y value, 
+				// but negative Z because 3D Studio max does the opposite.
+				ioObject->mVertices[i].mVertex.z = -fTempY;
+			}
+*/
+		}
+	}
+}
+
+//----------------------------------------------------------------------
+//	T3DSModel::ReadObjectMaterial
+//
+//	Purpose:	This function reads in the material name assigned to the object
+//				and sets the mMaterialID. A material is either the color or the
+//				texture map of the object. It can also hold other information like
+//				the brightness, shine, etc...
+//
+//	Inputs:		ioObject - The object that holds the data to read in
+//				ioPreviousChunk - The previously read chunk
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	05/12/13	CLW			5.0.0		first release
+//
+//----------------------------------------------------------------------
+void T3DSModel::ReadObjectMaterial(FILE* inFileHandle, T3DSObject* ioObject, T3DSChunk* ioPreviousChunk)
+{
+	string materialName;	// This is used to hold the objects material name
+
+	// Here we read the material name that is assigned to the current object.
+	ioPreviousChunk->mBytesRead += ReadString(inFileHandle, materialName);
+
+	// Now that we have a material name, we need to go through all of the materials
+	// and check the name against each material.  When we find a material in our material
+	// list that matches this name we just read in, then we assign that material index to
+	// the mMaterialID of each face in the object.
+	
+	// Go through all of the material
+	int materialID = -1;
+	int materialIndex = 0;
+	TMaterialVec::iterator material;
+	for (material = mMaterials.begin(); material != mMaterials.end(); material++)
+	{
+		// If the material we just read in matches the current texture name
+		if (material->mName == materialName)
+		{
+			materialID = materialIndex;
+			break;
+		}
+		
+		materialIndex++;
+	}
+
+	// Now read in which faces use this material
+	if (materialID >= 0)
+	{
+		uint16_t numMaterialFaceAssociations = 0;
+		ioPreviousChunk->mBytesRead += Read(inFileHandle, sizeof(numMaterialFaceAssociations), 1, &numMaterialFaceAssociations);
+		if (numMaterialFaceAssociations > 0)
+		{
+			uint16_t* faceIndices = new uint16_t[numMaterialFaceAssociations];
+			if (faceIndices)
+			{
+				ioPreviousChunk->mBytesRead += Read(inFileHandle, sizeof(uint16_t), numMaterialFaceAssociations, faceIndices);
+
+				for (uint16_t i = 0; i < numMaterialFaceAssociations; i++)
+				{
+					if (faceIndices[i] < ioObject->mNumFaces)
+						ioObject->mFaces[faceIndices[i]].mMaterialID = materialID;
+				}
+
+				delete [] faceIndices;
+			}
+		}
+	}
+    else
+    {
+        // Important - skip the un used bytes, we can't find this material, but we still need to skip the data
+        ioPreviousChunk->mBytesRead += Read(inFileHandle, 1, ioPreviousChunk->mLength - ioPreviousChunk->mBytesRead);
+    }
+}			
+
+//----------------------------------------------------------------------
+//	T3DSModel::ComputeNormals
+//
+//	Purpose:	This function is expensive. It must traverse every face	of every object
+//				and compute a normal vector for each face. These normal vector are needed
+//				if we want the model to respond to lighting. Unfortunately, one lighting
+//				normal per face is usually not sufficient. What is really needed is an
+//				averaged normal at each vertex. The average is computed by summing together
+//				the normal of each face that a particular vertex is part of and then
+//				scalar-dividing the normal. All this because AutoDesk didn't want to include
+//				per-vertex lighing normals in the model.
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	05/12/13	CLW			5.0.0		first release
+//
+//----------------------------------------------------------------------
+void T3DSModel::ComputeNormals()
+{
+	Vec3f vVector1, vVector2, vNormal, vPoly[3];
+
+	// If there are no objects, we can skip this part
+	if (mObjects.size() <= 0)
+		return;
+
+	// Go through each of the objects to calculate their normals
+	T3DSObjectVec::iterator object;
+	for (object = mObjects.begin(); object != mObjects.end(); object++)
+	{
+		if (object->mNumFaces > 0)
+		{
+			// Here we allocate all the memory we need to calculate the normals
+			Vec3f* tempFaceNormals = new Vec3f[object->mNumFaces];
+			if (tempFaceNormals)
+			{
+				// Go though all of the faces of this object and calculate the face normal
+				int i;
+				for (i = 0; i < object->mNumFaces; i++)
+				{												
+					// To cut down LARGE code, we extract the 3 points of this face
+					vPoly[0] = object->mVertices[object->mFaces[i].mVertIndex[0]].mVertex;
+					vPoly[1] = object->mVertices[object->mFaces[i].mVertIndex[1]].mVertex;
+					vPoly[2] = object->mVertices[object->mFaces[i].mVertIndex[2]].mVertex;
+
+					// Now let's calculate the face normals (Get 2 vectors and find the cross product of those 2)
+
+					vVector1 = vPoly[0] - vPoly[2];			// Get the vector of the polygon (we just need 2 sides for the normal)
+					vVector2 = vPoly[2] - vPoly[1];			// Get a second vector of the polygon
+
+					vNormal  = vVector2 ^ vVector1;			// Return the cross product of the 2 vectors (normalize vector, but not a unit vector)
+					tempFaceNormals[i] = vNormal;			// Save the un-normalized normal for the vertex normals
+					object->mFaces[i].mNormal = vNormal;	// Normalize the cross product to give us the polygons normal
+					object->mFaces[i].mNormal.normalize();
+				}
+				
+				// Rant Alert!
+				// The following code is bracketed by some limiting size factor thing since calculating
+				// lighting normals per-vertex is bloody expensive. Autodesk should've included per-vertex
+				// lighting normals in the 3DS file specification. So what if the file is a little larger. Jerks!
+				// Anyway, rendering with per-polygon lighting normals isn't the end of the world, but using
+				// per-vertex normals gives much nicer results. To avoid a major nested loop against object vertices
+				// and object faces, each vertex has a list of faces it belongs to.
+				if (object->mNumVertices && object->mHasSmoothingInfo)
+				{
+					// First, we have to determine all the smoothing groups associated with each vertex
+					for (i = 0; i < object->mNumFaces; i++)				// Go through all of the faces
+					{
+						object->mVertices[object->mFaces[i].mVertIndex[0]].mSmoothingGroups |= object->mFaces[i].mSmoothingGroup;
+						object->mVertices[object->mFaces[i].mVertIndex[1]].mSmoothingGroups |= object->mFaces[i].mSmoothingGroup;
+						object->mVertices[object->mFaces[i].mVertIndex[2]].mSmoothingGroups |= object->mFaces[i].mSmoothingGroup;
+					}
+
+					//////////////// Now Get The Vertex Normals /////////////////
+					for (i = 0; i < object->mNumVertices; i++)			// Go through all of the vertices
+					{
+						T3DSVertex* theVertex = &object->mVertices[i];
+						T3DSFaceList::iterator faceIt;
+						for (faceIt = theVertex->mFaceList.begin(); faceIt != theVertex->mFaceList.end(); faceIt++)
+						{
+							T3DSFace* theFace = &object->mFaces[*faceIt];
+
+							// Check if the vertex smoothing groups intersects the face smoothing group
+							uint32_t faceSmoothingGroup = theFace->mSmoothingGroup;
+							if (faceSmoothingGroup | theVertex->mSmoothingGroups)
+							{
+								theVertex->mNormalMap[faceSmoothingGroup].mNormal = theVertex->mNormalMap[faceSmoothingGroup].mNormal + tempFaceNormals[*faceIt];
+								theVertex->mNormalMap[faceSmoothingGroup].mSharedCount++;
+							}
+						}
+
+						// Now we divide the mNormalMap Vec3f by the number shared
+						T3DSNormalMap::iterator it;
+						for (it = theVertex->mNormalMap.begin(); it != theVertex->mNormalMap.end(); it++)
+						{
+							if (it->second.mSharedCount > 1)
+								it->second.mNormal /= (float_t)(it->second.mSharedCount);
+							it->second.mNormal.normalize();
+						}
+					}
+
+					object->mPerVertexNormals = true;
+				}
+
+				// Free our memory and start over on the next object
+				delete [] tempFaceNormals;
+			}
+		}
+	}
+}
+
+//----------------------------------------------------------------------
+//	T3DSModelFactory::~T3DSModelFactory
+//
+//	Purpose:	Destructor.
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	2007/01/29	CLW			6.0.4		
+//
+//----------------------------------------------------------------------
+T3DSModelFactory::~T3DSModelFactory()
+{
+	// Blow all loaded models away.
+	RemoveAll();
+}
+
+T3DSModel* T3DSModelFactory::get(File& inModelFile, bool inLoadMetaOnly)
+{
+	T3DSModelMapItem mapItem;
+	mapItem.mModel = NULL;
+
+	// Have we already instantiated this model?
+	string modelName = inModelFile.getFileNameWithoutExtension();
+	T3DSModelMap::iterator it = mModelMap.find(modelName);
+	if (it != mModelMap.end())
+	{
+		mapItem.mModel = it->second.mModel;
+
+		// We may need to load the model data. This happens when we've previously asked only for meta data
+		if (!inLoadMetaOnly && !mapItem.mModel->mModelDataLoaded)
+			mapItem.mModel->Load(inModelFile, inLoadMetaOnly);
+	}
+	else
+	{
+		// We gotta create the model
+		mapItem.mModel = new T3DSModel;
+		if (mapItem.mModel)
+		{
+			if (mapItem.mModel->Load(inModelFile, inLoadMetaOnly))
+			{
+				// Add new reference for this model
+//				mapItem.fPlanetRefs[inReferrer] = 1;
+
+				// Add the map item to the map
+				mModelMap[modelName] = mapItem;
+			}
+			else
+			{
+				// If model fails to load, we drop it.
+				delete mapItem.mModel;
+				mapItem.mModel = NULL;
+
+				LOG(ERROR) << "Model failed to load: " << inModelFile.getFullPath();
+			}
+		}
+	}
+
+	return mapItem.mModel;
+}
+
+/*
+//----------------------------------------------------------------------
+//	T3DSModelFactory::GetInstance
+//
+//	Purpose:	Either constructs a new T3DSModel instance if the requested model
+//				has not already been loaded, or returns the existing one.
+//
+//	Inputs:		inReferrer - TStaticPlanet instance requesting model
+//				inModelFS - LFile identifying the 3DS model we require
+//				inIsAUserModel - True if the requested model has been specified by user.
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	2007/01/29	CLW			6.0.4		
+//
+//----------------------------------------------------------------------
+T3DSModel* T3DSModelFactory::GetInstance(TStaticPlanet* inReferrer, LFile& inModelFile, Boolean inLoadMetaOnly, Boolean inIsAUserModel)
+{
+	T3DSModelMapItem mapItem;
+
+	// Get the pretty file name. This is the key in our map of 3DS models.
+	LStr255 prettyName;
+	inModelFile.GetPrettyFileName(prettyName);
+	string modelName = prettyName.GetSTLString();
+	
+	// Have we already instantiated this model?
+	T3DSModelMap::iterator it = mModelMap.find(modelName);
+	if (it != mModelMap.end())
+	{
+		mapItem.mModel = it->second.mModel;
+		
+		// We may need to load the model data. This happens when we've previously asked only for meta data
+		if (!inLoadMetaOnly && !mapItem.mModel->mModelDataLoaded)
+			mapItem.mModel->Load(inModelFile, inLoadMetaOnly, inIsAUserModel);
+
+		// Add new reference for this model (stl map handles duplicates)
+		mapItem.fPlanetRefs[inReferrer] = 1;
+	}
+	else
+	{
+		// We gotta create the model
+		mapItem.mModel = NEW T3DSModel;
+		if (mapItem.mModel)
+		{
+			if (mapItem.mModel->Load(inModelFile, inLoadMetaOnly, inIsAUserModel))
+			{
+				// Add new reference for this model
+				mapItem.fPlanetRefs[inReferrer] = 1;
+
+				// Add the map item to the map
+				mModelMap[modelName] = mapItem;
+			}
+			else
+			{
+				// If model fails to load, we drop it.
+				delete mapItem.mModel;
+				mapItem.mModel = NULL;
+
+				// Inform the user that there was an error loading the model.
+				UModalDialogs::AskUser(	kAlertStopAlert,
+										LStr255("STRx_AlertMessages"),
+										LStr255("STRx_AlertMessages", "ErrorLoading3DSModel"),
+										LStr255("STRx_AlertMessages", "ErrorLoading3DSModelExplanation"),
+										LStr255("Default"),
+										LStr255("Undefined"),
+										LStr255("Undefined"));
+			}
+		}
+	}
+
+	return mapItem.mModel;
+}
+
+T3DSModel* T3DSModelFactory::GetInstanceByName(TStaticPlanet* inReferrer, string inModelName)
+{
+	T3DSModelMap::iterator it = mModelMap.find(inModelName);
+	if (it != mModelMap.end())
+		return it->second.mModel;
+	else
+		return NULL;
+}
+
+//----------------------------------------------------------------------
+//	T3DSModelFactory::RemoveInstance
+//
+//	Purpose:	Deallocates and removes the given model from the factory.
+//				Necessary to support user-specified models.
+//
+//	Inputs:		inReferrer - TStaticPlanet instance requesting removal
+//				inModelName - the pretty filename of the model.
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	2007/01/29	CLW			6.0.4		
+//
+//----------------------------------------------------------------------
+Boolean T3DSModelFactory::RemoveInstance(TStaticPlanet* inReferrer, string inModelName)
+{
+	Boolean removed = false;
+	T3DSModelMap::iterator it = mModelMap.find(inModelName);
+	if (it != mModelMap.end())
+	{
+		// Remove reference to TStaticPlanet
+		TStaticPlanetMap::iterator itRef = it->second.fPlanetRefs.find(inReferrer);
+		if (itRef != it->second.fPlanetRefs.end())
+		{
+			it->second.fPlanetRefs.erase(itRef);
+			inReferrer->m3DSModel = NULL;
+			inReferrer->fAlreadyAttemptedToLoad3DSModel = false;
+		}
+
+		// If there are no references remaining, delete the model
+		if (it->second.fPlanetRefs.empty())
+		{
+			// Destroy the model instance
+			if (it->second.mModel)
+				delete it->second.mModel;
+
+			// Erase the item from the map
+			mModelMap.erase(it);
+		}
+
+		removed = true;
+	}
+
+	return removed;
+}
+*/
+
+//----------------------------------------------------------------------
+//	T3DSModelFactory::RemoveAll
+//
+//	Purpose:	Iterates through map of T3DSModel instances	and deallocates
+//				them.
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	2007/06/18	CLW			6.0.8		
+//
+//----------------------------------------------------------------------
+void T3DSModelFactory::RemoveAll()
+{
+	// Iterate through the map and delete each T3DSModel instance
+	T3DSModelMap::iterator it;
+	for (it = mModelMap.begin(); it != mModelMap.end(); it++)
+	{
+		// Destroy the model instance
+		if (it->second.mModel)
+			delete it->second.mModel;
+
+		// Mark every referring TStaticPlanet*
+//		TStaticPlanetMap::iterator itRef;
+//		for (itRef = it->second.fPlanetRefs.begin(); itRef != it->second.fPlanetRefs.end(); itRef++)
+//		{
+//			itRef->first->fAlreadyAttemptedToLoad3DSModel = false;
+//			itRef->first->m3DSModel = NULL;
+//		}
+
+		// Clear the reference list
+//		it->second.fPlanetRefs.clear();
+	}
+
+	// Clear the map
+	mModelMap.clear();
+}
+
+//----------------------------------------------------------------------
+//	T3DSFaceComparator::operator()
+//
+//	Purpose:	This is a function object we need to properly sort the vector
+//				of T3DSFace instances based on opacity. In order to properly
+//				render translucent objects, we must render the objects that are
+//				opaque first, and then render objects by decreasing opacity.
+//				Sorting the vector of T3DSFace instances requires access to private
+//				data in the T3DSModel instance that owns the vector of T3DSObjects,
+//				therefore this function object is absolutely necessary.
+//
+//	Inputs:		inItem1	- comparison item 1
+//				inItem2	- comparison item 2
+//
+//	Outputs:	return true if item1 is more opaque than item2.
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	2007/02/02	CLW			6.0.4		
+//
+//----------------------------------------------------------------------
+bool T3DSFaceComparator::operator()(const T3DSFace& inItem1, const T3DSFace& inItem2) const
+{
+	// We're basically comparing transparencies of the materials used in either item.
+	// If item has no material, we will draw opaque and assign a value of 1 for the item
+	// If item has material, we assign the alpha value of the diffuse material property
+	float item1Value, item2Value;
+	if (inItem1.mMaterialID == -1)
+		item1Value = 1.0f;
+	else
+		item1Value = m3DSModel->mMaterials[inItem1.mMaterialID].mDiffuseColor[3];
+	if (inItem2.mMaterialID == -1)
+		item2Value = 1.0f;
+	else
+		item2Value = m3DSModel->mMaterials[inItem2.mMaterialID].mDiffuseColor[3];
+	
+	return item1Value > item2Value;
+}

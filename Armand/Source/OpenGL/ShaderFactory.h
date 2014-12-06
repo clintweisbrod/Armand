@@ -27,7 +27,7 @@
 class ShaderObject
 {
 public:
-	ShaderObject(const char* inShaderFile, const GLenum inType);
+	ShaderObject(const char* inShaderFilePath, const GLenum inType);
 	virtual ~ShaderObject();
 
 	bool isCompiled() const { return mCompileStatus == GL_TRUE; }
@@ -51,9 +51,9 @@ private:
 };
 
 typedef map<string, ShaderProgram*> ShaderProgramMap_t;
-class ShaderFactory : public TSingleton<ShaderFactory>
+class ShaderFactory : public Singleton<ShaderFactory>
 {
-	friend class TSingleton<ShaderFactory>;
+	friend class Singleton<ShaderFactory>;
 
 public:
 	ShaderProgram*	getShaderProgram(const char* inVertexShader, const char* inFragmentShader);

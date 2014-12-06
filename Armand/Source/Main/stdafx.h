@@ -19,9 +19,11 @@
 
 // Convenient STL declaration
 #include <string>
+#include <vector>
+#include <map>
 #include <iostream>
 #include <sstream>
-#include <map>
+#include <exception>
 
 // TODO: reference additional headers your program requires here
 

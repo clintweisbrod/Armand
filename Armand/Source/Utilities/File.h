@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
 // Copyright (C) 2014 Clint Weisbrod. All rights reserved.
 //
-// Singleton.h
+// File.h
 //
-// Base class for singleton class instances.
+// Encapsulates the use of files.
 //
 // THIS SOFTWARE IS PROVIDED BY CLINT WEISBROD "AS IS" AND ANY EXPRESS OR
 // IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
@@ -19,43 +19,28 @@
 
 #pragma once
 
-template <typename T> 
-class Singleton
+#include <string>
+
+using namespace std;
+
+class File
 {
-	public:
-		static T* inst()
-		{
-			if (fInstance == NULL)
-				fInstance = new T;
+public:
+	File() {}
+	File(string& inRelativeFilePath);
+	virtual ~File();
 
-			return fInstance;
-		};
+	char*	readAsText() const;
+	FILE*	getCRTFileHandle(const char* inReadMode) const;
+	bool	exists() const;
+	string	getFileName() const { return mFileName;	}
+	string	getRelativePath() const { return mRelativePath; }
+	string	getFullPath() const { return mFullPath; }
+	string	getFileNameWithoutExtension() const { return mFileNameNoExtension; }
 
-		static void destroy()
-		{
-			if (fInstance != NULL)
-			{
-				delete fInstance;
-				fInstance = NULL;
-			}
-		};
-
-	protected:
-		// shield the constructor and destructor to prevent outside sources
-		// from creating or destroying a TSingleton instance.
-
-		//! Default constructor.
-		Singleton(){};
-
-		//! Destructor.
-		virtual ~Singleton(){};
-
-	private:
-		//! Copy constructor.
-		Singleton(const Singleton&){};
-
-		static T* fInstance; //!< singleton class instance
+private:
+	string	mRelativePath;
+	string	mFullPath;
+	string	mFileName;
+	string	mFileNameNoExtension;
 };
-
-//! static class member initialisation.
-template <typename T> T* Singleton<T>::fInstance = NULL;

@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
 // Copyright (C) 2014 Clint Weisbrod. All rights reserved.
 //
-// Singleton.h
+// ConfigReader.h
 //
-// Base class for singleton class instances.
+// Encapsulates reading config files.
 //
 // THIS SOFTWARE IS PROVIDED BY CLINT WEISBROD "AS IS" AND ANY EXPRESS OR
 // IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
@@ -19,43 +19,29 @@
 
 #pragma once
 
-template <typename T> 
-class Singleton
+#include <string>
+
+#include "File.h"
+#include "Math/vecmath.h"
+
+using namespace std;
+
+typedef map<string, string> ConfigValueMap_t;
+class ConfigFileReader
 {
-	public:
-		static T* inst()
-		{
-			if (fInstance == NULL)
-				fInstance = new T;
+public:
+	ConfigFileReader() {}
+	ConfigFileReader(string& inRelativeFilePath);
+	virtual ~ConfigFileReader();
 
-			return fInstance;
-		};
+	bool hasValues() const { return !mConfigValues.empty(); }
 
-		static void destroy()
-		{
-			if (fInstance != NULL)
-			{
-				delete fInstance;
-				fInstance = NULL;
-			}
-		};
+	bool getConfigValue(const char* inValueName, string& ioValue);
+	bool getConfigValue(const char* inValueName, int& ioValue);
+	bool getConfigValue(const char* inValueName, double_t& ioValue);
+	bool getConfigValue(const char* inValueName, Vec3f& ioValue);
 
-	protected:
-		// shield the constructor and destructor to prevent outside sources
-		// from creating or destroying a TSingleton instance.
-
-		//! Default constructor.
-		Singleton(){};
-
-		//! Destructor.
-		virtual ~Singleton(){};
-
-	private:
-		//! Copy constructor.
-		Singleton(const Singleton&){};
-
-		static T* fInstance; //!< singleton class instance
+private:
+	File*				mConfigFile;
+	ConfigValueMap_t	mConfigValues;
 };
-
-//! static class member initialisation.
-template <typename T> T* Singleton<T>::fInstance = NULL;

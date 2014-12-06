@@ -55,9 +55,9 @@ class FontRenderer
 };
 
 typedef map<string, FontRenderer*> FontRendererMap_t;
-class FontFactory : public TSingleton<FontFactory>
+class FontFactory : public Singleton<FontFactory>
 {
-	friend class TSingleton<FontFactory>;
+	friend class Singleton<FontFactory>;
 
 	public:
 		FontRenderer* getFontRenderer(string& inFaceName);

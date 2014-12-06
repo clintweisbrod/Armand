@@ -19,10 +19,11 @@
 
 #include "stdafx.h"
 
-#include <freetype-gl/shader.h>
+//#include <freetype-gl/shader.h>
 #include "ShaderFactory.h"
+#include "Utilities/File.h"
 
-ShaderObject::ShaderObject(const char* inShaderFile, const GLenum inType)
+ShaderObject::ShaderObject(const char* inShaderFilePath, const GLenum inType)
 {
 	mHandle = 0;
 	mCompileStatus = GL_FALSE;
@@ -31,12 +32,14 @@ ShaderObject::ShaderObject(const char* inShaderFile, const GLenum inType)
 	mHandle = glCreateShader(inType);
 	if (mHandle == 0)
 	{
-		LOG(ERROR) << "glCreateShader() failed for " << inShaderFile << ".";
+		LOG(ERROR) << "glCreateShader() failed for " << inShaderFilePath << ".";
 		return;
 	}
 
 	// Load the shader source.
-	char* shaderSrc = shader_read(inShaderFile);
+	string str(inShaderFilePath);
+	File shaderFile(str);
+	char* shaderSrc = shaderFile.readAsText();
 	if (shaderSrc)
 	{
 		glShaderSource(mHandle, 1, &shaderSrc, 0);
@@ -47,10 +50,10 @@ ShaderObject::ShaderObject(const char* inShaderFile, const GLenum inType)
 		{
 			GLchar messages[256];
 			glGetShaderInfoLog(mHandle, sizeof(messages), 0, &messages[0]);
-			LOG(ERROR) << "Shader compile failure. " << inShaderFile << ": " << messages;
+			LOG(ERROR) << "Shader compile failure. " << inShaderFilePath << ": " << messages;
 		}
 
-		free(shaderSrc);
+		delete[] shaderSrc;
 	}
 }
 
