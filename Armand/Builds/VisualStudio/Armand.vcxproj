@@ -116,7 +116,7 @@
       <Command>copy "..\..\SDKs\glew\bin\Release\x64\glew32.dll" "$(OutDir)" /y
 
 if not exist "$(OutDir)Resources" mkdir "$(OutDir)Resources"
-robocopy "..\..\Source\Resources" "$(OutDir)Resources" /e
+robocopy "..\..\Source\Resources" "$(OutDir)Resources" /e /mt
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -160,7 +160,7 @@ robocopy "..\..\Source\Resources" "$(OutDir)Resources" /e
       <Command>copy "..\..\SDKs\glew\bin\Release\x64\glew32.dll" "$(OutDir)" /y
 
 if not exist "$(OutDir)Resources" mkdir "$(OutDir)Resources"
-robocopy "..\..\Source\Resources" "$(OutDir)Resources" /e
+robocopy "..\..\Source\Resources" "$(OutDir)Resources" /e /mt
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
