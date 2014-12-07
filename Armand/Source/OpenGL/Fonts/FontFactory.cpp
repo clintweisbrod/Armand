@@ -34,7 +34,8 @@ FontFactory::FontFactory()
 {
 	// Load the shader program we will use to draw fonts
 	mShaderHandle = 0;
-	ShaderProgram* shaderProg = ShaderFactory::inst()->getShaderProgram("Shaders/v3f-t2f-c4f.vert", "Shaders/v3f-t2f-c4f.frag");
+	ShaderProgram* shaderProg = ShaderFactory::inst()->getShaderProgram("FontFactory/v3f-t2f-c4f.vert",
+																		"FontFactory/v3f-t2f-c4f.frag");
 	if (shaderProg)
 		mShaderHandle = shaderProg->getHandle();
 }

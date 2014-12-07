@@ -115,8 +115,8 @@
     <PostBuildEvent>
       <Command>copy "..\..\SDKs\glew\bin\Release\x64\glew32.dll" "$(OutDir)" /y
 
-if not exist "$(OutDir)\Resources" mkdir "$(OutDir)\Resources"
-(robocopy "..\..\Source\Resources" "$(OutDir)\Resources" /e /mt) &amp; IF %ERRORLEVEL% GTR 3 EXIT %ERRORLEVEL%
+if not exist "$(OutDir)Resources" mkdir "$(OutDir)Resources"
+robocopy "..\..\Source\Resources" "$(OutDir)Resources" /e
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -159,8 +159,8 @@ if not exist "$(OutDir)\Resources" mkdir "$(OutDir)\Resources"
     <PostBuildEvent>
       <Command>copy "..\..\SDKs\glew\bin\Release\x64\glew32.dll" "$(OutDir)" /y
 
-if not exist "$(OutDir)\Resources" mkdir "$(OutDir)\Resources"
-(robocopy "..\..\Source\Resources" "$(OutDir)\Resources" /e /mt) &amp; IF %ERRORLEVEL% GTR 3 EXIT %ERRORLEVEL%
+if not exist "$(OutDir)Resources" mkdir "$(OutDir)Resources"
+robocopy "..\..\Source\Resources" "$(OutDir)Resources" /e
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>

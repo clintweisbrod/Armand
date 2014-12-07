@@ -26,6 +26,13 @@ using namespace std;
 class File
 {
 public:
+	// Application folder locations
+	static string getDataFolder() { return "data"; }
+	static string getResourcesFolder() { return "resources"; }
+	static string getShadersFolder() { return getResourcesFolder().append("/").append("shaders"); }
+	static string getModelsFolder() { return getDataFolder().append("/").append("models"); }
+
+public:
 	File() {}
 	File(string& inRelativeFilePath);
 	virtual ~File();
