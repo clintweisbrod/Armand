@@ -878,7 +878,7 @@ class T3DSModelFactory : public Singleton<T3DSModelFactory>
 	friend class Singleton<T3DSModelFactory>;
 
 	public:
-		T3DSModel*	get(File& inModelFile, bool inLoadMetaOnly = false);
+		T3DSModel*	get(const char* inModelFileName, bool inLoadMetaOnly = false);
 //		T3DSModel*	GetInstance(TStaticPlanet* inReferrer, LFile& inModelFile, Boolean inLoadMetaOnly = false, Boolean inIsAUserModel = false);
 //		T3DSModel*	GetInstanceByName(TStaticPlanet* inReferrer, string inModelName);
 //		Boolean		RemoveInstance(TStaticPlanet* inReferrer, string inModelName);

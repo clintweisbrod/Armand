@@ -2192,13 +2192,19 @@ T3DSModelFactory::~T3DSModelFactory()
 	RemoveAll();
 }
 
-T3DSModel* T3DSModelFactory::get(File& inModelFile, bool inLoadMetaOnly)
+T3DSModel* T3DSModelFactory::get(const char* inModelFileName, bool inLoadMetaOnly)
 {
 	T3DSModelMapItem mapItem;
 	mapItem.mModel = NULL;
 
+	// Construct path to model file
+	string modelPath = File::getModelsFolder().append("/").append(inModelFileName);
+
+	// Build File instance for model. Note the constructor does no file I/O.
+	File modelFile(modelPath);
+
 	// Have we already instantiated this model?
-	string modelName = inModelFile.getFileNameWithoutExtension();
+	string modelName = modelFile.getFileNameWithoutExtension();
 	T3DSModelMap::iterator it = mModelMap.find(modelName);
 	if (it != mModelMap.end())
 	{
@@ -2206,7 +2212,7 @@ T3DSModel* T3DSModelFactory::get(File& inModelFile, bool inLoadMetaOnly)
 
 		// We may need to load the model data. This happens when we've previously asked only for meta data
 		if (!inLoadMetaOnly && !mapItem.mModel->mModelDataLoaded)
-			mapItem.mModel->Load(inModelFile, inLoadMetaOnly);
+			mapItem.mModel->Load(modelFile, inLoadMetaOnly);
 	}
 	else
 	{
@@ -2214,7 +2220,7 @@ T3DSModel* T3DSModelFactory::get(File& inModelFile, bool inLoadMetaOnly)
 		mapItem.mModel = new T3DSModel;
 		if (mapItem.mModel)
 		{
-			if (mapItem.mModel->Load(inModelFile, inLoadMetaOnly))
+			if (mapItem.mModel->Load(modelFile, inLoadMetaOnly))
 			{
 				// Add new reference for this model
 //				mapItem.fPlanetRefs[inReferrer] = 1;
@@ -2228,7 +2234,7 @@ T3DSModel* T3DSModelFactory::get(File& inModelFile, bool inLoadMetaOnly)
 				delete mapItem.mModel;
 				mapItem.mModel = NULL;
 
-				LOG(ERROR) << "Model failed to load: " << inModelFile.getFullPath();
+				LOG(ERROR) << "Model failed to load: " << modelFile.getFullPath();
 			}
 		}
 	}

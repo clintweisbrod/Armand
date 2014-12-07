@@ -111,9 +111,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 
 
 	// Testing 3DS model loading
-//	string modelPath("data/models/Apollo_3rdStage.3ds");
-//	File modelFile(modelPath);
-//	T3DSModel* model = T3DSModelFactory::inst()->get(modelFile);
+//	T3DSModel* model = T3DSModelFactory::inst()->get("Apollo_3rdStage.3ds");
 //	if (model)
 //		T3DSModelFactory::inst()->RemoveAll();
 
