@@ -75,13 +75,6 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	Vec3d largeVec;
 	Vec3i128toVec3d(largeVec128, largeVec);
 */
-	// Load logging configuration from file
-	el::Configurations conf("Resources/logging.cfg");
-	el::Loggers::reconfigureLogger("default", conf);
-	el::Loggers::reconfigureAllLoggers(conf);
-
-	LOG(INFO) << "Armand is starting...";
-
 	// Initialize gAppFolder
 	TCHAR buffer[MAX_PATH];
 	if (GetModuleFileName(NULL, buffer, MAX_PATH) > 0)
@@ -106,6 +99,16 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 		}
 	}
 
+	// Create "Logs" folder if necessary.
+	if (!File::folderExists("Logs"))
+		File::createFolder("Logs");
+
+	// Load logging configuration from file
+	el::Configurations conf("Resources/logging.cfg");
+	el::Loggers::reconfigureLogger("default", conf);
+	el::Loggers::reconfigureAllLoggers(conf);
+	LOG(INFO) << "Armand is starting...";
+
 
 	// Test area
 
@@ -114,7 +117,6 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 //	T3DSModel* model = T3DSModelFactory::inst()->get("Apollo_3rdStage.3ds");
 //	if (model)
 //		T3DSModelFactory::inst()->RemoveAll();
-
 
 
 
