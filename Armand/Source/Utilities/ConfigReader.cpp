@@ -34,12 +34,17 @@ ConfigFileReader::ConfigFileReader(string& inRelativeFilePath)
 			if (rawConfigText)
 			{
 				// rawConfigText contains a series of strings delimited by '\r' and 'n' characters
+				int lineNum = 0;
 				const char* lineDelims = "\r\n";
 				char* lineContext = NULL;
 				char* line;
 				line = strtok_s(rawConfigText, lineDelims, &lineContext);
 				while (line != NULL)
 				{
+					// Keep track of the line number we're processing in case we need to log
+					// unexpected formatting errors.
+					lineNum++;
+
 					// Advance past any leading whitespace
 					while (isspace(*line))
 						line++;
@@ -57,6 +62,18 @@ ConfigFileReader::ConfigFileReader(string& inRelativeFilePath)
 					char* valueContext = NULL;
 					char* valueName = strtok_s(line, valueDelims, &valueContext);
 					char* value = strtok_s(NULL, valueDelims, &valueContext);
+
+					// It's possible that valueName and/or value could be NULL if the line actually
+					// doesn't contain an '=' character. This is an error condition because the meta
+					// file contains unexpected formatting.
+					if (!valueName || !value)
+					{
+						LOG(ERROR) << "Unexpected formatting at line " << lineNum << " in: " << mConfigFile->getFullPath();
+						
+						// Next line
+						line = strtok_s(NULL, lineDelims, &lineContext);
+						continue;
+					}
 
 					// We allow for comments at the end of a line so we gotta trim those if they exist
 					string valueStr = value;
