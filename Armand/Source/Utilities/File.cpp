@@ -19,9 +19,31 @@
 
 #include "stdafx.h"
 
+#include "Shlwapi.h"
 #include "File.h"
+#include "StringUtils.h"
 
 extern string gAppFolder;
+
+bool File::folderExists(const char* inRelativePath)	// static
+{
+	string relativePath(inRelativePath);
+	File folder(relativePath);
+	wstring fullPath = wstringFromString(folder.getFullPath());
+	BOOL exists = PathFileExists(fullPath.c_str());
+
+	return (exists == TRUE);
+}
+
+bool File::createFolder(const char* inRelativePath)	// static
+{
+	string relativePath(inRelativePath);
+	File folder(relativePath);
+	wstring fullPath = wstringFromString(folder.getFullPath());
+	BOOL created = CreateDirectory(fullPath.c_str(), NULL);
+
+	return (created == TRUE);
+}
 
 File::File(string& inRelativeFilePath)
 {

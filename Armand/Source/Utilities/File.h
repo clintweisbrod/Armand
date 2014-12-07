@@ -32,6 +32,9 @@ public:
 	static string getShadersFolder() { return getResourcesFolder().append("/").append("shaders"); }
 	static string getModelsFolder() { return getDataFolder().append("/").append("models"); }
 
+	static bool	folderExists(const char* inRelativePath);
+	static bool createFolder(const char* inRelativePath);
+
 public:
 	File() {}
 	File(string& inRelativeFilePath);
