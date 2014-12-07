@@ -25,6 +25,7 @@
 #include "OpenGL/VertexBufferStructs.h"
 #include "Math/mathlib.h"
 #include "OpenGL/ShaderFactory.h"
+#include "Utilities/StringUtils.h"
 
 extern OpenGLWindow* gOpenGLWindow;
 
@@ -312,5 +313,5 @@ string FontRenderer::getSystemFontFile(const string &inFontName) const
 	ss << winDir << "\\Fonts\\" << wsFontFile;
 	wsFontFile = ss.str();
 
-	return string(wsFontFile.begin(), wsFontFile.end());
+	return stringFromWstring(wsFontFile);
 }

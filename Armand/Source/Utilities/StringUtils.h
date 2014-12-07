@@ -23,6 +23,9 @@
 
 using namespace std;
 
+bool intFromString(string& inString, int& outInt);
+bool doubleFromString(string& inString, double_t& outDouble);
+
 template<class T>
 void trimString(basic_string<T>& ioString)
 {
@@ -32,45 +35,12 @@ void trimString(basic_string<T>& ioString)
 	ioString = ioString.substr(startPos, endPos - startPos + 1);
 }
 
-bool intFromString(string& inString, int& outInt)
+inline wstring wstringFromString(string& inString)
 {
-	if (inString.empty())
-		return false;
-
-	// Why not just use atoi()? Because atoi() doesn't give any indication of failure.
-	// So, lets just make sure we've got sane character to convert.
-	const char* validChars = "0123456789-";
-	string::size_type pos = inString.find_first_not_of(validChars);
-	if (pos == string::npos)
-	{
-		outInt = atoi(inString.c_str());
-		return true;
-	}
-	else
-	{
-		LOG(ERROR) << "intFromString() encountered unexpected input.";
-		return false;
-	}
+	return wstring(inString.begin(), inString.end());
 }
 
-bool doubleFromString(string& inString, double_t& outDouble)
+inline string stringFromWstring(wstring& inString)
 {
-	if (inString.empty())
-		return false;
-
-	// Why not just use atof()? Because atof() doesn't give any indication of failure.
-	// So, lets just make sure we've got sane character to convert.
-	const char* validChars = "0123456789-.eE";
-	string::size_type pos = inString.find_first_not_of(validChars);
-	if (pos == string::npos)
-	{
-		outDouble = atof(inString.c_str());
-		return true;
-	}
-	else
-	{
-		LOG(ERROR) << "doubleFromString() encountered unexpected input.";
-		return false;
-	}
+	return string(inString.begin(), inString.end());
 }
-

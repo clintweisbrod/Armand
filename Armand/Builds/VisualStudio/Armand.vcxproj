@@ -109,7 +109,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glew32.lib;opengl32.lib;glu32.lib;freetype.lib;freetype-gl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>shlwapi.lib;glew32.lib;opengl32.lib;glu32.lib;freetype.lib;freetype-gl.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\SDKs\glew\lib\Release\x64;freetype\$(Platform)\$(Configuration);freetype-gl\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
@@ -154,7 +154,7 @@ robocopy "..\..\Source\Resources" "$(OutDir)Resources" /e /mt
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>..\..\SDKs\glew\lib\Release\x64;freetype\$(Platform)\$(Configuration);freetype-gl\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glew32.lib;opengl32.lib;glu32.lib;freetype.lib;freetype-gl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>shlwapi.lib;glew32.lib;opengl32.lib;glu32.lib;freetype.lib;freetype-gl.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy "..\..\SDKs\glew\bin\Release\x64\glew32.dll" "$(OutDir)" /y
@@ -225,6 +225,7 @@ robocopy "..\..\Source\Resources" "$(OutDir)Resources" /e /mt
     <ClCompile Include="..\..\Source\OpenGL\ShaderFactory.cpp" />
     <ClCompile Include="..\..\Source\Utilities\ConfigReader.cpp" />
     <ClCompile Include="..\..\Source\Utilities\File.cpp" />
+    <ClCompile Include="..\..\Source\Utilities\StringUtils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\Source\Main\Armand.ico" />
