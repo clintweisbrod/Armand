@@ -22,6 +22,7 @@
 #include "Main/Armand.h"
 #include "OpenGL/OpenGLWindow.h"
 #include "Models/3ds.h"
+#include "OpenGL/Textures/Texture.h"
 
 #define MAX_LOADSTRING 100
 
@@ -117,6 +118,12 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 //	T3DSModel* model = T3DSModelFactory::inst()->get("Apollo_3rdStage.3ds");
 //	if (model)
 //		T3DSModelFactory::inst()->RemoveAll();
+
+	// Testing texture loading
+	File texFile("data/TestImage.png");
+	Texture tex;
+	tex.load(texFile);
+
 
 
 

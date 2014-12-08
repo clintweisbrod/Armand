@@ -109,7 +109,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>shlwapi.lib;glew32.lib;opengl32.lib;glu32.lib;freetype.lib;freetype-gl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>shlwapi.lib;windowscodecs.lib;msimg32.lib;glew32.lib;opengl32.lib;glu32.lib;freetype.lib;freetype-gl.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\SDKs\glew\lib\Release\x64;freetype\$(Platform)\$(Configuration);freetype-gl\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
@@ -204,6 +204,8 @@ robocopy "..\..\Source\Resources" "$(OutDir)Resources" /e /mt
     <ClInclude Include="..\..\Source\OpenGL\Fonts\FontFactory.h" />
     <ClInclude Include="..\..\Source\OpenGL\OpenGLWindow.h" />
     <ClInclude Include="..\..\Source\OpenGL\ShaderFactory.h" />
+    <ClInclude Include="..\..\Source\OpenGL\Textures\Texture.h" />
+    <ClInclude Include="..\..\Source\OpenGL\Textures\WICImagingFactorySingleton.h" />
     <ClInclude Include="..\..\Source\OpenGL\VertexBufferStructs.h" />
     <ClInclude Include="..\..\Source\Utilities\ConfigReader.h" />
     <ClInclude Include="..\..\Source\Utilities\easylogging++.h" />
@@ -223,6 +225,7 @@ robocopy "..\..\Source\Resources" "$(OutDir)Resources" /e /mt
     <ClCompile Include="..\..\Source\OpenGL\Fonts\FontFactory.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\OpenGLWindow.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\ShaderFactory.cpp" />
+    <ClCompile Include="..\..\Source\OpenGL\Textures\Texture.cpp" />
     <ClCompile Include="..\..\Source\Utilities\ConfigReader.cpp" />
     <ClCompile Include="..\..\Source\Utilities\File.cpp" />
     <ClCompile Include="..\..\Source\Utilities\StringUtils.cpp" />
