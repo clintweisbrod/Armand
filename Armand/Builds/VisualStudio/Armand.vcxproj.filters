@@ -52,6 +52,12 @@
     <Filter Include="Source Files\Models">
       <UniqueIdentifier>{81e41224-fe56-4b5c-9843-dd667f8e2046}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\OpenGL\Textures">
+      <UniqueIdentifier>{a2df3757-a3e4-4cb4-b531-cac43efb5695}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\OpenGL\Textures">
+      <UniqueIdentifier>{bb033840-2bf7-45e4-8145-d3b04039bd99}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -183,6 +189,12 @@
     <ClInclude Include="..\..\Source\Utilities\ConfigReader.h">
       <Filter>Header Files\Utilities</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Source\OpenGL\Textures\WICImagingFactorySingleton.h">
+      <Filter>Header Files\OpenGL\Textures</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\OpenGL\Textures\Texture.h">
+      <Filter>Header Files\OpenGL\Textures</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\Main\Armand.cpp">
@@ -214,6 +226,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\Utilities\StringUtils.cpp">
       <Filter>Source Files\Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\OpenGL\Textures\Texture.cpp">
+      <Filter>Source Files\OpenGL\Textures</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

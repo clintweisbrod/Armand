@@ -45,6 +45,10 @@ bool File::createFolder(const char* inRelativePath)	// static
 	return (created == TRUE);
 }
 
+File::File(const char* inRelativeFilePath) : File(string(inRelativeFilePath))
+{
+}
+
 File::File(string& inRelativeFilePath)
 {
 	mRelativePath = inRelativeFilePath;

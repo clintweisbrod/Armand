@@ -37,6 +37,7 @@ public:
 
 public:
 	File() {}
+	File(const char* inRelativeFilePath);
 	File(string& inRelativeFilePath);
 	virtual ~File();
 
