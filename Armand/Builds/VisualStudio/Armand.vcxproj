@@ -205,6 +205,7 @@ robocopy "..\..\Source\Resources" "$(OutDir)Resources" /e /mt
     <ClInclude Include="..\..\Source\OpenGL\OpenGLWindow.h" />
     <ClInclude Include="..\..\Source\OpenGL\ShaderFactory.h" />
     <ClInclude Include="..\..\Source\OpenGL\Textures\Texture.h" />
+    <ClInclude Include="..\..\Source\OpenGL\Textures\TextureManager.h" />
     <ClInclude Include="..\..\Source\OpenGL\Textures\WICImagingFactorySingleton.h" />
     <ClInclude Include="..\..\Source\OpenGL\VertexBufferStructs.h" />
     <ClInclude Include="..\..\Source\Utilities\ConfigReader.h" />

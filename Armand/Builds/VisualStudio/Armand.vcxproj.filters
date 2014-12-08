@@ -195,6 +195,9 @@
     <ClInclude Include="..\..\Source\OpenGL\Textures\Texture.h">
       <Filter>Header Files\OpenGL\Textures</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Source\OpenGL\Textures\TextureManager.h">
+      <Filter>Header Files\OpenGL\Textures</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\Main\Armand.cpp">
