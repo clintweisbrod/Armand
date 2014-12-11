@@ -31,5 +31,3 @@ extern float turbulence(const Point3f& p, float freq);
 extern float fractalsum(float v[], float freq);
 extern float fractalsum(const Point2f& p, float freq);
 extern float fractalsum(const Point3f& p, float freq);
-
-#endif // _PERLIN_H_

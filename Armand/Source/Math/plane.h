@@ -140,5 +140,3 @@ template<class T> Point3<T> Plane<T>::intersection(const Plane<T>& p0,
                     p2.d * cross(p0.normal, p1.normal)) * (1.0f / d);
     return Point3<T>(v.x, v.y, v.z);
 }
-
-#endif // _CELMATH_PLANE_H_
