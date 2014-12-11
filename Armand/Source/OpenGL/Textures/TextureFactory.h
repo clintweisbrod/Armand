@@ -30,13 +30,10 @@ class TextureFactory : public Singleton<TextureFactory>
 	friend class Singleton<TextureFactory>;
 
 public:
-	void		SetupUnifiedModelRAMLimits(double_t inMBytesOfRamOnMachine);	// sets up limits based on the amount of RAM that is installed on the system
-	void		SetupOpenGLRAMLimitsBIOSMode(double_t inDirectSetMBytes);		// sets up fMaxRAMAvailableForTextures based on GL information that is passed in.
-
 	void		startGarbageCollecting(Texture* inTexture); // called for every real load
 	void		stopGarbageCollecting(Texture* inTexture); // texture calls on texture destruct. Texture may or may not be in list.
-
 	void 		doGarbageCollection();		// sorts list by age, then takes off older ones until it gets to the ram target. 
+
 	double_t	getMaxTextureRAMAvailable() const { return mMaxRAMAvailableForTextures; };
 	double_t	getVRAMDetected() const { return mRAMDetected; };
 	double_t	getTotalTextureRAMLoaded() const { return mTotalRAMLoaded; };

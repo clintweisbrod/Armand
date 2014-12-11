@@ -25,14 +25,17 @@ TextureFactory::TextureFactory()
 	// have to 0 out all the entries:
 	for (int count = 0; count < kMaxItemsToCollect; count++)
 		mTextures[count] = NULL;
+
 	mNumTexturesTracked = 0;
 	mTotalRAMLoaded = 0;
 	mPermanentRAMLoaded = 0;
-	mMaxRAMAvailableForTextures = 30.0; // This can be adjusted during runtime by looking at the amount of RAM on the machine.
+	mMaxRAMAvailableForTextures = 512.0; // TODO: detect this amount
+	mRAMDetected = mMaxRAMAvailableForTextures;
 }
 
 TextureFactory::~TextureFactory()
 {
+	// TODO: Do we unload all the textures we're tracking? I think so.
 //	for (TextureVec_t::iterator it = mTextures.begin(); it != mTextures.end(); it++)
 //		delete *it;
 }
@@ -213,25 +216,4 @@ void TextureFactory::sortByAge()
 			}
 		}
 	}
-}
-
-//----------------------------------------------------------------------
-//	TTextureGarbageCollector::SetupUnifiedModelRAMLimits
-//
-//	Purpose:	called when the amount of phsical ram on the machine has been obtained.
-//					
-//
-//	Date		Initials	Version		Comments
-//  ----------	---------	----------	---------------------------
-//	02/10/10	Tom			5.0.0		Last minute PC bug fix
-//
-//----------------------------------------------------------------------
-void TextureFactory::SetupUnifiedModelRAMLimits(double_t inMBytesOfRamOnMachine)
-{
-	// we can use up to 50% of RAM over 128MB on the machine for OpenGL and other textures, but we never set ourselves lower than
-	// 42MB. This is assumes a machine with unified memory architecture.  Like the Mac OS X.
-	double_t leftOverRAM = fmax(inMBytesOfRamOnMachine - 512.0, (double_t) 0.0);
-	leftOverRAM = fmin(leftOverRAM, (double_t)1300); // constrain RAM that we can get to 1.5 GB -- address space is only 2 GB or so.
-	mMaxRAMAvailableForTextures = fmax(leftOverRAM*0.5, (double_t) 42.0);
-	mRAMDetected = mMaxRAMAvailableForTextures;
 }
