@@ -21,7 +21,7 @@
 #include "stdafx.h"
 
 #include "Texture.h"
-#include "TextureFactory.h"
+#include "TextureManager.h"
 #include "WICImagingFactorySingleton.h"
 #include "Utilities/StringUtils.h"
 #include "Math/mathlib.h"
@@ -29,12 +29,32 @@
 
 Texture::Texture()
 {
-	cleanup();
+	init();
 }
 
 Texture::~Texture()
 {
 	cleanup();
+
+	// Tell the TextureFactory to stop tracking this texture
+	removeFromGPU(true);
+}
+
+void Texture::init()
+{
+	mSourceFile = NULL;
+	mEncodedImageBuffer = NULL;
+	mEncodedImageBufferBytes = 0;
+	mImageBuffer = NULL;
+	mImageBufferBytes = 0;
+	mVRAMMegabytesUsed = 0.0;
+	mDimensions = Vec2i(0, 0);
+	mNumMipMaps = 0;
+	mFlags = kTextureFlagLoadMipmaps;
+	mLastTimeUsed = 0.0;
+	mTextureID = 0;
+	mClampingMode = GL_CLAMP;
+	mInternalformat = 0;
 }
 
 void Texture::cleanup()
@@ -44,20 +64,16 @@ void Texture::cleanup()
 		delete[] mImageBuffer;
 		mImageBuffer = NULL;
 	}
-	if (mTextureID != 0)
+	if (mSourceFile)
 	{
-		glDeleteTextures(1, &mTextureID);
-		mTextureID = 0;
+		delete mSourceFile;
+		mSourceFile = NULL;
 	}
-	mImageBufferBytes = 0;
-	mVRAMBytesUsed = 0;
-	mDimensions = Vec2i(0, 0);
-	mNumMipMaps = 0;
-	mIsCompressed = false;
-	mFlags = 0;
-	mLastTimeUsed = 0.0;
-	mClampingMode = GL_CLAMP;
-	mInternalformat = 0;
+	if (mEncodedImageBuffer != NULL)
+	{
+		delete[] mEncodedImageBuffer;
+		mEncodedImageBuffer = NULL;
+	}
 }
 
 bool Texture::load(File& inFile)
@@ -66,9 +82,6 @@ bool Texture::load(File& inFile)
 		return false;
 
 	bool result = false;
-
-	// Release resources from any previous image load
-	cleanup();
 
 	// If the file extension is "dds", the process of obtaining a buffer for the GPU is entirely different.
 	if (inFile.getExtension() == "dds")
@@ -88,17 +101,28 @@ bool Texture::load(File& inFile)
 		mInternalformat = GL_RGBA8;
 	}
 
+	if (result)
+	{
+		// Remember the source file in case this instance gets jettisoned by the TextureFactory, in which case we will
+		// need to reload.
+		if (mSourceFile == NULL)
+		{
+			mSourceFile = new File;
+			*mSourceFile = inFile;
+		}
+	}
+	else
+		cleanup();
+
+	// Indicate a load has been attempted
+	SET_FLAG(kTextureFlagLoadAttempted);
+
 	return result;
 }
 
-void Texture::unLoad()
-{
-	if (mTextureID != 0)
-		glDeleteTextures(1, &mTextureID);
-	mTextureID = 0;
-}
-
-bool Texture::load(uint8_t* inEncodedBuffer, uint32_t inBufferBytes)
+//
+// NOTE: This method takes ownership of the supplied buffer!
+bool Texture::load(uint8_t* inEncodedBuffer, size_t inBufferBytes)
 {
 	if (inEncodedBuffer == NULL)
 		return false;
@@ -106,9 +130,6 @@ bool Texture::load(uint8_t* inEncodedBuffer, uint32_t inBufferBytes)
 		return false;
 
 	bool result = false;
-
-	// Release resources from any previous image load
-	cleanup();
 
 	IWICBitmapDecoder* pDecoder = NULL;
 	HRESULT hr = getDecoder(inEncodedBuffer, inBufferBytes, &pDecoder);
@@ -118,6 +139,100 @@ bool Texture::load(uint8_t* inEncodedBuffer, uint32_t inBufferBytes)
 	// Release the image decoder
 	if (pDecoder)
 		pDecoder->Release();
+
+	if (result)
+	{
+		// Release resources from any previous image load
+		if (mEncodedImageBuffer != NULL)
+		{
+			delete[] mEncodedImageBuffer;
+			mEncodedImageBuffer = NULL;
+		}
+
+		// Remember the source image buffer in case this instance gets jettisoned by the TextureFactory, in which case we will
+		// need to reload.
+		if (mEncodedImageBuffer == NULL)
+		{
+			mEncodedImageBuffer = inEncodedBuffer;
+			mEncodedImageBufferBytes = inBufferBytes;
+		}
+	}
+	else
+		cleanup();
+
+	// Indicate a load has been attempted
+	SET_FLAG(kTextureFlagLoadAttempted);
+
+	return result;
+}
+
+bool Texture::sendBufferToGPU()
+{
+	bool result = false;
+
+	if (mInternalformat == GL_RGBA8)
+		result = sendBufferToGPU_Native();
+	else
+		result = sendBufferToGPU_DDS();
+
+	return result;
+}
+
+void Texture::removeFromGPU(bool inNotifyTextureManager)
+{
+	if (mTextureID != 0)
+		glDeleteTextures(1, &mTextureID);
+	mTextureID = 0;
+
+	// We need this because this method can be called from the TextureManager when it dumps a texture.
+	// We don't want to then tell the TextureManager the texture was dumped because it already is.
+	if (inNotifyTextureManager)
+		TextureManager::inst()->stopGarbageCollecting(this);
+
+	CLEAR_FLAG(kTextureFlagGarbageCollect);
+	CLEAR_FLAG(kTextureFlagBufferOnGPU);
+}
+
+
+GLuint Texture::getTextureID()
+{
+	GLuint result = 0;
+
+	if (mTextureID != 0)
+	{
+		// Update last used member for garbage collection
+		mLastTimeUsed = Timer::seconds();
+
+		result = mTextureID;
+	}
+	else
+	{
+		// If this texture is being garbage collected, it may have been unloaded
+		if (IS_FLAG_SET(kTextureFlagGarbageCollect))
+		{
+			// Synchronous texture load. We only attempt loading once.
+			if (IS_FLAG_CLEAR(kTextureFlagLoadAttempted))
+			{
+				// We gotta load the image first
+				if (reload())
+					result = mTextureID;
+			}
+		}
+	}
+
+	return result;
+}
+
+bool Texture::reload()
+{
+	bool result = false;
+
+	if (mSourceFile)
+		result = load(*mSourceFile);
+	else if (mEncodedImageBuffer && (mEncodedImageBufferBytes > 0))
+		result = load(mEncodedImageBuffer, mEncodedImageBufferBytes);
+	if (result)
+		result = sendBufferToGPU();
 
 	return result;
 }
@@ -143,7 +258,7 @@ HRESULT Texture::getDecoder(File& inFile, IWICBitmapDecoder** ioDecoder)
 	return result;
 }
 
-HRESULT Texture::getDecoder(uint8_t* inEncodedBuffer, uint32_t inBufferBytes, IWICBitmapDecoder** ioDecoder)
+HRESULT Texture::getDecoder(uint8_t* inEncodedBuffer, size_t inBufferBytes, IWICBitmapDecoder** ioDecoder)
 {
 	HRESULT result = 0;
 
@@ -154,7 +269,7 @@ HRESULT Texture::getDecoder(uint8_t* inEncodedBuffer, uint32_t inBufferBytes, IW
 		result = wicFactory->GetFactory()->CreateStream(&pStream);
 		if (SUCCEEDED(result))
 		{
-			result = pStream->InitializeFromMemory(inEncodedBuffer, inBufferBytes);
+			result = pStream->InitializeFromMemory(inEncodedBuffer, (DWORD)inBufferBytes);
 			if (SUCCEEDED(result))
 			{
 				// Create a decoder
@@ -239,10 +354,19 @@ bool Texture::loadNative(IWICBitmapDecoder* inDecoder)
 			}
 			if (SUCCEEDED(hr))
 			{
-				mImageBufferBytes = cbBufferSize;
-
-				// Allocate out image buffer and copy the image data
-				mImageBuffer = new uint8_t[mImageBufferBytes];
+				// Allocate image buffer and copy the image data
+				// If we already have a buffer allocated but not large enough, release it.
+				if (mImageBuffer && (mImageBufferBytes < cbBufferSize))
+				{
+					delete[] mImageBuffer;
+					mImageBuffer = NULL;
+					mImageBufferBytes = 0;
+				}
+				if (mImageBuffer == NULL)
+				{
+					mImageBuffer = new uint8_t[cbBufferSize];
+					mImageBufferBytes = cbBufferSize;
+				}
 				if (mImageBuffer)
 				{
 					memcpy(mImageBuffer, pv, mImageBufferBytes);
@@ -342,9 +466,9 @@ bool Texture::loadDDS(File& inFile)
 			uint32_t maxDimension = max(ddsd.fWidth, ddsd.fHeight);
 			while ((maxDimension >>= 1) > 0)
 				expectedMipmaps++;
-			//			Assert_(expectedMipmaps == ddsd.fMipMapCount);
-//			if (expectedMipmaps != ddsd.fMipMapCount)
-//				CLEAR_FLAG(kSNImageFlagLoadMipmaps);
+
+			if (expectedMipmaps != ddsd.fMipMapCount)
+				CLEAR_FLAG(kTextureFlagLoadMipmaps);
 		}
 
 		// Set the detected size of the image
@@ -352,11 +476,11 @@ bool Texture::loadDDS(File& inFile)
 		mDimensions.y = ddsd.fHeight;
 
 		// We may only be looking for the image dimensions
-//		if (IS_FLAG_SET(kSNImageFlagQueryInfoOnly))
-//			return result;
+		if (IS_FLAG_SET(kTextureFlagQueryInfoOnly))
+			return result;
 
 		// DDS images are always POT texture
-//		CLEAR_FLAG(kSNImageFlagMakeRectangleTexture);
+		CLEAR_FLAG(kTextureFlagMakeRectangleTexture);
 
 
 		// Initialize the DDS_SURFACE_DATA struct
@@ -393,7 +517,7 @@ bool Texture::loadDDS(File& inFile)
 		mNumMipMaps = ddsd.fMipMapCount;
 		if ((mNumMipMaps == 0) /* || IS_FLAG_CLEAR(kSNImageFlagLoadMipmaps) */)
 			mNumMipMaps = 1;	// Still have to load the first level of detail
-//		(mNumMipMaps > 1) ? SET_FLAG(kSNImageFlagUsingMipmaps) : CLEAR_FLAG(kSNImageFlagUsingMipmaps);
+		(mNumMipMaps > 1) ? SET_FLAG(kTextureFlagUsingMipmaps) : CLEAR_FLAG(kTextureFlagUsingMipmaps);
 
 		// We need blockSize to compute number of bytes to read from file
 		GLint blockSize = 16;
@@ -402,7 +526,7 @@ bool Texture::loadDDS(File& inFile)
 
 		// Compute required buffer size to hold 1 or all mipmap images
 		int i;
-		mImageBufferBytes = 0;
+		size_t requiredBufferBytes = 0;
 		int mapHeight = mDimensions.y;
 		int mapWidth = mDimensions.x;
 		for (i = 0; i < mNumMipMaps; ++i)
@@ -412,14 +536,26 @@ bool Texture::loadDDS(File& inFile)
 			if (mapHeight == 0)
 				mapHeight = 1;
 
-			mImageBufferBytes += ((mapWidth + 3) / 4) * ((mapHeight + 3) / 4) * blockSize;
+			requiredBufferBytes += ((mapWidth + 3) / 4) * ((mapHeight + 3) / 4) * blockSize;
 
 			// Half the image size for the next mip-map level...
 			mapWidth /= 2;
 			mapHeight /= 2;
 		}
-		// Allocate buffer to hold pixel data
-		mImageBuffer = new uint8_t[mImageBufferBytes];
+
+		// Allocate image buffer and load the image data
+		// If we already have a buffer allocated but not large enough, release it.
+		if (mImageBuffer && (mImageBufferBytes < requiredBufferBytes))
+		{
+			delete[] mImageBuffer;
+			mImageBuffer = NULL;
+			mImageBufferBytes = 0;
+		}
+		if (mImageBuffer == NULL)
+		{
+			mImageBuffer = new uint8_t[requiredBufferBytes];
+			mImageBufferBytes = requiredBufferBytes;
+		}
 		if (mImageBuffer == NULL)
 		{
 			LOG(ERROR) << "Unable to allocate pixel buffer while reading DDS file: " << inFile.getFullPath();
@@ -434,24 +570,24 @@ bool Texture::loadDDS(File& inFile)
 			throw(result);
 		}
 
-		mIsCompressed = true;
-
 		result = true;
 	}
 	catch (...)
 	{
 		if (fp)
 			fclose(fp);
-		cleanup();
 	}
 
 	return result;
 }
 
-bool Texture::sendBufferToGPU()
+bool Texture::sendBufferToGPU_Native()
 {
 	if (mImageBuffer == NULL)
-		return false;
+		return 0;
+
+	if (IS_FLAG_SET(kTextureFlagBufferOnGPU))
+		return true;
 
 	bool result = false;
 
@@ -581,7 +717,7 @@ bool Texture::sendBufferToGPU()
 			CLEAR_FLAG(kTextureFlagUsingMipmaps);
 
 		// Now determine how much VRAM has been used
-		mVRAMBytesUsed = 0;
+		GLint bytesUsed = 0;
 		if (mInternalformat == GL_COMPRESSED_RGBA)
 		{
 			GLint imageSize;
@@ -595,7 +731,7 @@ bool Texture::sendBufferToGPU()
 					imageSize = 0;
 					glGetTexLevelParameteriv(GL_TEXTURE_2D, imageLevel, GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &imageSize);
 					if (imageSize > 0)
-						mVRAMBytesUsed += imageSize;
+						bytesUsed += imageSize;
 					else
 						break;
 
@@ -608,13 +744,13 @@ bool Texture::sendBufferToGPU()
 				imageSize = 0;
 				glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &imageSize);
 				if (imageSize > 0)
-					mVRAMBytesUsed = imageSize;
+					bytesUsed = imageSize;
 			}
 		}
 		else
 		{
 			// Calculate VRAM used based on image dimensions
-			mVRAMBytesUsed = (mDimensions.x * mDimensions.y * 4);
+			bytesUsed = (mDimensions.x * mDimensions.y * 4);
 			if (IS_FLAG_SET(kTextureFlagLoadMipmaps))
 			{
 				int mipmapWidth = mDimensions.x;
@@ -627,13 +763,16 @@ bool Texture::sendBufferToGPU()
 					if (mipmapHeight > 1)
 						mipmapHeight /= 2;
 
-					mVRAMBytesUsed += (mipmapWidth * mipmapHeight * 4);
+					bytesUsed += (mipmapWidth * mipmapHeight * 4);
 				}
 			}
 		}
+		mVRAMMegabytesUsed = (double_t)bytesUsed / 1048576.0;
 
 		// Start garbage collecting this texture
-		TextureFactory::inst()->startGarbageCollecting(this);
+		SET_FLAG(kTextureFlagGarbageCollect);
+		TextureManager::inst()->startGarbageCollecting(this);
+		SET_FLAG(kTextureFlagBufferOnGPU);
 	}
 
 	return result;
@@ -642,16 +781,15 @@ bool Texture::sendBufferToGPU()
 bool Texture::sendBufferToGPU_DDS()
 {
 	if (mImageBuffer == NULL)
-		return false;
+		return 0;
+
+	if (IS_FLAG_SET(kTextureFlagBufferOnGPU))
+		return true;
 
 	bool result = false;
 
 	// Check for any GL error conditions
 	glCheckForError();
-
-	// Handle reload
-	if (mTextureID != 0)
-		unLoad();
 
 	// Generate a texture object
 	glGenTextures(1, &mTextureID);
@@ -724,7 +862,7 @@ bool Texture::sendBufferToGPU_DDS()
 		result = true;
 
 		// Get the texture VRAM used.
-		mVRAMBytesUsed = 0;
+		GLint bytesUsed = 0;
 		GLint compressed = GL_FALSE;
 		glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_COMPRESSED, &compressed);
 		if (compressed == GL_TRUE)
@@ -735,12 +873,15 @@ bool Texture::sendBufferToGPU_DDS()
 			{
 				glGetTexLevelParameteriv(GL_TEXTURE_2D, i, GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &imageSize);
 				if (imageSize > 0)
-					mVRAMBytesUsed += imageSize;
+					bytesUsed += imageSize;
 			}
 		}
+		mVRAMMegabytesUsed = (double_t)bytesUsed / 1048576.0;
 
 		// Start garbage collecting this texture
-		TextureFactory::inst()->startGarbageCollecting(this);
+		SET_FLAG(kTextureFlagGarbageCollect);
+		TextureManager::inst()->startGarbageCollecting(this);
+		SET_FLAG(kTextureFlagBufferOnGPU);
 	}
 
 	// Deallocate buffer

@@ -84,41 +84,44 @@ public:
 		kTextureFlagAsyncLoadInProgress = 0x4000,	// Asynchronous texture image buffer is being constructed
 		kTextureFlagIncludeAlphaOnSave = 0x8000,	// Include alpha channel when saving
 		kTextureFlagUsingExplicitBuffer = 0x10000,	// Using explicitly specified raw BRGA buffer
+		kTextureFlagBufferOnGPU = 0x20000,			// Set if last loaded buffer was successfully sent to GPU
 	};
 
 	Texture();
 	virtual ~Texture();
 
+	// These two load functions do not make any GL calls so in theory, they could be threaded.
 	bool		load(File& inFile);
-	bool		load(uint8_t* inEncodedBuffer, uint32_t inBufferBytes);
-
-	void		unLoad();
-
+	bool		load(uint8_t* inEncodedBuffer, size_t inBufferBytes);
 	bool		sendBufferToGPU();
-	bool		sendBufferToGPU_DDS();
 
-	GLuint		getTextureID() const { return mTextureID; }
-	int			getVRAMUsed() const { return mVRAMBytesUsed; }
+	void		removeFromGPU(bool inNotifyTextureManager);
+
+	GLuint		getTextureID();
+	double_t	getVRAMMegabytesUsed() const { return mVRAMMegabytesUsed; }
 	double_t	getLastUsedSeconds() const { return mLastTimeUsed; };
 
 	int			getGarbageCollect() const { return IS_FLAG_SET(kTextureFlagGarbageCollect); };
 
 private:
+	void		init();
 	bool		loadDDS(File& inFile);
 	HRESULT		getDecoder(File& inFile, IWICBitmapDecoder** ioDecoder);
-	HRESULT		getDecoder(uint8_t* inEncodedBuffer, uint32_t inBufferBytes, IWICBitmapDecoder** ioDecoder);
+	HRESULT		getDecoder(uint8_t* inEncodedBuffer, size_t inBufferBytes, IWICBitmapDecoder** ioDecoder);
 	bool		loadNative(IWICBitmapDecoder* inDecoder);
+	bool		reload();
 	void		cleanup();
+	bool		sendBufferToGPU_Native();
+	bool		sendBufferToGPU_DDS();
 
-	uint8_t*	getImageBuffer() const { return mImageBuffer; }
-	int			getImageBufferBytes() const { return mImageBufferBytes; }
-
+	File*		mSourceFile;			// This will be non-NULL if texture originated from local file
+	uint8_t*	mEncodedImageBuffer;	// This will be non-NULL if texture originated from some remote source
+	size_t		mEncodedImageBufferBytes;
 	uint8_t*	mImageBuffer;
-	int			mImageBufferBytes;
-	int			mVRAMBytesUsed;
+	size_t		mImageBufferBytes;
+	double_t	mVRAMMegabytesUsed;
 	Vec2i		mDimensions;
 	GLint		mNumMipMaps;
-	bool		mIsCompressed;
 	int			mFlags;
 	double_t	mLastTimeUsed;
 

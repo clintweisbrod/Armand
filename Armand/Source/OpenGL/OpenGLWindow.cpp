@@ -24,6 +24,7 @@
 #include "ShaderFactory.h"
 #include "Fonts/FontFactory.h"
 #include "Models/3ds.h"
+#include "OpenGL/Textures/Texture.h"
 
 bool OpenGLWindow::sEnabledGLExtensions = false;
 
@@ -613,6 +614,16 @@ void OpenGLWindow::render()								// Here's where we do all the drawing
 	wstring text(L"\260 A quick brown fox jumped over the lazy dog. !@#$%^&*()-=+{}[];:'<>,.?/`~");
 	FontFactory* ff = FontFactory::inst();
 	FontRenderer* fontRenderer = ff->getFontRenderer(fontName);
+
+	// Testing texture loading
+//	File texFile("data/TestImage.dds");
+//	Texture* tex = new Texture;
+//	if (tex)
+//	{
+//		if (tex->load(texFile))
+//			GLuint texid = tex->sendBufferToGPU();
+//		delete tex;
+//	}
 
 	// The code below renders the text string above 1000 times with random positions, sizes
 	// and angles. On my 2010 Macbook Pro, framerate was 26.6 fps. Pretty damn good

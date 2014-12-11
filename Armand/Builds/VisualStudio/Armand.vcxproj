@@ -206,7 +206,7 @@ robocopy "..\..\Source\Resources" "$(OutDir)Resources" /e /mt
     <ClInclude Include="..\..\Source\OpenGL\OpenGLWindow.h" />
     <ClInclude Include="..\..\Source\OpenGL\ShaderFactory.h" />
     <ClInclude Include="..\..\Source\OpenGL\Textures\Texture.h" />
-    <ClInclude Include="..\..\Source\OpenGL\Textures\TextureFactory.h" />
+    <ClInclude Include="..\..\Source\OpenGL\Textures\TextureManager.h" />
     <ClInclude Include="..\..\Source\OpenGL\Textures\WICImagingFactorySingleton.h" />
     <ClInclude Include="..\..\Source\OpenGL\VertexBufferStructs.h" />
     <ClInclude Include="..\..\Source\Utilities\ConfigReader.h" />
@@ -230,7 +230,7 @@ robocopy "..\..\Source\Resources" "$(OutDir)Resources" /e /mt
     <ClCompile Include="..\..\Source\OpenGL\OpenGLWindow.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\ShaderFactory.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\Textures\Texture.cpp" />
-    <ClCompile Include="..\..\Source\OpenGL\Textures\TextureFactory.cpp" />
+    <ClCompile Include="..\..\Source\OpenGL\Textures\TextureManager.cpp" />
     <ClCompile Include="..\..\Source\Utilities\ConfigReader.cpp" />
     <ClCompile Include="..\..\Source\Utilities\File.cpp" />
     <ClCompile Include="..\..\Source\Utilities\StringUtils.cpp" />
