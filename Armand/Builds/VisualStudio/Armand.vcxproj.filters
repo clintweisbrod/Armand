@@ -195,8 +195,14 @@
     <ClInclude Include="..\..\Source\OpenGL\Textures\Texture.h">
       <Filter>Header Files\OpenGL\Textures</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Source\OpenGL\Textures\TextureManager.h">
+    <ClInclude Include="..\..\Source\OpenGL\GLUtils.h">
+      <Filter>Header Files\OpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\OpenGL\Textures\TextureFactory.h">
       <Filter>Header Files\OpenGL\Textures</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Utilities\Timer.h">
+      <Filter>Header Files\Utilities</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -232,6 +238,15 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\OpenGL\Textures\Texture.cpp">
       <Filter>Source Files\OpenGL\Textures</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\OpenGL\GLUtils.cpp">
+      <Filter>Source Files\OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\OpenGL\Textures\TextureFactory.cpp">
+      <Filter>Source Files\OpenGL\Textures</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Utilities\Timer.cpp">
+      <Filter>Source Files\Utilities</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

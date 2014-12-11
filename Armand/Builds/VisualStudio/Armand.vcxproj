@@ -202,10 +202,11 @@ robocopy "..\..\Source\Resources" "$(OutDir)Resources" /e /mt
     <ClInclude Include="..\..\Source\Math\vecmath.h" />
     <ClInclude Include="..\..\Source\Models\3ds.h" />
     <ClInclude Include="..\..\Source\OpenGL\Fonts\FontFactory.h" />
+    <ClInclude Include="..\..\Source\OpenGL\GLUtils.h" />
     <ClInclude Include="..\..\Source\OpenGL\OpenGLWindow.h" />
     <ClInclude Include="..\..\Source\OpenGL\ShaderFactory.h" />
     <ClInclude Include="..\..\Source\OpenGL\Textures\Texture.h" />
-    <ClInclude Include="..\..\Source\OpenGL\Textures\TextureManager.h" />
+    <ClInclude Include="..\..\Source\OpenGL\Textures\TextureFactory.h" />
     <ClInclude Include="..\..\Source\OpenGL\Textures\WICImagingFactorySingleton.h" />
     <ClInclude Include="..\..\Source\OpenGL\VertexBufferStructs.h" />
     <ClInclude Include="..\..\Source\Utilities\ConfigReader.h" />
@@ -213,6 +214,7 @@ robocopy "..\..\Source\Resources" "$(OutDir)Resources" /e /mt
     <ClInclude Include="..\..\Source\Utilities\File.h" />
     <ClInclude Include="..\..\Source\Utilities\Singleton.h" />
     <ClInclude Include="..\..\Source\Utilities\StringUtils.h" />
+    <ClInclude Include="..\..\Source\Utilities\Timer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\Main\Armand.cpp" />
@@ -224,12 +226,15 @@ robocopy "..\..\Source\Resources" "$(OutDir)Resources" /e /mt
     <ClCompile Include="..\..\Source\Math\vecmath.cpp" />
     <ClCompile Include="..\..\Source\Models\3ds.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\Fonts\FontFactory.cpp" />
+    <ClCompile Include="..\..\Source\OpenGL\GLUtils.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\OpenGLWindow.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\ShaderFactory.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\Textures\Texture.cpp" />
+    <ClCompile Include="..\..\Source\OpenGL\Textures\TextureFactory.cpp" />
     <ClCompile Include="..\..\Source\Utilities\ConfigReader.cpp" />
     <ClCompile Include="..\..\Source\Utilities\File.cpp" />
     <ClCompile Include="..\..\Source\Utilities\StringUtils.cpp" />
+    <ClCompile Include="..\..\Source\Utilities\Timer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\Source\Main\Armand.ico" />
