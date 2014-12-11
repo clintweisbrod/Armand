@@ -120,7 +120,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 //		T3DSModelFactory::inst()->RemoveAll();
 
 	// Testing texture loading
-	File texFile("data/TestImage.png");
+	File texFile("data/TestImage.dds");
 	Texture tex;
 	tex.load(texFile);
 

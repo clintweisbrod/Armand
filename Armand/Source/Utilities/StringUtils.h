@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <string>
 
 using namespace std;
@@ -33,6 +34,18 @@ void trimString(basic_string<T>& ioString)
 	basic_string<T>::size_type startPos = ioString.find_first_not_of(spaceChrs);
 	basic_string<T>::size_type endPos = ioString.find_last_not_of(spaceChrs);
 	ioString = ioString.substr(startPos, endPos - startPos + 1);
+}
+
+template<class T>
+void toLower(basic_string<T>& ioString)
+{
+	transform(ioString.begin(), ioString.end(), ioString.begin(), ::tolower);
+}
+
+template<class T>
+void toUpper(basic_string<T>& ioString)
+{
+	transform(ioString.begin(), ioString.end(), ioString.begin(), ::toupper);
 }
 
 inline wstring wstringFromString(string& inString)

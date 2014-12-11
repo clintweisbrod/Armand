@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
 // Copyright (C) 2014 Clint Weisbrod. All rights reserved.
 //
-// TextureManager.h
+// GLUtilis.h
 //
-// Handles creation, loading and unloading of OpenGL texture objects.
+// Declares handy GL-related functions.
 //
 // THIS SOFTWARE IS PROVIDED BY CLINT WEISBROD "AS IS" AND ANY EXPRESS OR
 // IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
@@ -18,3 +18,7 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
+
+#include <GL/glew.h>
+
+bool glCheckForError();

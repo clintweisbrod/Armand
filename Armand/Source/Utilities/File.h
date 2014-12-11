@@ -47,11 +47,13 @@ public:
 	string	getFileName() const { return mFileName;	}
 	string	getRelativePath() const { return mRelativePath; }
 	string	getFullPath() const { return mFullPath; }
-	string	getFileNameWithoutExtension() const { return mFileNameNoExtension; }
+	string	getExtension() const { return mExtension; }
+	string	getFileNameWithoutExtension() const { return mFileNameWithoutExtension; }
 
 private:
 	string	mRelativePath;
 	string	mFullPath;
 	string	mFileName;
-	string	mFileNameNoExtension;
+	string	mExtension;
+	string	mFileNameWithoutExtension;
 };

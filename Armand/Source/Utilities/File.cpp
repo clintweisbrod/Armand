@@ -58,12 +58,21 @@ File::File(string& inRelativeFilePath)
 	if (slashPos != string::npos)
 		mFileName = mRelativePath.substr(slashPos + 1);
 
-	// Parse filename without extension
+	// Parse filename without extension and the extension
 	if (!mFileName.empty())
 	{
 		size_t dotPos = mFileName.rfind('.');
 		if (dotPos != string::npos)
-			mFileNameNoExtension = mFileName.substr(0, dotPos);
+		{
+			mFileNameWithoutExtension = mFileName.substr(0, dotPos);
+
+			size_t len = mFileName.length();
+			if (len > dotPos + 1)
+			{
+				mExtension = mFileName.substr(dotPos + 1, len - dotPos - 1);
+				toLower(mExtension);
+			}
+		}
 	}
 
 	// Construct full path to this file
@@ -96,7 +105,7 @@ FILE* File::getCRTFileHandle(const char* inReadMode) const
 
 char* File::readAsText() const
 {
-	FILE* fp = fopen(mRelativePath.c_str(), "rb");
+	FILE* fp = getCRTFileHandle("rb");
 	if (!fp)
 	{
 		LOG(ERROR) << "Unable to open file: " << mFullPath;

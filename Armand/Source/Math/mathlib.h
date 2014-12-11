@@ -110,6 +110,11 @@ template<class T> T sphereArea(T r)
     return 4 * (T) PI * r * r;
 }
 
+template<class T> bool isPowerOf2(T inValue)
+{
+	return ((inValue & (inValue - 1)) == 0);
+}
+
 template<class T> void Math<T>::sincos(T angle, T& s, T& c)
 {
     s = (T) sin(angle);
@@ -158,14 +163,14 @@ template<class T> void Math<T>::constrain(T& ioVal, T inMin, T inMax)
 
 template<class T> T Math<T>::lerp2(T inX1, T inX2, T inY1, T inY2, T inX)
 {
-	if (fabs((double)inX2 - (double)inX1) < 1e-6)
+	if (fabs((double_t)inX2 - (double_t)inX1) < 1e-6)
 		return inY1;
 
-	T result = (T)(((double)(inY2 - inY1) / (double)(inX2 - inX1))*(double)inX + ((double)(inX2*inY1 - inX1*inY2) / (double)(inX2 - inX1)));
+	T result = ((inY2 - inY1) / (inX2 - inX1)) * inX + ((inX2*inY1 - inX1*inY2) / (inX2 - inX1));
 
 	// Constrain result between inY1 and inY2
-	T minVal = fmin((double)inY1, (double)inY2);
-	T maxVal = fmax((double)inY1, (double)inY2);
+	T minVal = fmin((double_t)inY1, (double_t)inY2);
+	T maxVal = fmax((double_t)inY1, (double_t)inY2);
 	if (result < minVal)
 		result = minVal;
 	if (result > maxVal)
@@ -176,8 +181,9 @@ template<class T> T Math<T>::lerp2(T inX1, T inX2, T inY1, T inY2, T inX)
 
 template<class T> T Math<T>::lerp2NoConstrain(T inX1, T inX2, T inY1, T inY2, T inX)
 {
-	if (fabs((double)inX2 - (double)inX1) < 1e-6)
+	if (fabs((double_t)inX2 - (double_t)inX1) < 1e-6)
 		return inY1;
 
-	return (T)(((double)(inY2 - inY1) / (double)(inX2 - inX1))*(double)inX + ((double)(inX2*inY1 - inX1*inY2) / (double)(inX2 - inX1)));
+	return ((inY2 - inY1) / (inX2 - inX1)) * inX + ((inX2*inY1 - inX1*inY2) / (inX2 - inX1));
 }
+
