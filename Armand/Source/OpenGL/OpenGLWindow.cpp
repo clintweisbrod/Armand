@@ -841,26 +841,32 @@ void OpenGLWindow::render()
 */
 
 
-
 	// Testing 3DS model loading
-	glEnable(GL_LIGHTING);
-	glMatrixMode(GL_PROJECTION);						// Select the projection matrix
-	glLoadIdentity();									// Reset the projection matrix
-
-	// Calculate the aspect ratio of the window
-	GLfloat aspectRatio = (GLfloat)mSceneSize.x / (GLfloat)mSceneSize.y;
-	gluPerspective(60.0f, aspectRatio, 0.1f, 200.0f);
-
-	glMatrixMode(GL_MODELVIEW);							// Select the modelview matrix
-	glLoadIdentity();									// Reset the modelview matrix
-	
-	static Vec3d rot;
-	static Vec3d dRot(0.1, 0.2, 0.3);
-	
 	T3DSModel* model = T3DSModelFactory::inst()->get("Apollo_3rdStage.3ds");
+//	T3DSModel* model = T3DSModelFactory::inst()->get("ISS.3ds");
 	if (model)
 	{
-		glTranslated(0.0, 0.0, model->GetModelBoundingRadius() * -2);
+		glEnable(GL_LIGHTING);
+		glMatrixMode(GL_PROJECTION);						// Select the projection matrix
+		glLoadIdentity();									// Reset the projection matrix
+
+		// Calculate the aspect ratio of the window
+		GLfloat aspectRatio = (GLfloat)mSceneSize.x / (GLfloat)mSceneSize.y;
+
+		// Get bounding radius of model
+		double_t boundingRadius = model->GetModelBoundingRadius();
+
+		// Set perspective projection
+		gluPerspective(30.0f, aspectRatio, boundingRadius * 0.1, 3 * boundingRadius);
+
+		glMatrixMode(GL_MODELVIEW);							// Select the modelview matrix
+		glLoadIdentity();									// Reset the modelview matrix
+	
+		static Vec3d rot;
+		static Vec3d dRot(0.05, 0.1, 0.15);
+	
+		GLdouble translate = -boundingRadius * 2;
+		glTranslated(0.0, 0.0, translate);
 		glRotated(rot.x, 1, 0, 0);
 		glRotated(rot.y, 0, 1, 0);
 		glRotated(rot.z, 0, 0, 1);
