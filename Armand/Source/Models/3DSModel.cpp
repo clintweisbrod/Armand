@@ -22,9 +22,10 @@
 #include <assert.h>
 #include <math.h>
 
-#include "3ds.h"
+#include "3DSModel.h"
 #include "Math/constants.h"
 #include "Utilities/ConfigReader.h"
+#include "OpenGL/GLUtils.h"
 
 #define INITIAL_BUFFER_SIZE	2000000
 
@@ -68,7 +69,7 @@ T3DSVertex::T3DSVertex() :	mVertex(0.0f, 0.0f, 0.0f),
 //	05/12/13	CLW			5.0.0		first release
 //
 //----------------------------------------------------------------------
-T3DSMaterialInfo::T3DSMaterialInfo() :	/*fTexture(NULL),*/
+T3DSMaterialInfo::T3DSMaterialInfo() :	mTexture(NULL),
 										mShininess(0.0f),
 										mUScale(1.0f),
 										mVScale(1.0f),
@@ -86,6 +87,45 @@ T3DSFace::T3DSFace()
 	mCoordIndex[0] = mCoordIndex[1] = mCoordIndex[2] = 0;
 	mSmoothingGroup = 0;
 	mMaterialID = -1;
+}
+
+//----------------------------------------------------------------------
+//	T3DSFaceComparator::operator()
+//
+//	Purpose:	This is a function object we need to properly sort the vector
+//				of T3DSFace instances based on opacity. In order to properly
+//				render translucent objects, we must render the objects that are
+//				opaque first, and then render objects by decreasing opacity.
+//				Sorting the vector of T3DSFace instances requires access to private
+//				data in the T3DSModel instance that owns the vector of T3DSObjects,
+//				therefore this function object is absolutely necessary.
+//
+//	Inputs:		inItem1	- comparison item 1
+//				inItem2	- comparison item 2
+//
+//	Outputs:	return true if item1 is more opaque than item2.
+//
+//	Date		Initials	Version		Comments
+//  ----------	---------	----------	---------------------------
+//	2007/02/02	CLW			6.0.4		
+//
+//----------------------------------------------------------------------
+bool T3DSFaceComparator::operator()(const T3DSFace& inItem1, const T3DSFace& inItem2) const
+{
+	// We're basically comparing transparencies of the materials used in either item.
+	// If item has no material, we will draw opaque and assign a value of 1 for the item
+	// If item has material, we assign the alpha value of the diffuse material property
+	float item1Value, item2Value;
+	if (inItem1.mMaterialID == -1)
+		item1Value = 1.0f;
+	else
+		item1Value = m3DSModel->mMaterials[inItem1.mMaterialID].mDiffuseColor[3];
+	if (inItem2.mMaterialID == -1)
+		item2Value = 1.0f;
+	else
+		item2Value = m3DSModel->mMaterials[inItem2.mMaterialID].mDiffuseColor[3];
+
+	return item1Value > item2Value;
 }
 
 //----------------------------------------------------------------------
@@ -268,7 +308,7 @@ bool T3DSModel::Load(File& inModelFile, bool inLoadMetaOnly, bool inIsAUserModel
 			ComputeNormals();
 			
 			// Try to load any textures that this model uses
-//			LoadTextures(inIsAUserModel);
+			LoadTextures();
 
 			// Adjust any texture coordinates by their material scaling and offset params
 			AdjustTextureCoordinates();
@@ -415,8 +455,7 @@ void T3DSModel::ComputeBoundingRadius()
 //	05/12/13	CLW			5.0.0		first release
 //
 //----------------------------------------------------------------------
-/*
-void T3DSModel::LoadTextures(bool inIsAUserModel)
+void T3DSModel::LoadTextures()
 {
 	//	We want to use a "default" texture if the conditions are right. Conditions under
 	//	which the default texture is used are as follows:
@@ -451,11 +490,11 @@ void T3DSModel::LoadTextures(bool inIsAUserModel)
 		if (!material->mFilename.empty())
 		{
 			// Now look in the texture map to see if we already have this texture
-			TModelTextureMap::iterator it = fTextureMap.find(material->mFilename);
-			if (it != fTextureMap.end())
+			TModelTextureMap::iterator it = mTextureMap.find(material->mFilename);
+			if (it != mTextureMap.end())
 			{
 				// The texture has already been loaded for another material so we just set the pointer
-				material->fTexture = it->second;
+				material->mTexture = it->second;
 			}
 			else
 			{
@@ -463,62 +502,46 @@ void T3DSModel::LoadTextures(bool inIsAUserModel)
 				// to the map.
 
 				// Create a LFile for the file containing the texture.
-				// Rather than pollute the Sky Date/Models folder with a whole wack of texture files for various
+				// Rather than pollute the Data/Models folder with a whole wack of texture files for various
 				// models, we require all external texture files to be located in a sub-folder under Models. The
 				// name of the folder is the name of the 3DS file (less the .3ds extension). So for HST.3ds, we
 				// require a "HST" folder in the Models folder.
-
-				// If this is a 'user' added model, it will be located in the prefs folder and so will the textures!
-				UOptions::EFileLocation theFileLocation = UOptions::kLocatedInData;
-				if (inIsAUserModel)
-					theFileLocation = UOptions::kLocatedInPrefs;
-					
-				LStr255 relativeFolderPath("STRx_PlanetExtras", "3DSModelFolder");
-				LFile::AddFolderSeparator(relativeFolderPath);
-				relativeFolderPath.Append(mTextureFolderName.c_str());
-					
-				LFile textureFile;
-				OSErr theErr = UOptions::CreateLFile(theFileLocation, relativeFolderPath, LStr255(material->mFilename.c_str()), textureFile, false);
-				if (theErr == noErr)
+				string texturePath = File::getModelsFolder().append("/").append(mTextureFolderName).append("/").append(material->mFilename);
+				File textureFile(texturePath);
+				if (textureFile.exists())
 				{
-					TOGLTexture* newTexture = NEW TOGLTexture();
+					Texture* newTexture = new Texture(textureFile);
 					if (newTexture)
 					{
-						if (!newTexture->Load(textureFile))
+						// Get the texture up on the GPU
+						if (newTexture->getImageBufferOK() && newTexture->sendToGPU())
+						{
+							// The new texture is successfully created so we can add it to the texture map
+							// and point this material at it.
+							mTextureMap[material->mFilename] = newTexture;
+							material->mTexture = newTexture;
+
+							// Set clamping mode to repeat for 3DS model textures
+							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+						}
+						else
 						{
 							// If we fail to load the texture, delete the TOGLTexture object
 							delete newTexture;
 							newTexture = NULL;
 						}
-						else
-						{
-							// The new texture is successfully created so we can add it to the texture map
-							// and point this material at it.
-							fTextureMap[material->mFilename] = newTexture;
-							material->fTexture = newTexture;
-							
-							// Set clamping mode to repeat for 3DS model textures
-							 
-							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-						}
 					}
 				}
-				else if (theErr == fnfErr)
+				else
 				{
 					// The model needs a texture file we do not have, report which file is missing
-					string errorString = "Missing 3DS model external texture file; ";
-					errorString.append(material->mFilename);
-					errorString.append(" while loading ");
-					errorString.append(mFilename);
-					errorString.append(1, '.');
-					SignalString_(errorString.c_str());
+					LOG(ERROR) << "Missing 3DS model external texture file; " << material->mFilename << " while loading " << mFilename << ".";
 				}
 			}
 		}
 	}
 }
-*/
 
 //----------------------------------------------------------------------
 //	T3DSModel::LoadMetaData
@@ -630,7 +653,6 @@ void T3DSModel::SetFBOSize(GLuint inWidth, GLuint inHeight)
 	mFBOSize.y = (GLint)inHeight;
 }
 
-/*
 //----------------------------------------------------------------------
 //	T3DSModel::SetupOpenGLMaterialState
 //
@@ -642,7 +664,7 @@ void T3DSModel::SetFBOSize(GLuint inWidth, GLuint inHeight)
 //	2014/06/05	CLW			7.0.0		Reading all of chunk 4130
 //
 //----------------------------------------------------------------------
-bool T3DSModel::SetupOpenGLMaterialState(TOGLDrawer* inOpenGL, int inMaterialID, bool& ioIsTexturing)
+bool T3DSModel::SetupOpenGLMaterialState(int inMaterialID, bool& ioIsTexturing)
 {
 	const GLfloat kDefaultMaterialShininess = 0.1f * 128.0f;
 	const GLfloat kZeroLight[] = {0.0f, 0.0f, 0.0f, 1.0f};
@@ -661,15 +683,15 @@ bool T3DSModel::SetupOpenGLMaterialState(TOGLDrawer* inOpenGL, int inMaterialID,
 			return false;
 					
 		// Check to see if this object has a texture map, if so bind the texture to it.
-		if (theMaterial->fTexture)
+		if (theMaterial->mTexture)
 		{
 			// Turn on texture mapping and bind the texture map to the object by it's mMaterialID
-			inOpenGL->StateSetTexturingOn(theMaterial->fTexture->GetTextureID());
+			glTexturingOn(GL_TEXTURE_2D, theMaterial->mTexture->getTextureID());
 		}
 		else
 		{
 			// Turn off texture mapping
-			inOpenGL->StateSetTexturingOff();
+			glTexturingOff();
 		}
 					
 		// Set ambient material color
@@ -708,7 +730,7 @@ bool T3DSModel::SetupOpenGLMaterialState(TOGLDrawer* inOpenGL, int inMaterialID,
 		// YIKES!! No material definition. Bummer. Default to white material with default shininess.
 					
 		// Turn off texture mapping
-		inOpenGL->StateSetTexturingOff();
+		glTexturingOff();
 
 		// Turn off blending.
 		glDisable(GL_BLEND);
@@ -720,11 +742,10 @@ bool T3DSModel::SetupOpenGLMaterialState(TOGLDrawer* inOpenGL, int inMaterialID,
 		glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, &kDefaultMaterialShininess);
 	}
 
-	ioIsTexturing = (theMaterial != NULL) && (theMaterial->fTexture != NULL);
+	ioIsTexturing = (theMaterial != NULL) && (theMaterial->mTexture != NULL);
 
 	return true;
 }
-*/
 
 //----------------------------------------------------------------------
 //	T3DSModel::Render
@@ -781,11 +802,11 @@ void T3DSModel::Render(/* TOGLDrawer* inOpenGL */)
 							glEnd();
 
 						// Setup OpenGL state for this object
-//						if (!SetupOpenGLMaterialState(inOpenGL, theFace->mMaterialID, hasTexture))
-//						{
-//							glBegin(GL_TRIANGLES);
-//							continue;
-//						}
+						if (!SetupOpenGLMaterialState(theFace->mMaterialID, hasTexture))
+						{
+							glBegin(GL_TRIANGLES);
+							continue;
+						}
 
 						// Don't perform texturing if for some reason the texcoords are not present
 						hasTexture = hasTexture && (object->mTexCoords != NULL);
@@ -2174,275 +2195,4 @@ void T3DSModel::ComputeNormals()
 			}
 		}
 	}
-}
-
-//----------------------------------------------------------------------
-//	T3DSModelFactory::~T3DSModelFactory
-//
-//	Purpose:	Destructor.
-//
-//	Date		Initials	Version		Comments
-//  ----------	---------	----------	---------------------------
-//	2007/01/29	CLW			6.0.4		
-//
-//----------------------------------------------------------------------
-T3DSModelFactory::~T3DSModelFactory()
-{
-	// Blow all loaded models away.
-	RemoveAll();
-}
-
-T3DSModel* T3DSModelFactory::get(const char* inModelFileName, bool inLoadMetaOnly)
-{
-	T3DSModelMapItem mapItem;
-	mapItem.mModel = NULL;
-
-	// Construct path to model file
-	string modelPath = File::getModelsFolder().append("/").append(inModelFileName);
-
-	// Build File instance for model. Note the constructor does no file I/O.
-	File modelFile(modelPath);
-
-	// Have we already instantiated this model?
-	string modelName = modelFile.getFileNameWithoutExtension();
-	T3DSModelMap::iterator it = mModelMap.find(modelName);
-	if (it != mModelMap.end())
-	{
-		mapItem.mModel = it->second.mModel;
-
-		// We may need to load the model data. This happens when we've previously asked only for meta data
-		if (!inLoadMetaOnly && !mapItem.mModel->mModelDataLoaded)
-			mapItem.mModel->Load(modelFile, inLoadMetaOnly);
-	}
-	else
-	{
-		// We gotta create the model
-		mapItem.mModel = new T3DSModel;
-		if (mapItem.mModel)
-		{
-			if (mapItem.mModel->Load(modelFile, inLoadMetaOnly))
-			{
-				// Add new reference for this model
-//				mapItem.fPlanetRefs[inReferrer] = 1;
-
-				// Add the map item to the map
-				mModelMap[modelName] = mapItem;
-			}
-			else
-			{
-				// If model fails to load, we drop it.
-				delete mapItem.mModel;
-				mapItem.mModel = NULL;
-
-				LOG(ERROR) << "Model failed to load: " << modelFile.getFullPath();
-			}
-		}
-	}
-
-	return mapItem.mModel;
-}
-
-/*
-//----------------------------------------------------------------------
-//	T3DSModelFactory::GetInstance
-//
-//	Purpose:	Either constructs a new T3DSModel instance if the requested model
-//				has not already been loaded, or returns the existing one.
-//
-//	Inputs:		inReferrer - TStaticPlanet instance requesting model
-//				inModelFS - LFile identifying the 3DS model we require
-//				inIsAUserModel - True if the requested model has been specified by user.
-//
-//	Date		Initials	Version		Comments
-//  ----------	---------	----------	---------------------------
-//	2007/01/29	CLW			6.0.4		
-//
-//----------------------------------------------------------------------
-T3DSModel* T3DSModelFactory::GetInstance(TStaticPlanet* inReferrer, LFile& inModelFile, Boolean inLoadMetaOnly, Boolean inIsAUserModel)
-{
-	T3DSModelMapItem mapItem;
-
-	// Get the pretty file name. This is the key in our map of 3DS models.
-	LStr255 prettyName;
-	inModelFile.GetPrettyFileName(prettyName);
-	string modelName = prettyName.GetSTLString();
-	
-	// Have we already instantiated this model?
-	T3DSModelMap::iterator it = mModelMap.find(modelName);
-	if (it != mModelMap.end())
-	{
-		mapItem.mModel = it->second.mModel;
-		
-		// We may need to load the model data. This happens when we've previously asked only for meta data
-		if (!inLoadMetaOnly && !mapItem.mModel->mModelDataLoaded)
-			mapItem.mModel->Load(inModelFile, inLoadMetaOnly, inIsAUserModel);
-
-		// Add new reference for this model (stl map handles duplicates)
-		mapItem.fPlanetRefs[inReferrer] = 1;
-	}
-	else
-	{
-		// We gotta create the model
-		mapItem.mModel = NEW T3DSModel;
-		if (mapItem.mModel)
-		{
-			if (mapItem.mModel->Load(inModelFile, inLoadMetaOnly, inIsAUserModel))
-			{
-				// Add new reference for this model
-				mapItem.fPlanetRefs[inReferrer] = 1;
-
-				// Add the map item to the map
-				mModelMap[modelName] = mapItem;
-			}
-			else
-			{
-				// If model fails to load, we drop it.
-				delete mapItem.mModel;
-				mapItem.mModel = NULL;
-
-				// Inform the user that there was an error loading the model.
-				UModalDialogs::AskUser(	kAlertStopAlert,
-										LStr255("STRx_AlertMessages"),
-										LStr255("STRx_AlertMessages", "ErrorLoading3DSModel"),
-										LStr255("STRx_AlertMessages", "ErrorLoading3DSModelExplanation"),
-										LStr255("Default"),
-										LStr255("Undefined"),
-										LStr255("Undefined"));
-			}
-		}
-	}
-
-	return mapItem.mModel;
-}
-
-T3DSModel* T3DSModelFactory::GetInstanceByName(TStaticPlanet* inReferrer, string inModelName)
-{
-	T3DSModelMap::iterator it = mModelMap.find(inModelName);
-	if (it != mModelMap.end())
-		return it->second.mModel;
-	else
-		return NULL;
-}
-
-//----------------------------------------------------------------------
-//	T3DSModelFactory::RemoveInstance
-//
-//	Purpose:	Deallocates and removes the given model from the factory.
-//				Necessary to support user-specified models.
-//
-//	Inputs:		inReferrer - TStaticPlanet instance requesting removal
-//				inModelName - the pretty filename of the model.
-//
-//	Date		Initials	Version		Comments
-//  ----------	---------	----------	---------------------------
-//	2007/01/29	CLW			6.0.4		
-//
-//----------------------------------------------------------------------
-Boolean T3DSModelFactory::RemoveInstance(TStaticPlanet* inReferrer, string inModelName)
-{
-	Boolean removed = false;
-	T3DSModelMap::iterator it = mModelMap.find(inModelName);
-	if (it != mModelMap.end())
-	{
-		// Remove reference to TStaticPlanet
-		TStaticPlanetMap::iterator itRef = it->second.fPlanetRefs.find(inReferrer);
-		if (itRef != it->second.fPlanetRefs.end())
-		{
-			it->second.fPlanetRefs.erase(itRef);
-			inReferrer->m3DSModel = NULL;
-			inReferrer->fAlreadyAttemptedToLoad3DSModel = false;
-		}
-
-		// If there are no references remaining, delete the model
-		if (it->second.fPlanetRefs.empty())
-		{
-			// Destroy the model instance
-			if (it->second.mModel)
-				delete it->second.mModel;
-
-			// Erase the item from the map
-			mModelMap.erase(it);
-		}
-
-		removed = true;
-	}
-
-	return removed;
-}
-*/
-
-//----------------------------------------------------------------------
-//	T3DSModelFactory::RemoveAll
-//
-//	Purpose:	Iterates through map of T3DSModel instances	and deallocates
-//				them.
-//
-//	Date		Initials	Version		Comments
-//  ----------	---------	----------	---------------------------
-//	2007/06/18	CLW			6.0.8		
-//
-//----------------------------------------------------------------------
-void T3DSModelFactory::RemoveAll()
-{
-	// Iterate through the map and delete each T3DSModel instance
-	T3DSModelMap::iterator it;
-	for (it = mModelMap.begin(); it != mModelMap.end(); it++)
-	{
-		// Destroy the model instance
-		if (it->second.mModel)
-			delete it->second.mModel;
-
-		// Mark every referring TStaticPlanet*
-//		TStaticPlanetMap::iterator itRef;
-//		for (itRef = it->second.fPlanetRefs.begin(); itRef != it->second.fPlanetRefs.end(); itRef++)
-//		{
-//			itRef->first->fAlreadyAttemptedToLoad3DSModel = false;
-//			itRef->first->m3DSModel = NULL;
-//		}
-
-		// Clear the reference list
-//		it->second.fPlanetRefs.clear();
-	}
-
-	// Clear the map
-	mModelMap.clear();
-}
-
-//----------------------------------------------------------------------
-//	T3DSFaceComparator::operator()
-//
-//	Purpose:	This is a function object we need to properly sort the vector
-//				of T3DSFace instances based on opacity. In order to properly
-//				render translucent objects, we must render the objects that are
-//				opaque first, and then render objects by decreasing opacity.
-//				Sorting the vector of T3DSFace instances requires access to private
-//				data in the T3DSModel instance that owns the vector of T3DSObjects,
-//				therefore this function object is absolutely necessary.
-//
-//	Inputs:		inItem1	- comparison item 1
-//				inItem2	- comparison item 2
-//
-//	Outputs:	return true if item1 is more opaque than item2.
-//
-//	Date		Initials	Version		Comments
-//  ----------	---------	----------	---------------------------
-//	2007/02/02	CLW			6.0.4		
-//
-//----------------------------------------------------------------------
-bool T3DSFaceComparator::operator()(const T3DSFace& inItem1, const T3DSFace& inItem2) const
-{
-	// We're basically comparing transparencies of the materials used in either item.
-	// If item has no material, we will draw opaque and assign a value of 1 for the item
-	// If item has material, we assign the alpha value of the diffuse material property
-	float item1Value, item2Value;
-	if (inItem1.mMaterialID == -1)
-		item1Value = 1.0f;
-	else
-		item1Value = m3DSModel->mMaterials[inItem1.mMaterialID].mDiffuseColor[3];
-	if (inItem2.mMaterialID == -1)
-		item2Value = 1.0f;
-	else
-		item2Value = m3DSModel->mMaterials[inItem2.mMaterialID].mDiffuseColor[3];
-	
-	return item1Value > item2Value;
 }

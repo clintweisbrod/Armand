@@ -23,7 +23,34 @@
 #include "File.h"
 #include "StringUtils.h"
 
-extern string gAppFolder;
+string File::sAppFolder;
+
+void File::initAppFolder()	// Static
+{
+	// Initialize gAppFolder
+	TCHAR buffer[MAX_PATH];
+	if (GetModuleFileName(NULL, buffer, MAX_PATH) > 0)
+	{
+		wstring moduleName(buffer);
+		wstring::size_type pos = moduleName.find_last_of(L"\\/");
+		wstring path = moduleName.substr(0, pos);
+		sAppFolder = string(path.begin(), path.end());
+
+		// First replace all '\\' with '/'.
+		std::replace(sAppFolder.begin(), sAppFolder.end(), '\\', '/');
+
+		// Now remove any "/../" with correct symantics
+		string::size_type pos2 = sAppFolder.rfind("/../");
+		while (pos2 != string::npos)
+		{
+			string::size_type pos1 = sAppFolder.rfind("/", pos2 - 1);
+			if (pos1 != string::npos)
+				sAppFolder.erase(pos1, pos2 - pos1 + 3);
+
+			pos2 = sAppFolder.rfind("/../");
+		}
+	}
+}
 
 bool File::folderExists(const char* inRelativePath)	// static
 {
@@ -76,9 +103,8 @@ File::File(string& inRelativeFilePath)
 	}
 
 	// Construct full path to this file
-	mFullPath = gAppFolder;
-	mFullPath.append(1, '/');
-	mFullPath.append(mRelativePath);
+	mFullPath = sAppFolder;
+	mFullPath.append("/").append(mRelativePath);
 }
 
 File::~File()

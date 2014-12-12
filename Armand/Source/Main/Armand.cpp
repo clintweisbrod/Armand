@@ -20,8 +20,8 @@
 #include "stdafx.h"
 #include <algorithm>
 #include "Main/Armand.h"
+#include "Utilities/File.h"
 #include "OpenGL/OpenGLWindow.h"
-#include "Models/3ds.h"
 #include "Utilities/Timer.h"
 #include "Math/vecMath.h"
 
@@ -33,7 +33,6 @@ TCHAR szTitle[MAX_LOADSTRING];					// The title bar text
 TCHAR szWindowClass[MAX_LOADSTRING];			// the main window class name
 OpenGLWindow* gOpenGLWindow;
 bool gActive = true;		// Window active flag set to true by default
-string gAppFolder;
 
 _INITIALIZE_EASYLOGGINGPP
 
@@ -77,29 +76,9 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	Vec3d largeVec;
 	Vec3i128toVec3d(largeVec128, largeVec);
 */
-	// Initialize gAppFolder
-	TCHAR buffer[MAX_PATH];
-	if (GetModuleFileName(NULL, buffer, MAX_PATH) > 0)
-	{
-		wstring moduleName(buffer);
-		wstring::size_type pos = moduleName.find_last_of(L"\\/");
-		wstring path = moduleName.substr(0, pos);
-		gAppFolder = string(path.begin(), path.end());
+	// Determine the application folder
+	File::initAppFolder();
 
-		// First replace all '\\' with '/'.
-		std::replace(gAppFolder.begin(), gAppFolder.end(), '\\', '/');
-
-		// Now remove any "/../" with correct symantics
-		string::size_type pos2 = gAppFolder.rfind("/../");
-		while (pos2 != string::npos)
-		{
-			string::size_type pos1 = gAppFolder.rfind("/", pos2 - 1);
-			if (pos1 != string::npos)
-				gAppFolder.erase(pos1, pos2 - pos1 + 3);
-
-			pos2 = gAppFolder.rfind("/../");
-		}
-	}
 
 	// Create "Logs" folder if necessary.
 	if (!File::folderExists("Logs"))
@@ -116,12 +95,6 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 
 
 	// Test area
-
-
-	// Testing 3DS model loading
-//	T3DSModel* model = T3DSModelFactory::inst()->get("Apollo_3rdStage.3ds");
-//	if (model)
-//		T3DSModelFactory::inst()->RemoveAll();
 
 
 
@@ -169,7 +142,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 				if (gOpenGLWindow->getKeys()[VK_ESCAPE])	// Was there a quit received?
 					done = true;							// ESC or DrawGLScene signalled a quit
 				else
-					gOpenGLWindow->render();
+					gOpenGLWindow->drawScene();
 			}
 
 			if (gOpenGLWindow->getKeys()[VK_F1])	// Is F1 being pressed?
@@ -287,8 +260,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 
 		case WM_SIZE:
-			gOpenGLWindow->resizeGLScene(LOWORD(lParam), HIWORD(lParam));
-			gOpenGLWindow->render();
+			gOpenGLWindow->resizeScene(LOWORD(lParam), HIWORD(lParam));
+			gOpenGLWindow->drawScene();
 			return 0;
 
 		case WM_MOUSEMOVE:

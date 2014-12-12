@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
 // Copyright (C) 2014 Clint Weisbrod. All rights reserved.
 //
-// GLUtilis.h
+// 3DSModelFactory.h
 //
-// Declares handy GL-related functions.
+// Declares a factory class for creation and management of 3DS models.
 //
 // THIS SOFTWARE IS PROVIDED BY CLINT WEISBROD "AS IS" AND ANY EXPRESS OR
 // IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
@@ -19,8 +19,33 @@
 
 #pragma once
 
-#include <GL/glew.h>
+#include <string>
+#include <map>
+#include "Utilities/Singleton.h"
+#include "3DSModel.h"
 
-bool glCheckForError();
-void glTexturingOn(GLuint inTextureMode, GLuint inTextureID);
-void glTexturingOff();
+using namespace std;
+
+struct T3DSModelMapItem
+{
+	T3DSModel*			mModel;
+	//	TStaticPlanetMap	fPlanetRefs;
+};
+typedef map<string, T3DSModelMapItem>	T3DSModelMap;
+
+class T3DSModelFactory : public Singleton<T3DSModelFactory>
+{
+	friend class Singleton<T3DSModelFactory>;
+
+public:
+	T3DSModel*	get(const char* inModelFileName, bool inLoadMetaOnly = false);
+	//		T3DSModel*	GetInstance(TStaticPlanet* inReferrer, LFile& inModelFile, Boolean inLoadMetaOnly = false, Boolean inIsAUserModel = false);
+	//		T3DSModel*	GetInstanceByName(TStaticPlanet* inReferrer, string inModelName);
+	//		Boolean		RemoveInstance(TStaticPlanet* inReferrer, string inModelName);
+	void		RemoveAll();
+
+private:
+	virtual ~T3DSModelFactory();
+
+	T3DSModelMap	mModelMap;
+};

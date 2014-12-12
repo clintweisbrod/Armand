@@ -23,7 +23,7 @@
 #include "OpenGLWindow.h"
 #include "ShaderFactory.h"
 #include "Fonts/FontFactory.h"
-#include "Models/3ds.h"
+#include "Models/3DSModelFactory.h"
 
 bool OpenGLWindow::sEnabledGLExtensions = false;
 
@@ -506,7 +506,7 @@ bool OpenGLWindow::create(HINSTANCE inInstance, WNDPROC inWndProc, WORD inMenuID
 			ShowWindow(mhWnd, mCmdShow);						// Make the window visible
 			SetForegroundWindow(mhWnd);							// Slightly higher priority
 			SetFocus(mhWnd);									// Sets keyboard focus to the window
-			resizeGLScene(mSceneSize.x, mSceneSize.y);
+			resizeScene(mSceneSize.x, mSceneSize.y);
 
 			initGL();											// Initialize our newly created GL window
 			mFrameCount = 0;									// Reset frame count
@@ -516,56 +516,6 @@ bool OpenGLWindow::create(HINSTANCE inInstance, WNDPROC inWndProc, WORD inMenuID
 	}
 
 	return true;										// Success
-}
-
-void OpenGLWindow::initGL()								// All setup for OpenGL goes here
-{
-	glShadeModel(GL_SMOOTH);							// Enable smooth shading
-	glClearColor(mClearColor.x, mClearColor.y, mClearColor.z, 1.0f);
-	glClearDepth(1.0f);									// Depth buffer setup
-//	glEnable(GL_DEPTH_TEST);							// Enables depth testing
-//	glDepthFunc(GL_LEQUAL);								// The type of depth testing to do
-	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);	// Really nice perspective calculations
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	if (mHasMultisampleBuffer)
-	{
-		glEnable(GL_MULTISAMPLE_ARB);
-		glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST);
-	}
-
-//	File texFile("data/TestImage.dds");
-//	theTexture = new Texture(texFile);
-	theTexture = new Texture("data/TestImage.dds");
-	if (theTexture->getImageBufferOK())
-		theTexture->sendToGPU();
-
-	mGLInitialized = true;
-}
-
-void OpenGLWindow::resizeGLScene(GLsizei inWidth, GLsizei inHeight)		// Resize and initialize the GL window
-{
-	if (inHeight == 0)									// Prevent a divide by zero by
-		inHeight = 1;									// making height equal one
-
-	mSceneSize.x = inWidth;								// Remember width
-	mSceneSize.y = inHeight;							// Remember height
-
-	glViewport(0, 0, mSceneSize.x, mSceneSize.y);		// Reset the current viewport
-
-	// Notify FontFactory of scene size change
-	FontFactory::inst()->sceneSizeChanged(mSceneSize);
-
-/*
-	glMatrixMode(GL_PROJECTION);						// Select the projection matrix
-	glLoadIdentity();									// Reset the projection matrix
-
-	// Calculate the aspect ratio of the window
-	GLfloat aspectRatio = (GLfloat)mWindowSize.cx / (GLfloat)mWindowSize.cy;
-	gluPerspective(45.0f, aspectRatio, 0.1f, 200.0f);
-
-	glMatrixMode(GL_MODELVIEW);							// Select the modelview matrix
-	glLoadIdentity();									// Reset the modelview matrix
-*/
 }
 
 void OpenGLWindow::destroy()							// Properly kill the window
@@ -608,7 +558,186 @@ void OpenGLWindow::destroy()							// Properly kill the window
 	mCreated = false;
 }
 
-void OpenGLWindow::render()								// Here's where we do all the drawing
+// This method is called once on app startup.
+// Good place to initialize any global OpenGL resources.
+void OpenGLWindow::initGL()								// All setup for OpenGL goes here
+{
+	// Make sure all our factory instances are created
+	FontFactory* ff = FontFactory::inst();
+	ShaderFactory* sf = ShaderFactory::inst();
+	T3DSModelFactory* mf = T3DSModelFactory::inst();
+	if (!ff || !sf || !mf)
+		return;
+
+
+
+	// For testing 3DS models
+	glDrawBuffer(GL_BACK); // draw into the back buffer
+	// anti aliasing -- see page 236, example 6-3 OpenGL programming guide, 3rd ed.
+
+	// default has blending on, with additive saturation.
+	glEnable(GL_BLEND);
+	glBlendEquation(GL_FUNC_ADD);
+	glBlendColor(0.0, 0.0, 0.0, 0.0);
+
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE); 	// also try GL_ONE_MINUS_SRC_ALPHA as second param
+
+	// Lines are always done as smoothed..
+	glEnable(GL_LINE_SMOOTH);
+	glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+
+	// polygons are by default filled in
+	glPolygonMode(GL_FRONT, GL_FILL);
+	glPolygonMode(GL_BACK, GL_FILL);
+	glDisable(GL_POLYGON_SMOOTH);
+	glHint(GL_POLYGON_SMOOTH_HINT, GL_DONT_CARE); // this is the line that slows down some PC driver/card combos, if you pass nicest in
+	//glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST ); does not seem to do anything
+
+	// 3DS models use local-viewer light model. Make sure it is disabled.
+	glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_FALSE);
+
+	// Speed hints.....
+	//Be sure you have turned off lighting also if you don't need it:
+	// and specify the colors directly.
+	glDisable(GL_LIGHTING);
+	glDisable(GL_LIGHT0);
+	glDisable(GL_LIGHT1);
+
+	//Also, use 
+	glShadeModel(GL_FLAT); //to turn off color interpolation.
+
+	// this is so we get perspective on the texture mapping more often. see TRenderReadyTriangle::CalcZCoord and planet mapping
+	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);	// turn off the depth buffer:
+
+	glDisable(GL_DEPTH_TEST);
+	glDepthMask(GL_FALSE);		// RSW 8/28/2002
+
+	// alpha cut off by default
+	glDisable(GL_ALPHA_TEST);
+
+	// Including this because State3DSModel() enables culling of back-facing polygons and the default GL state is disabled.
+	glDisable(GL_CULL_FACE);
+
+	// CLW - Sep 22, 2006 - I'm disabling stencil test disable because we manage stencil in only a couple places and don't
+	// have to depend on setting default OpenGL state to turn off stenciling. Need this to manage drawing sky with stencil
+	// test. Stencil test is always off by default in an OpenGL state machine. So unless we explicitly call
+	// glEnable(GL_STENCIL_TEST);, we are guaranteed that it is off.
+	//	glDisable(GL_STENCIL_TEST);	// no stenciling by default
+
+	// the default texture functions:
+	// Added by RSW 9/11/2002 - Don't rely on this being the default
+	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+	// If we have a multisample buffer, lets use it!
+	//	if (IsShiftKeyDown())
+	//	{
+	if (mHasMultisampleBuffer && GLEW_ARB_multisample)
+	{
+		glEnable(GL_MULTISAMPLE_ARB);
+		glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST);
+	}
+	else
+		glDisable(GL_MULTISAMPLE_ARB);
+
+	// VPoint sprite stuff
+	glDisable(GL_POINT_SPRITE_ARB);
+	glPointSize(1.0f);
+
+	// Setup lighting
+	GLfloat zeroLight[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	GLfloat whiteLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	GLfloat defaultAmbient[] = { 0.2f, 0.2f, 0.2f, 1.0f };
+
+#ifdef GL_LIGHT_MODEL_COLOR_CONTROL_EXT
+	glLightModeli(GL_LIGHT_MODEL_COLOR_CONTROL_EXT, GL_SINGLE_COLOR);	// default GL state
+#endif
+
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, defaultAmbient);	// default GL state
+	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_FALSE);
+	glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
+
+	// Turn off any emissive material properties
+	glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, zeroLight);
+
+	// Turn on Light0 and enable lighting
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+
+	glLightfv(GL_LIGHT0, GL_AMBIENT, zeroLight);	// default GL state
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, whiteLight);	// default GL state
+	glLightfv(GL_LIGHT0, GL_SPECULAR, whiteLight);	// default GL state
+	glLightfv(GL_LIGHT1, GL_AMBIENT, zeroLight);
+	glLightfv(GL_LIGHT1, GL_SPECULAR, zeroLight);
+
+	// Enable depth testing
+	glDepthMask(GL_TRUE);
+	glClear(GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_DEPTH_TEST);
+
+	// Enable surface culling
+	glEnable(GL_CULL_FACE);
+
+	// Smooth shading
+	glShadeModel(GL_SMOOTH);
+	glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+
+	// No blending to start with
+	glDisable(GL_BLEND);	// 3DS model objects are sorted by material opacity so blending is off to start with
+
+
+
+
+/*
+	glShadeModel(GL_SMOOTH);							// Enable smooth shading
+	glClearColor(mClearColor.x, mClearColor.y, mClearColor.z, 1.0f);
+	glClearDepth(1.0f);									// Depth buffer setup
+//	glEnable(GL_DEPTH_TEST);							// Enables depth testing
+//	glDepthFunc(GL_LEQUAL);								// The type of depth testing to do
+	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);	// Really nice perspective calculations
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	if (mHasMultisampleBuffer)
+	{
+		glEnable(GL_MULTISAMPLE_ARB);
+		glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST);
+	}
+*/
+//	File texFile("data/TestImage.dds");
+//	theTexture = new Texture(texFile);
+	theTexture = new Texture("Data/TestImage.dds");
+	if (theTexture->getImageBufferOK())
+		theTexture->sendToGPU();
+
+	mGLInitialized = true;
+}
+
+void OpenGLWindow::resizeScene(GLsizei inWidth, GLsizei inHeight)		// Resize and initialize the GL window
+{
+	if (inHeight == 0)									// Prevent a divide by zero by
+		inHeight = 1;									// making height equal one
+
+	mSceneSize.x = inWidth;								// Remember width
+	mSceneSize.y = inHeight;							// Remember height
+
+	glViewport(0, 0, mSceneSize.x, mSceneSize.y);		// Reset the current viewport
+
+	// Notify FontFactory of scene size change
+	FontFactory::inst()->sceneSizeChanged(mSceneSize);
+
+/*
+	glMatrixMode(GL_PROJECTION);						// Select the projection matrix
+	glLoadIdentity();									// Reset the projection matrix
+
+	// Calculate the aspect ratio of the window
+	GLfloat aspectRatio = (GLfloat)mWindowSize.cx / (GLfloat)mWindowSize.cy;
+	gluPerspective(45.0f, aspectRatio, 0.1f, 200.0f);
+
+	glMatrixMode(GL_MODELVIEW);							// Select the modelview matrix
+	glLoadIdentity();									// Reset the modelview matrix
+*/
+}
+
+void OpenGLWindow::drawScene()
 {
 	if (!mGLInitialized)
 		return;
@@ -619,71 +748,11 @@ void OpenGLWindow::render()								// Here's where we do all the drawing
 	// Handle any keyboard input
 	handleKeys();
 
-	// Clear screen and modelview matrix
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	// Clear screen and depth buffer
+	// Render the scene
+	preRender();
+	render();
+	postRender();
 
-	// FontFactory testing
-	string fontName("Verdana");
-	wstring text(L"\260 A quick brown fox jumped over the lazy dog. !@#$%^&*()-=+{}[];:'<>,.?/`~");
-	FontFactory* ff = FontFactory::inst();
-	FontRenderer* fontRenderer = ff->getFontRenderer(fontName);
-
-
-	// Testing texture loading
-	glMatrixMode(GL_PROJECTION);						// Select the projection matrix
-	glLoadIdentity();									// Reset the projection matrix
-	glOrtho(0.0, mSceneSize.x, mSceneSize.y, 0.0, -1.0, 1.0);
-
-	glMatrixMode(GL_MODELVIEW);							// Select the modelview matrix
-	glLoadIdentity();									// Reset the modelview matrix
-
-	glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, theTexture->getTextureID());
-	Vec2i dimensions = theTexture->getDimensions();
-	Vec2f texCoords = theTexture->getTexCoords();
-	glBegin(GL_QUADS);
-		glTexCoord2f(0, 0);						glVertex2i(0, 0);
-		glTexCoord2f(0, texCoords.t);			glVertex2i(0, dimensions.y);
-		glTexCoord2f(texCoords.s, texCoords.t); glVertex2i(dimensions.x, dimensions.y);
-		glTexCoord2f(texCoords.s, 0);			glVertex2i(dimensions.x, 0);
-	glEnd();
-
-	
-//	File texFile("data/TestImage.dds");
-//	Texture* tex = new Texture;
-//	if (tex)
-//	{
-//		if (tex->load(texFile))
-//			GLuint texid = tex->sendBufferToGPU();
-//		delete tex;
-//	}
-
-	// The code below renders the text string above 1000 times with random positions, sizes
-	// and angles. On my 2010 Macbook Pro, framerate was 26.6 fps. Pretty damn good
-	// under normal circumstances far fewer than 1000 text items will be rendered per frame
-	// and each item will certainly be much smaller than the 72-char string we're using.
-/*
-	std::random_device rd;
-	std::mt19937 gen(rd());
-	std::uniform_int_distribution<> xDis(0, mWindowSize.cx);
-	std::uniform_int_distribution<> yDis(0, mWindowSize.cy);
-	std::uniform_int_distribution<> sizeDis(10, 36);
-	std::uniform_int_distribution<> angleDis(0, 359);
-	TVector2f position;
-	int fontSize;
-	float angle;
-	for (int n = 0; n < 50; ++n)
-	{
-	position.x = (GLfloat)xDis(gen);
-	position.y = (GLfloat)yDis(gen);
-	fontSize = sizeDis(gen);
-	angle = (float)angleDis(gen);
-	fontRenderer->render(text, fontSize, position, TVector4f(1.0f, 1.0f, 1.0f, 1.0f), angle);
-	}
-*/
-	fontRenderer->render(text, 30, Vec2f(100, 100), Vec4f(1.0f, 1.0f, 1.0f, 1.0f), 30);
-
-	SwapBuffers(mhDC);									// Swap buffers (double buffering)
 	mFrameCount++;
 
 	// Average the frame render time over 50 frames
@@ -702,6 +771,117 @@ void OpenGLWindow::render()								// Here's where we do all the drawing
 		wstring fpsString = fpsStream.str();
 		SetWindowText(mhWnd, fpsString.c_str());
 	}
+}
+
+void OpenGLWindow::preRender()
+{
+}
+
+void OpenGLWindow::render()
+{
+	// Clear screen and modelview matrix
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	// Clear screen and depth buffer
+
+/*
+	// Testing texture loading
+	glMatrixMode(GL_PROJECTION);						// Select the projection matrix
+	glLoadIdentity();									// Reset the projection matrix
+	glOrtho(0.0, mSceneSize.x, mSceneSize.y, 0.0, -1.0, 1.0);
+
+	glMatrixMode(GL_MODELVIEW);							// Select the modelview matrix
+	glLoadIdentity();									// Reset the modelview matrix
+
+	glDisable(GL_LIGHTING);
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, theTexture->getTextureID());
+	Vec2i dimensions = theTexture->getDimensions();
+	Vec2f texCoords = theTexture->getTexCoords();
+	Vec2i screenLocationTL = (mSceneSize - dimensions) / 2;
+	Vec2i screenLocationBR = screenLocationTL + dimensions;
+	glBegin(GL_QUADS);
+	glTexCoord2f(0, 0);						glVertex2i(screenLocationTL.x, screenLocationTL.y);
+	glTexCoord2f(0, texCoords.t);			glVertex2i(screenLocationTL.x, screenLocationBR.y);
+	glTexCoord2f(texCoords.s, texCoords.t); glVertex2i(screenLocationBR.x, screenLocationBR.y);
+	glTexCoord2f(texCoords.s, 0);			glVertex2i(screenLocationBR.x, screenLocationTL.y);
+	glEnd();
+*/
+
+/*
+	// FontFactory testing
+	string fontName("Verdana");
+	wstring text(L"\260 A quick brown fox jumped over the lazy dog. !@#$%^&*()-=+{}[];:'<>,.?/`~");
+
+	FontRenderer* fontRenderer = FontFactory::inst()->getFontRenderer(fontName);
+
+	// The code below renders the text string above 1000 times with random positions, sizes
+	// and angles. On my 2010 Macbook Pro, framerate was 26.6 fps. Pretty damn good
+	// under normal circumstances far fewer than 1000 text items will be rendered per frame
+	// and each item will certainly be much smaller than the 72-char string we're using.
+
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_int_distribution<> xDis(0, mWindowSize.cx);
+	std::uniform_int_distribution<> yDis(0, mWindowSize.cy);
+	std::uniform_int_distribution<> sizeDis(10, 36);
+	std::uniform_int_distribution<> angleDis(0, 359);
+	TVector2f position;
+	int fontSize;
+	float angle;
+	for (int n = 0; n < 50; ++n)
+	{
+	position.x = (GLfloat)xDis(gen);
+	position.y = (GLfloat)yDis(gen);
+	fontSize = sizeDis(gen);
+	angle = (float)angleDis(gen);
+	fontRenderer->render(text, fontSize, position, TVector4f(1.0f, 1.0f, 1.0f, 1.0f), angle);
+	}
+
+	glEnable(GL_BLEND);
+	fontRenderer->render(text, 30, Vec2f(100, 100), Vec4f(1.0f, 1.0f, 1.0f, 1.0f), 30);
+*/
+
+
+
+	// Testing 3DS model loading
+	glEnable(GL_LIGHTING);
+	glMatrixMode(GL_PROJECTION);						// Select the projection matrix
+	glLoadIdentity();									// Reset the projection matrix
+
+	// Calculate the aspect ratio of the window
+	GLfloat aspectRatio = (GLfloat)mSceneSize.x / (GLfloat)mSceneSize.y;
+	gluPerspective(60.0f, aspectRatio, 0.1f, 200.0f);
+
+	glMatrixMode(GL_MODELVIEW);							// Select the modelview matrix
+	glLoadIdentity();									// Reset the modelview matrix
+	
+	static Vec3d rot;
+	static Vec3d dRot(0.1, 0.2, 0.3);
+	
+	T3DSModel* model = T3DSModelFactory::inst()->get("Apollo_3rdStage.3ds");
+	if (model)
+	{
+		glTranslated(0.0, 0.0, model->GetModelBoundingRadius() * -2);
+		glRotated(rot.x, 1, 0, 0);
+		glRotated(rot.y, 0, 1, 0);
+		glRotated(rot.z, 0, 0, 1);
+		
+		rot += dRot;
+		if (rot.x > 360)
+			rot.x -= 360;
+		if (rot.y > 360)
+			rot.y -= 360;
+		if (rot.z > 360)
+			rot.z -= 360;
+		
+		model->Render();
+	}
+
+//	T3DSModelFactory::inst()->RemoveAll();
+}
+
+void OpenGLWindow::postRender()
+{
+	SwapBuffers(mhDC);	// Swap buffers (double buffering)
 }
 
 void OpenGLWindow::setClearColor(const GLfloat inRed, const GLfloat inGreen, const GLfloat inBlue)

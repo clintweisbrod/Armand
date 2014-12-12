@@ -43,8 +43,8 @@ class OpenGLWindow
 		void			getSceneSize(Vec2i& ioSceneSize) { ioSceneSize = mSceneSize; };
 
 		// OpenGL
-		void			render();
-		void			resizeGLScene(GLsizei inWidth, GLsizei inHeight);
+		void			drawScene();
+		void			resizeScene(GLsizei inWidth, GLsizei inHeight);
 		
 		// User input
 		void			mouseEvent(WORD inXPos, WORD inYPos, bool inCtrlDown, bool inShiftDown, bool inLeftDown, bool inMiddleDown, bool inRightDown);
@@ -63,9 +63,14 @@ class OpenGLWindow
 									 TCHAR* inTitle, int inWidth, int inHeight, int inBitsPerPixel, bool inFullscreenFlag);
 		bool			setupOpenGLForWindow(GLuint inPixelFormat, PIXELFORMATDESCRIPTOR* inPFD);
 		GLuint			selectBestPixelFormatUsingWGL(HDC hDC);
-		void			initGL();
 		double			getCurrentSeconds() const;
 		void			handleKeys();
+
+		// OpenGL
+		void			initGL();
+		void			preRender();
+		void			render();
+		void			postRender();
 
 		bool			mCreated;
 		bool			mGLInitialized;

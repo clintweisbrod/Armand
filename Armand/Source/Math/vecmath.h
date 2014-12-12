@@ -487,8 +487,7 @@ template<class T> bool operator!=(const Vector2<T>& a, const Vector2<T>& b)
 
 template<class T> Vector2<T> operator/(const Vector2<T>& v, T s)
 {
-	T is = 1 / s;
-	return Vector2<T>(is * v.x, is * v.y);
+	return Vector2<T>(v.x / s, v.y / s);
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -622,8 +621,7 @@ template<class T> bool operator!=(const Vector3<T>& a, const Vector3<T>& b)
 
 template<class T> Vector3<T> operator/(const Vector3<T>& v, T s)
 {
-    T is = 1 / s;
-    return Vector3<T>(is * v.x, is * v.y, is * v.z);
+    return Vector3<T>(v.x / s, v.y / s, v.z / s);
 }
 
 template<class T> T dot(const Vector3<T>& a, const Vector3<T>& b)
@@ -761,8 +759,7 @@ template<class T> bool operator!=(const Vector3_ttmath<T>& a, const Vector3_ttma
 
 template<class T> Vector3_ttmath<T> operator/(const Vector3_ttmath<T>& v, T s)
 {
-	T is = 1 / s;
-	return Vector3<T>(is * v.x, is * v.y, is * v.z);
+	return Vector3<T>(v.x / s, v.y / s, v.z / s);
 }
 
 template<class T> T dot(const Vector3_ttmath<T>& a, const Vector3_ttmath<T>& b)

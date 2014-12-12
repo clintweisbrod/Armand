@@ -26,11 +26,15 @@ using namespace std;
 class File
 {
 public:
-	// Application folder locations
-	static string getDataFolder() { return "data"; }
-	static string getResourcesFolder() { return "resources"; }
-	static string getShadersFolder() { return getResourcesFolder().append("/").append("shaders"); }
-	static string getModelsFolder() { return getDataFolder().append("/").append("models"); }
+	// Returns absolute path
+	static void initAppFolder();
+	static string getAppFolderFullPath() { return sAppFolder; }
+
+	// Returns paths relative to application folder
+	static string getDataFolder() { return "Data"; }
+	static string getResourcesFolder() { return "Resources"; }
+	static string getShadersFolder() { return getResourcesFolder().append("/").append("Shaders"); }
+	static string getModelsFolder() { return getDataFolder().append("/").append("Models"); }
 
 	static bool	folderExists(const char* inRelativePath);
 	static bool createFolder(const char* inRelativePath);
@@ -51,6 +55,8 @@ public:
 	string	getFileNameWithoutExtension() const { return mFileNameWithoutExtension; }
 
 private:
+	static string sAppFolder;
+
 	string	mRelativePath;
 	string	mFullPath;
 	string	mFileName;

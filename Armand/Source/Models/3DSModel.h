@@ -564,6 +564,7 @@
 #include "Math/vecmath.h"
 #include "Utilities/File.h"
 #include "Utilities/Singleton.h"
+#include "OpenGL/Textures/Texture.h"
 
 #define M3D_CHUNKTYPE_VERSION			0x0002			// This gives the version of the .3ds file
 #define M3D_CHUNKTYPE_COLOR_FLOAT		0x0010
@@ -687,7 +688,7 @@ struct T3DSMaterialInfo
 	float			mAmbientColor[4];
 	float			mDiffuseColor[4];
 	float			mSpecularColor[4];
-//	TOGLTexture*	fTexture;		// the texture
+	Texture*		mTexture;		// the texture
 	float			mShininess;		// the material shininess [0.0, 128.0]
 	float			mUScale;		// u scale
 	float			mVScale;		// v scale
@@ -745,7 +746,7 @@ struct T3DSChunk
 
 typedef vector<T3DSMaterialInfo>	TMaterialVec;
 typedef vector<T3DSObject>			T3DSObjectVec;
-//typedef map<string, TOGLTexture*>	TModelTextureMap;
+typedef map<string, Texture*>		TModelTextureMap;
 
 //----------------------------------------------------------------------
 //	Class:		T3DSModel
@@ -823,15 +824,15 @@ class T3DSModel
 		void		ComputeNormals();
 		void		SortFaces();
 		void		ComputeBoundingRadius();
-//		void		LoadTextures(bool inIsAUserModel = false);
+		void		LoadTextures();
 		void		LoadMetaData(File& inModelFile);
 		void		AdjustTextureCoordinates();
 		void		CleanUp();
-//		bool		SetupOpenGLMaterialState(TOGLDrawer* inOpenGL, int inMaterialID, bool& ioIsTexturing);
+		bool		SetupOpenGLMaterialState(int inMaterialID, bool& ioIsTexturing);
 		
 		TMaterialVec		mMaterials;		// The list of material information (Textures and colors)
 		T3DSObjectVec		mObjects;		// The object list for our model
-//		TModelTextureMap	fTextureMap;
+		TModelTextureMap	mTextureMap;
 		
 		File				mFile;
 		string				mFilename;
@@ -848,46 +849,6 @@ class T3DSModel
 	
 		bool				mModelDataLoaded;
 		bool				mMetaDataLoaded;
-};
-
-
-//typedef map<TStaticPlanet*, int>	TStaticPlanetMap;
-struct T3DSModelMapItem
-{
-	T3DSModel*			mModel;
-//	TStaticPlanetMap	fPlanetRefs;
-};
-typedef map<string, T3DSModelMapItem>	T3DSModelMap;
-//----------------------------------------------------------------------
-//	Class:		T3DSModelFactory
-//
-//	Purpose:	This class limits the instatiation of T3DSModel instances by
-//				filename. This is necessary since we are now using default 3DS
-//				models for satellites. We don't need to instantiate an instance
-//				of the same default 3DS model for every satellite that uses it.
-//				Therefore, this singleton class will handle creation and destruction
-//				of all 3DS model instances.
-//
-//	Date		Initials	Version		Comments
-//  ----------	---------	----------	---------------------------
-//	2007/01/29	CLW			6.0.4		
-//
-//----------------------------------------------------------------------
-class T3DSModelFactory : public Singleton<T3DSModelFactory>
-{
-	friend class Singleton<T3DSModelFactory>;
-
-	public:
-		T3DSModel*	get(const char* inModelFileName, bool inLoadMetaOnly = false);
-//		T3DSModel*	GetInstance(TStaticPlanet* inReferrer, LFile& inModelFile, Boolean inLoadMetaOnly = false, Boolean inIsAUserModel = false);
-//		T3DSModel*	GetInstanceByName(TStaticPlanet* inReferrer, string inModelName);
-//		Boolean		RemoveInstance(TStaticPlanet* inReferrer, string inModelName);
-		void		RemoveAll();
-
-	private:      
- 		virtual ~T3DSModelFactory();
- 		
- 		T3DSModelMap	mModelMap;
 };
 
 //----------------------------------------------------------------------
@@ -909,9 +870,9 @@ class T3DSModelFactory : public Singleton<T3DSModelFactory>
 class T3DSFaceComparator : public std::binary_function<const T3DSFace&, const T3DSFace&, bool>
 {
 	T3DSModel*	m3DSModel;
-	
-	public:
-		T3DSFaceComparator(T3DSModel* in3DSModel)	{ m3DSModel = in3DSModel; };
-		
-		bool operator()(const T3DSFace& inItem1, const T3DSFace& inItem2) const;
+
+public:
+	T3DSFaceComparator(T3DSModel* in3DSModel)	{ m3DSModel = in3DSModel; };
+
+	bool operator()(const T3DSFace& inItem1, const T3DSFace& inItem2) const;
 };

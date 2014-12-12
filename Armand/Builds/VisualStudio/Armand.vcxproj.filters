@@ -177,9 +177,6 @@
     <ClInclude Include="..\..\Source\OpenGL\ShaderFactory.h">
       <Filter>Header Files\OpenGL</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Source\Models\3ds.h">
-      <Filter>Header Files\Models</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Source\Utilities\File.h">
       <Filter>Header Files\Utilities</Filter>
     </ClInclude>
@@ -204,6 +201,12 @@
     <ClInclude Include="..\..\Source\OpenGL\Textures\TextureManager.h">
       <Filter>Header Files\OpenGL\Textures</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Source\Models\3DSModel.h">
+      <Filter>Header Files\Models</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Models\3DSModelFactory.h">
+      <Filter>Header Files\Models</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\Main\Armand.cpp">
@@ -223,9 +226,6 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\OpenGL\ShaderFactory.cpp">
       <Filter>Source Files\OpenGL</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\Models\3ds.cpp">
-      <Filter>Source Files\Models</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Utilities\File.cpp">
       <Filter>Source Files\Utilities</Filter>
@@ -247,6 +247,12 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\OpenGL\Textures\TextureManager.cpp">
       <Filter>Source Files\OpenGL\Textures</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Models\3DSModel.cpp">
+      <Filter>Source Files\Models</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Models\3DSModelFactory.cpp">
+      <Filter>Source Files\Models</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -154,7 +154,7 @@ robocopy "..\..\Source\Resources" "$(OutDir)Resources" /e /mt
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>..\..\SDKs\glew\lib\Release\x64;freetype\$(Platform)\$(Configuration);freetype-gl\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>shlwapi.lib;glew32.lib;opengl32.lib;glu32.lib;freetype.lib;freetype-gl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>shlwapi.lib;windowscodecs.lib;msimg32.lib;glew32.lib;opengl32.lib;glu32.lib;freetype.lib;freetype-gl.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy "..\..\SDKs\glew\bin\Release\x64\glew32.dll" "$(OutDir)" /y
@@ -200,7 +200,8 @@ robocopy "..\..\Source\Resources" "$(OutDir)Resources" /e /mt
     <ClInclude Include="..\..\Source\Math\ttmath\ttmathuint_x86.h" />
     <ClInclude Include="..\..\Source\Math\ttmath\ttmathuint_x86_64.h" />
     <ClInclude Include="..\..\Source\Math\vecmath.h" />
-    <ClInclude Include="..\..\Source\Models\3ds.h" />
+    <ClInclude Include="..\..\Source\Models\3DSModel.h" />
+    <ClInclude Include="..\..\Source\Models\3DSModelFactory.h" />
     <ClInclude Include="..\..\Source\OpenGL\Fonts\FontFactory.h" />
     <ClInclude Include="..\..\Source\OpenGL\GLUtils.h" />
     <ClInclude Include="..\..\Source\OpenGL\OpenGLWindow.h" />
@@ -224,7 +225,8 @@ robocopy "..\..\Source\Resources" "$(OutDir)Resources" /e /mt
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\..\Source\Math\vecmath.cpp" />
-    <ClCompile Include="..\..\Source\Models\3ds.cpp" />
+    <ClCompile Include="..\..\Source\Models\3DSModel.cpp" />
+    <ClCompile Include="..\..\Source\Models\3DSModelFactory.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\Fonts\FontFactory.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\GLUtils.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\OpenGLWindow.cpp" />

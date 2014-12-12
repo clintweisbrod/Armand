@@ -47,3 +47,29 @@ bool glCheckForError()
 
 	return result;
 }
+
+void glTexturingOn(GLuint inTextureMode, GLuint inTextureID)
+{
+	GLuint enabledTextureMode, disabledTextureMode;
+	if ((inTextureMode == GL_TEXTURE_RECTANGLE) && GLEW_ARB_texture_rectangle)
+	{
+		enabledTextureMode = GL_TEXTURE_RECTANGLE;
+		disabledTextureMode = GL_TEXTURE_2D;
+	}
+	else
+	{
+		enabledTextureMode = GL_TEXTURE_2D;
+		disabledTextureMode = GL_TEXTURE_RECTANGLE;
+	}
+	glDisable(disabledTextureMode);
+	glEnable(enabledTextureMode);
+	glBindTexture(enabledTextureMode, inTextureID);
+}
+
+void glTexturingOff()
+{
+	if (GLEW_ARB_texture_rectangle)
+		glDisable(GL_TEXTURE_RECTANGLE);
+
+	glDisable(GL_TEXTURE_2D);
+}
