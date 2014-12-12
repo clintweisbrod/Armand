@@ -84,6 +84,18 @@ FontRenderer* FontFactory::getFontRenderer(string& inFaceName)
 	return result;
 }
 
+// This should be called anytime the scene size is changed
+void FontFactory::sceneSizeChanged(Vec2i& inNewSceneSize)
+{
+	// Call setSceneSize() on each FontRenderer instance
+	FontRendererMap_t::iterator it;
+	for (it = mRenderers.begin(); it != mRenderers.end(); it++)
+	{
+		if (it->second)
+			it->second->setSceneSize(inNewSceneSize);
+	}
+}
+
 ////////////////////////////
 
 FontRenderer::FontRenderer(string& inFontName, GLuint inShader) : mAtlas(NULL),
@@ -136,9 +148,9 @@ FontRenderer::FontRenderer(string& inFontName, GLuint inShader) : mAtlas(NULL),
 	// Setup transform matrices
 	mat4_set_identity(&mModelMatrix);
 	mat4_set_identity(&mViewMatrix);
-	SIZE windowSize;
-	gOpenGLWindow->getWindowSize(windowSize);
-	mat4_set_orthographic(&mProjectionMatrix, 0, (float)windowSize.cx, 0, (float)windowSize.cy, -1, 1);
+	Vec2i sceneSize;
+	gOpenGLWindow->getSceneSize(sceneSize);
+	setSceneSize(sceneSize);
 }
 
 FontRenderer::~FontRenderer()
@@ -252,6 +264,11 @@ bool FontRenderer::render(wstring& inString, int inFontSize, Vec2f& inPen, Vec4f
 	glDisable(GL_BLEND);
 
 	return (numGlyphsRendered == inString.length());
+}
+
+void FontRenderer::setSceneSize(Vec2i& inSceneSize)
+{
+	mat4_set_orthographic(&mProjectionMatrix, 0, (float)inSceneSize.x, 0, (float)inSceneSize.y, -1, 1);
 }
 
 string FontRenderer::getSystemFontFile(const string &inFontName) const

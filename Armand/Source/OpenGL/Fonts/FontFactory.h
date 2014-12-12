@@ -32,6 +32,8 @@
 typedef map<int, texture_font_t*> FontMap_t;
 class FontRenderer
 {
+	friend class FontFactory;
+
 	public:
 		FontRenderer(string& inFontName, GLuint inShader);
 		virtual ~FontRenderer();
@@ -40,6 +42,7 @@ class FontRenderer
 
 	private:
 		string getSystemFontFile(const string &inFontName) const;
+		void setSceneSize(Vec2i& inSceneSize);
 
 		string					mFontName;
 		texture_atlas_t*		mAtlas;
@@ -61,6 +64,7 @@ class FontFactory : public Singleton<FontFactory>
 
 	public:
 		FontRenderer* getFontRenderer(string& inFaceName);
+		void sceneSizeChanged(Vec2i& inNewSceneSize);
 
 	protected:
 		FontFactory();
