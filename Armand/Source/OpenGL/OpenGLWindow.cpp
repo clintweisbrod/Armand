@@ -24,7 +24,6 @@
 #include "ShaderFactory.h"
 #include "Fonts/FontFactory.h"
 #include "Models/3ds.h"
-#include "OpenGL/Textures/Texture.h"
 
 bool OpenGLWindow::sEnabledGLExtensions = false;
 
@@ -52,6 +51,9 @@ OpenGLWindow::OpenGLWindow() : mCreated(false),
 
 OpenGLWindow::~OpenGLWindow()
 {
+	if (theTexture)
+		delete theTexture;
+
 	// Release the FontFactory
 	FontFactory::destroy();
 
@@ -352,8 +354,8 @@ bool OpenGLWindow::createWindow(HINSTANCE inInstance, WNDPROC inWndProc, WORD in
 		AdjustWindowRectEx(&windowRect, dwStyle, (wcex.lpszMenuName != NULL)?TRUE:FALSE, dwExStyle);
 	}
 
-	mWindowSize.cx = windowRect.right - windowRect.left;
-	mWindowSize.cy = windowRect.bottom - windowRect.top;
+	mSceneSize.x = windowRect.right - windowRect.left;
+	mSceneSize.y = windowRect.bottom - windowRect.top;
 
 	mhWnd = CreateWindowEx(dwExStyle,					// Extended style for the window
 						   L"OpenGL",					// Class name
@@ -362,8 +364,8 @@ bool OpenGLWindow::createWindow(HINSTANCE inInstance, WNDPROC inWndProc, WORD in
 						   WS_CLIPSIBLINGS |			// Required window style
 						   WS_CLIPCHILDREN,				// Required window style
 						   0, 0,						// Window position
-						   mWindowSize.cx,				// Window width
-						   mWindowSize.cy,				// Window height
+						   mSceneSize.x,				// Window width
+						   mSceneSize.y,				// Window height
 						   NULL,						// No parent window
 						   NULL,						// No menu
 						   mhInstance,					// Instance
@@ -504,7 +506,7 @@ bool OpenGLWindow::create(HINSTANCE inInstance, WNDPROC inWndProc, WORD inMenuID
 			ShowWindow(mhWnd, mCmdShow);						// Make the window visible
 			SetForegroundWindow(mhWnd);							// Slightly higher priority
 			SetFocus(mhWnd);									// Sets keyboard focus to the window
-			resizeGLScene(mWindowSize.cx, mWindowSize.cy);
+			resizeGLScene(mSceneSize.x, mSceneSize.y);
 
 			initGL();											// Initialize our newly created GL window
 			mFrameCount = 0;									// Reset frame count
@@ -521,8 +523,8 @@ void OpenGLWindow::initGL()								// All setup for OpenGL goes here
 	glShadeModel(GL_SMOOTH);							// Enable smooth shading
 	glClearColor(mClearColor.x, mClearColor.y, mClearColor.z, 1.0f);
 	glClearDepth(1.0f);									// Depth buffer setup
-	glEnable(GL_DEPTH_TEST);							// Enables depth testing
-	glDepthFunc(GL_LEQUAL);								// The type of depth testing to do
+//	glEnable(GL_DEPTH_TEST);							// Enables depth testing
+//	glDepthFunc(GL_LEQUAL);								// The type of depth testing to do
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);	// Really nice perspective calculations
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	if (mHasMultisampleBuffer)
@@ -530,6 +532,12 @@ void OpenGLWindow::initGL()								// All setup for OpenGL goes here
 		glEnable(GL_MULTISAMPLE_ARB);
 		glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST);
 	}
+
+//	File texFile("data/TestImage.dds");
+//	theTexture = new Texture(texFile);
+	theTexture = new Texture("data/TestImage.dds");
+	if (theTexture->getImageBufferOK())
+		theTexture->sendToGPU();
 
 	mGLInitialized = true;
 }
@@ -539,11 +547,15 @@ void OpenGLWindow::resizeGLScene(GLsizei inWidth, GLsizei inHeight)		// Resize a
 	if (inHeight == 0)									// Prevent a divide by zero by
 		inHeight = 1;									// making height equal one
 
-	mWindowSize.cx = inWidth;							// Remember width
-	mWindowSize.cy = inHeight;							// Remember height
+	mSceneSize.x = inWidth;								// Remember width
+	mSceneSize.y = inHeight;							// Remember height
 
-	glViewport(0, 0, mWindowSize.cx, mWindowSize.cy);	// Reset the current viewport
+	glViewport(0, 0, mSceneSize.x, mSceneSize.y);		// Reset the current viewport
 
+	// Notify FontFactory of scene size change
+	FontFactory::inst()->sceneSizeChanged(mSceneSize);
+
+/*
 	glMatrixMode(GL_PROJECTION);						// Select the projection matrix
 	glLoadIdentity();									// Reset the projection matrix
 
@@ -553,6 +565,7 @@ void OpenGLWindow::resizeGLScene(GLsizei inWidth, GLsizei inHeight)		// Resize a
 
 	glMatrixMode(GL_MODELVIEW);							// Select the modelview matrix
 	glLoadIdentity();									// Reset the modelview matrix
+*/
 }
 
 void OpenGLWindow::destroy()							// Properly kill the window
@@ -615,7 +628,27 @@ void OpenGLWindow::render()								// Here's where we do all the drawing
 	FontFactory* ff = FontFactory::inst();
 	FontRenderer* fontRenderer = ff->getFontRenderer(fontName);
 
+
 	// Testing texture loading
+	glMatrixMode(GL_PROJECTION);						// Select the projection matrix
+	glLoadIdentity();									// Reset the projection matrix
+	glOrtho(0.0, mSceneSize.x, mSceneSize.y, 0.0, -1.0, 1.0);
+
+	glMatrixMode(GL_MODELVIEW);							// Select the modelview matrix
+	glLoadIdentity();									// Reset the modelview matrix
+
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, theTexture->getTextureID());
+	Vec2i dimensions = theTexture->getDimensions();
+	Vec2f texCoords = theTexture->getTexCoords();
+	glBegin(GL_QUADS);
+		glTexCoord2f(0, 0);						glVertex2i(0, 0);
+		glTexCoord2f(0, texCoords.t);			glVertex2i(0, dimensions.y);
+		glTexCoord2f(texCoords.s, texCoords.t); glVertex2i(dimensions.x, dimensions.y);
+		glTexCoord2f(texCoords.s, 0);			glVertex2i(dimensions.x, 0);
+	glEnd();
+
+	
 //	File texFile("data/TestImage.dds");
 //	Texture* tex = new Texture;
 //	if (tex)

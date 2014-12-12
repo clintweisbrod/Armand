@@ -32,6 +32,21 @@ Texture::Texture()
 	init();
 }
 
+Texture::Texture(const char* inFilePath) : Texture()
+{
+	load(File(inFilePath));
+}
+
+Texture::Texture(string& inFilePath) : Texture()
+{
+	load(File(inFilePath));
+}
+
+Texture::Texture(File& inFile) : Texture()
+{
+	load(inFile);
+}
+
 Texture::~Texture()
 {
 	cleanup();
@@ -49,6 +64,7 @@ void Texture::init()
 	mImageBufferBytes = 0;
 	mVRAMMegabytesUsed = 0.0;
 	mDimensions = Vec2i(0, 0);
+	mTexCoords = Vec2f(0, 0);
 	mNumMipMaps = 0;
 	mFlags = kTextureFlagLoadMipmaps;
 	mLastTimeUsed = 0.0;
@@ -103,6 +119,8 @@ bool Texture::load(File& inFile)
 
 	if (result)
 	{
+		SET_FLAG(kTextureFlagImageBufferOK);
+
 		// Remember the source file in case this instance gets jettisoned by the TextureFactory, in which case we will
 		// need to reload.
 		if (mSourceFile == NULL)
@@ -142,6 +160,8 @@ bool Texture::load(uint8_t* inEncodedBuffer, size_t inBufferBytes)
 
 	if (result)
 	{
+		SET_FLAG(kTextureFlagImageBufferOK);
+
 		// Release resources from any previous image load
 		if (mEncodedImageBuffer != NULL)
 		{
@@ -166,7 +186,7 @@ bool Texture::load(uint8_t* inEncodedBuffer, size_t inBufferBytes)
 	return result;
 }
 
-bool Texture::sendBufferToGPU()
+bool Texture::sendToGPU()
 {
 	bool result = false;
 
@@ -232,7 +252,7 @@ bool Texture::reload()
 	else if (mEncodedImageBuffer && (mEncodedImageBufferBytes > 0))
 		result = load(mEncodedImageBuffer, mEncodedImageBufferBytes);
 	if (result)
-		result = sendBufferToGPU();
+		result = sendToGPU();
 
 	return result;
 }
@@ -607,11 +627,16 @@ bool Texture::sendBufferToGPU_Native()
 	{
 		enabledTextureMode = GL_TEXTURE_RECTANGLE;
 		disabledTextureMode = GL_TEXTURE_2D;
+		mTexCoords.s = (float_t)mDimensions.x;
+		mTexCoords.t = (float_t)mDimensions.y;
+		mClampingMode = GL_CLAMP_TO_EDGE;
 	}
 	else
 	{
 		enabledTextureMode = GL_TEXTURE_2D;
 		disabledTextureMode = GL_TEXTURE_RECTANGLE;
+		mTexCoords.s = 1;
+		mTexCoords.t = 1;
 	}
 	glDisable(disabledTextureMode);
 	glEnable(enabledTextureMode);
@@ -798,6 +823,10 @@ bool Texture::sendBufferToGPU_DDS()
 	glDisable(GL_TEXTURE_RECTANGLE);
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, mTextureID);
+
+	// We use GL_TEXTURE_2D so we have normalized texture coordinates
+	mTexCoords.s = 1;
+	mTexCoords.t = 1;
 
 	// Specify min and mag filters
 	if (IS_FLAG_SET(kTextureFlagUsingMipmaps))

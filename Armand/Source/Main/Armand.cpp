@@ -22,6 +22,8 @@
 #include "Main/Armand.h"
 #include "OpenGL/OpenGLWindow.h"
 #include "Models/3ds.h"
+#include "Utilities/Timer.h"
+#include "Math/vecMath.h"
 
 #define MAX_LOADSTRING 100
 
@@ -109,6 +111,9 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	el::Loggers::reconfigureAllLoggers(conf);
 	LOG(INFO) << "Armand is starting...";
 
+	// Get the high resolution counter's accuracy
+	QueryPerformanceFrequency(&Timer::sTicksPerSecond);
+
 
 	// Test area
 
@@ -133,11 +138,11 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 
 	// Create an instance of OpenGLWindow
 	bool fullscreen = false;	// Fullscreen flag set to normal mode by default
-	SIZE windowSize = { 640, 480 };
+	Vec2i windowSize(640, 480);
 	gOpenGLWindow = new OpenGLWindow();
 	if (gOpenGLWindow)
 	{
-		gOpenGLWindow->create(hInst, WndProc, IDI_ARMAND, szTitle, windowSize.cx, windowSize.cy, 24, fullscreen);
+		gOpenGLWindow->create(hInst, WndProc, IDI_ARMAND, szTitle, windowSize.x, windowSize.y, 24, fullscreen);
 		if (!gOpenGLWindow->getIsCreated())
 			return 0;
 	}
@@ -172,13 +177,13 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 				gOpenGLWindow->getKeys()[VK_F1] = false;	// If so, make key FALSE
 
 				if (!fullscreen)
-					gOpenGLWindow->getWindowSize(windowSize);
+					gOpenGLWindow->getSceneSize(windowSize);
 
 				gOpenGLWindow->destroy();			// Destroy our OpenGLWindow instance
 				fullscreen = !fullscreen;			// Toggle fullscreen / windowed mode
 
 				// Recreate our OpenGL window
-				gOpenGLWindow->create(hInst, WndProc, IDI_ARMAND, szTitle, windowSize.cx, windowSize.cy, 24, fullscreen);
+				gOpenGLWindow->create(hInst, WndProc, IDI_ARMAND, szTitle, windowSize.x, windowSize.y, 24, fullscreen);
 				if (!gOpenGLWindow->getIsCreated())
 					return 0;
 			}

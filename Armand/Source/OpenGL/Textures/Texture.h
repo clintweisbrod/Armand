@@ -85,22 +85,30 @@ public:
 		kTextureFlagIncludeAlphaOnSave = 0x8000,	// Include alpha channel when saving
 		kTextureFlagUsingExplicitBuffer = 0x10000,	// Using explicitly specified raw BRGA buffer
 		kTextureFlagBufferOnGPU = 0x20000,			// Set if last loaded buffer was successfully sent to GPU
+		kTextureFlagImageBufferOK = 0x40000,		// Set if image buffer was successfully loaded
 	};
 
+	// Constructors
 	Texture();
+	Texture(const char* inFilePath);
+	Texture(string& inFilePath);
+	Texture(File& inFile);
 	virtual ~Texture();
 
-	// These two load functions do not make any GL calls so in theory, they could be threaded.
+	// These two load methods do not make any GL calls so in theory, they could be threaded.
 	bool		load(File& inFile);
 	bool		load(uint8_t* inEncodedBuffer, size_t inBufferBytes);
-	bool		sendBufferToGPU();
-
+	
+	bool		sendToGPU();
 	void		removeFromGPU(bool inNotifyTextureManager);
 
 	GLuint		getTextureID();
 	double_t	getVRAMMegabytesUsed() const { return mVRAMMegabytesUsed; }
-	double_t	getLastUsedSeconds() const { return mLastTimeUsed; };
+	double_t	getLastUsedSeconds() const { return mLastTimeUsed; }
+	Vec2i&		getDimensions() { return mDimensions; }
+	Vec2f&		getTexCoords() { return mTexCoords; }
 
+	int			getImageBufferOK() const { return IS_FLAG_SET(kTextureFlagImageBufferOK); }
 	int			getGarbageCollect() const { return IS_FLAG_SET(kTextureFlagGarbageCollect); };
 
 private:
@@ -121,6 +129,7 @@ private:
 	size_t		mImageBufferBytes;
 	double_t	mVRAMMegabytesUsed;
 	Vec2i		mDimensions;
+	Vec2f		mTexCoords;
 	GLint		mNumMipMaps;
 	int			mFlags;
 	double_t	mLastTimeUsed;
@@ -130,5 +139,4 @@ private:
 
 	// These are parameters named directly from argument names for glTexImage2D() and glCompressedTexImage2D() 
 	GLint		mInternalformat;	// Third parameter to glTexImage2D() and glCompressedTexImage2D()
-	
 };

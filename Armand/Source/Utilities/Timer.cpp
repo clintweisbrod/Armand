@@ -23,6 +23,21 @@
 
 LARGE_INTEGER Timer::sTicksPerSecond;
 
+double_t Timer::seconds()		// static
+{
+	LARGE_INTEGER tick;
+	QueryPerformanceCounter(&tick);
+	double_t rawTime = (double_t)tick.QuadPart;
+	double_t seconds = rawTime / sTicksPerSecond.QuadPart;
+
+	return seconds;
+}
+
+double_t Timer::microseconds()	// static
+{
+	return Timer::seconds() * 1e-6;
+}
+
 Timer::Timer(void)
 {
 	reset();
@@ -31,21 +46,6 @@ Timer::Timer(void)
 void Timer::reset()
 {
 	mStartMicroseconds = Timer::microseconds();
-}
-
-double_t Timer::microseconds()
-{
-	LARGE_INTEGER tick;
-	QueryPerformanceCounter(&tick);
-	double_t rawTime = (double_t)tick.QuadPart;
-	double_t seconds = rawTime / sTicksPerSecond.QuadPart;
-
-	return seconds * 1e6;
-}
-
-double_t Timer::seconds()
-{
-	return Timer::microseconds() * 1e-6;
 }
 
 double_t Timer::elapsedMicroseconds()

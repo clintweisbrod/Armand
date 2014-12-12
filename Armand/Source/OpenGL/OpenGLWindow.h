@@ -23,6 +23,7 @@
 #include <GL/wglew.h>
 
 #include "Math/vecmath.h"
+#include "OpenGL/Textures/Texture.h"
 
 class OpenGLWindow
 {
@@ -39,7 +40,7 @@ class OpenGLWindow
 
 		// Informational
 		bool			getIsCreated() { return mCreated; };
-		void			getWindowSize(SIZE& ioWindowSize) { ioWindowSize = mWindowSize; };
+		void			getSceneSize(Vec2i& ioSceneSize) { ioSceneSize = mSceneSize; };
 
 		// OpenGL
 		void			render();
@@ -76,7 +77,7 @@ class OpenGLWindow
 		HGLRC			mhRC;			// Permanent rendering context
 		wstring			mWindowTitle;
 		bool			mFullscreen;
-		SIZE			mWindowSize;
+		Vec2i			mSceneSize;
 		int				mCmdShow;
 
 		// Frame rate determination
@@ -92,6 +93,8 @@ class OpenGLWindow
 		// Mouse input
 		double			mLastMouseMoveSeconds;
 		Vec2i			mLastMousePosition;
+
+		Texture*		theTexture;
 
 		Vec3f			mClearColor;
 };
