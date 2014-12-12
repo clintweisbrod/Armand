@@ -413,8 +413,66 @@ template<class T> Vector2<T>::Vector2() : x(0), y(0)
 {
 }
 
+template<class T> Vector2<T>::Vector2(const Vector2<T>& v) : x(v.x), y(v.y)
+{
+}
+
 template<class T> Vector2<T>::Vector2(T _x, T _y) : x(_x), y(_y)
 {
+}
+
+template<class T> Vector2<T>& Vector2<T>::operator+=(const Vector2<T>& a)
+{
+	x += a.x; y += a.y;
+	return *this;
+}
+
+template<class T> Vector2<T>& Vector2<T>::operator-=(const Vector2<T>& a)
+{
+	x -= a.x; y -= a.y;
+	return *this;
+}
+
+template<class T> Vector2<T>& Vector2<T>::operator*=(T s)
+{
+	x *= s; y *= s;
+	return *this;
+}
+
+template<class T> Vector2<T>& Vector2<T>::operator/=(T s)
+{
+	x /= s; y /= s;
+	return *this;
+}
+
+template<class T> Vector2<T> Vector2<T>::operator-() const
+{
+	return Vector2<T>(-x, -y);
+}
+
+template<class T> Vector2<T> Vector2<T>::operator+() const
+{
+	return *this;
+}
+
+template<class T> Vector2<T> operator+(const Vector2<T>& a, const Vector2<T>& b)
+{
+	return Vector2<T>(a.x + b.x, a.y + b.y);
+}
+
+template<class T> Vector2<T> operator-(const Vector2<T>& a, const Vector2<T>& b)
+{
+	return Vector2<T>(a.x - b.x, a.y - b.y);
+}
+
+template<class T> Vector2<T> operator*(T s, const Vector2<T>& v)
+{
+	return Vector2<T>(s * v.x, s * v.y);
+}
+
+template<class T> Vector2<T> operator*(const Vector2<T>& v, T s)
+{
+	return Vector2<T>(s * v.x, s * v.y);
 }
 
 template<class T> bool operator==(const Vector2<T>& a, const Vector2<T>& b)
@@ -425,6 +483,12 @@ template<class T> bool operator==(const Vector2<T>& a, const Vector2<T>& b)
 template<class T> bool operator!=(const Vector2<T>& a, const Vector2<T>& b)
 {
 	return a.x != b.x || a.y != b.y;
+}
+
+template<class T> Vector2<T> operator/(const Vector2<T>& v, T s)
+{
+	T is = 1 / s;
+	return Vector2<T>(is * v.x, is * v.y);
 }
 
 ///////////////////////////////////////////////////////////////////////
