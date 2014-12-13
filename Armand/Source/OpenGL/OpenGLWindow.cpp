@@ -27,6 +27,13 @@
 
 bool OpenGLWindow::sEnabledGLExtensions = false;
 
+//——————————————————————————————————————————————————————————————————————
+//——————————————————————————————————————————————————————————————————————
+// Class construction/destruction
+//——————————————————————————————————————————————————————————————————————
+//——————————————————————————————————————————————————————————————————————
+
+
 OpenGLWindow::OpenGLWindow() : mCreated(false),
 							   mGLInitialized(false),
 							   mHasMultisampleBuffer(false),
@@ -44,9 +51,18 @@ OpenGLWindow::OpenGLWindow() : mCreated(false),
 	// Get the high resolution counter's accuracy
 	QueryPerformanceFrequency(&mTicksPerSecond);
 
+	// Clear all keys
 	memset(mKeys, 0, sizeof(mKeys));
-	mLastMousePosition.x = 0;
-	mLastMousePosition.y = 0;
+
+	// Window styles for both windowed and fullscreen modes
+	mWindowedStyle = WS_OVERLAPPEDWINDOW;
+	mWindowedExStyle = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
+	mFullScreenStyle = WS_POPUP;
+	mFullScreenExStyle = WS_EX_APPWINDOW;
+
+	mIgnoreResizeEvents = false;
+
+//	mCmdShow = SW_SHOW;
 }
 
 OpenGLWindow::~OpenGLWindow()
@@ -66,6 +82,517 @@ OpenGLWindow::~OpenGLWindow()
 	// Clean up the resources for this window
 	destroy();
 }
+
+//——————————————————————————————————————————————————————————————————————
+//——————————————————————————————————————————————————————————————————————
+// OpenGL/Window creation-related methods
+//——————————————————————————————————————————————————————————————————————
+//——————————————————————————————————————————————————————————————————————
+
+bool OpenGLWindow::create(HINSTANCE inInstance, WNDPROC inWndProc, WORD inMenuID,
+	TCHAR* inTitle, int inWidth, int inHeight, int inBitsPerPixel,
+	bool inFullscreen)
+{
+	PIXELFORMATDESCRIPTOR pfd =
+	{
+		sizeof(PIXELFORMATDESCRIPTOR),
+		1,								// Version number
+		PFD_DRAW_TO_WINDOW |			// Format must support window
+		PFD_SUPPORT_OPENGL |			// Format must support OpenGL
+		PFD_DOUBLEBUFFER,				// Must support double Buffering
+		PFD_TYPE_RGBA,					// Request an RGBA format
+		inBitsPerPixel,					// Select our color depth
+		0, 0, 0, 0, 0, 0,				// Color bits ignored
+		0,								// No alpha buffer
+		0,								// Shift bit ignored
+		0,								// No accumulation buffer
+		0, 0, 0, 0,						// Accumulation bits ignored
+		16,								// 16-bit Z-buffer (depth buffer)  
+		0,								// No stencil buffer
+		0,								// No auxiliary buffer
+		PFD_MAIN_PLANE,					// Main drawing layer
+		0,								// Reserved
+		0, 0, 0							// Layer masks ignored
+	};
+
+	if (createWindow(inInstance, inWndProc, inMenuID, inTitle, inWidth, inHeight, inBitsPerPixel, inFullscreen))
+	{
+		// Did we get a device context?
+		if (!(mhDC = GetDC(mhWnd)))
+		{
+			destroy();
+			MessageBox(NULL, L"Can't create a GL device context.", L"ERROR", MB_OK | MB_ICONEXCLAMATION);
+			return false;
+		}
+
+		// Did Windows find a matching pixel format?
+		GLuint basicPixelFormat;
+		if (!(basicPixelFormat = ChoosePixelFormat(mhDC, &pfd)))
+		{
+			destroy();
+			MessageBox(NULL, L"Can't find a suitable pixelformat.", L"ERROR", MB_OK | MB_ICONEXCLAMATION);
+			return false;
+		}
+
+		if (setupOpenGLForWindow(basicPixelFormat, &pfd))
+		{
+			// We only need to do this once
+			if (!sEnabledGLExtensions)
+			{
+				GLenum err = glewInit();
+				if (err == GLEW_OK)
+					sEnabledGLExtensions = true;
+				else
+				{
+					// Problem: glewInit failed, something is seriously wrong.
+					char errMsg[256];
+					sprintf(errMsg, "Error: %s\n", glewGetErrorString(err));
+					fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
+				}
+			}
+
+			// Now try to obtain a pixel format with extended capabilities
+			GLuint uberPixelFormat = selectBestPixelFormatUsingWGL(mhDC);
+			if ((uberPixelFormat > 0) && (uberPixelFormat != basicPixelFormat))
+			{
+				// Windows only allows a pixel format to be set once in a window,
+				// therefore, we must destroy and re-create our window.
+				destroy();
+				if (createWindow(inInstance, inWndProc, inMenuID, inTitle, inWidth, inHeight, inBitsPerPixel, inFullscreen))
+				{
+					if (!setupOpenGLForWindow(uberPixelFormat, &pfd))
+					{
+						// Well, this is lame! We can't use the uber pixel format
+						// Destroy and re-create our window using basic pixel format
+						destroy();
+						if (createWindow(inInstance, inWndProc, inMenuID, inTitle, inWidth, inHeight, inBitsPerPixel, inFullscreen))
+						{
+							if (!setupOpenGLForWindow(basicPixelFormat, &pfd))
+								return false;
+						}
+						mHasMultisampleBuffer = false;
+					}
+				}
+				else
+					return false;
+			}
+
+			// Initialize our newly created GL window
+			initGL();
+
+			// Enable VSYNC
+			if (wglSwapIntervalEXT)
+				wglSwapIntervalEXT(1);
+
+			// Make the window visible
+			if (!mFullscreen)
+				ShowWindow(mhWnd, mCmdShow);
+
+			// Slightly higher priority
+			SetForegroundWindow(mhWnd);
+
+			// Sets keyboard focus to the window
+			SetFocus(mhWnd);
+
+			// Reset frame count
+			mFrameCount = 0;
+
+			mCreated = true;
+		}
+	}
+
+	return true;
+}
+
+void OpenGLWindow::destroy()
+{
+	if (mhRC)
+	{
+		// Release the DC And RC contexts
+		if (!wglMakeCurrent(NULL, NULL))
+			MessageBox(NULL, L"Release of DC and RC failed.", L"SHUTDOWN ERROR", MB_OK | MB_ICONINFORMATION);
+
+		// Delete the RC?
+		if (!wglDeleteContext(mhRC))
+			MessageBox(NULL, L"Release rendering context failed.", L"SHUTDOWN ERROR", MB_OK | MB_ICONINFORMATION);
+
+		mhRC = NULL;
+	}
+
+	// Release the DC
+	if (mhDC && !ReleaseDC(mhWnd, mhDC))
+	{
+		MessageBox(NULL, L"Release device context failed.", L"SHUTDOWN ERROR", MB_OK | MB_ICONINFORMATION);
+		mhDC = NULL;
+	}
+
+	// Destroy the window
+	if (mhWnd && !DestroyWindow(mhWnd))
+	{
+		MessageBox(NULL, L"Could not release window handle.", L"SHUTDOWN ERROR", MB_OK | MB_ICONINFORMATION);
+		mhWnd = NULL;
+	}
+
+	// Unregister class
+	if (!UnregisterClass(L"OpenGL", mhInstance))
+	{
+		MessageBox(NULL, L"Could not unregister class.", L"SHUTDOWN ERROR", MB_OK | MB_ICONINFORMATION);
+		mhInstance = NULL;
+	}
+
+	mCreated = false;
+}
+
+void OpenGLWindow::setFullScreen(bool inFullScreen)
+{
+	if (inFullScreen)
+	{
+		// Remember position and size of window
+		RECT rect;
+		GetWindowRect(mhWnd, &rect);
+		mLastWindowPosition = Vec2i(rect.left, rect.top);
+		mLastWindowSize = Vec2i(rect.right - rect.left, rect.bottom - rect.top);
+		mLastWindowedSceneSize = mSceneSize;
+
+		// The following calls may cause spurious WM_SIZE messages we don't want to handle
+		mIgnoreResizeEvents = true;
+
+		// Remove menu
+		SetMenu(mhWnd, NULL);
+
+		// Set fullscreen style
+		SetWindowLong(mhWnd, GWL_STYLE, mFullScreenStyle);
+		SetWindowLong(mhWnd, GWL_EXSTYLE, mFullScreenExStyle);
+
+		mIgnoreResizeEvents = false;
+
+		// Modify window size and position
+		Vec2i windowPosition(GetSystemMetrics(SM_XVIRTUALSCREEN), GetSystemMetrics(SM_YVIRTUALSCREEN));
+		mSceneSize.x = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+		mSceneSize.y = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+		mWindowSize = mSceneSize;
+		MoveWindow(mhWnd, windowPosition.x, windowPosition.y, mWindowSize.x, mWindowSize.y, TRUE);
+		mFullscreen = true;
+
+		// Make sure window is visible
+		if (!IsWindowVisible(mhWnd))
+			ShowWindow(mhWnd, SW_SHOW);
+	}
+	else
+	{
+		// The following calls may cause spurious WM_SIZE messages we don't want to handle
+		mIgnoreResizeEvents = true;
+
+		// Set windowed style
+		SetWindowLong(mhWnd, GWL_STYLE, mWindowedStyle);
+		SetWindowLong(mhWnd, GWL_EXSTYLE, mWindowedExStyle);
+
+		// Replace menu
+		SetMenu(mhWnd, mWindowMenu);
+
+		mIgnoreResizeEvents = false;
+
+		// Restore size and position
+		Vec2i windowPosition = mLastWindowPosition;
+		mSceneSize = mLastWindowedSceneSize;
+		mWindowSize = mLastWindowSize;
+		MoveWindow(mhWnd, windowPosition.x, windowPosition.y, mWindowSize.x, mWindowSize.y, TRUE);
+		mFullscreen = false;
+
+		// Make sure window is visible
+		if (!IsWindowVisible(mhWnd))
+			ShowWindow(mhWnd, SW_SHOW);
+	}
+}
+
+bool OpenGLWindow::createWindow(HINSTANCE inInstance, WNDPROC inWndProc, WORD inMenuID,
+	TCHAR* inTitle, int inWidth, int inHeight, int inBitsPerPixel,
+	bool inFullscreen)
+{
+	mhInstance = inInstance;
+	mWindowTitle = inTitle;
+	mFullscreen = inFullscreen;
+
+	Vec2i desktopSize(GetSystemMetrics(SM_CXVIRTUALSCREEN), GetSystemMetrics(SM_CYVIRTUALSCREEN));
+
+	WNDCLASSEX wcex;
+	wcex.cbSize = sizeof(WNDCLASSEX);
+	wcex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+	wcex.lpfnWndProc = inWndProc;
+	wcex.cbClsExtra = 0;
+	wcex.cbWndExtra = 0;
+	wcex.hInstance = mhInstance;
+	wcex.hIcon = LoadIcon(NULL, IDI_WINLOGO);
+	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wcex.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
+	wcex.lpszMenuName = ((inMenuID > 0) && !mFullscreen) ? MAKEINTRESOURCE(inMenuID) : NULL;
+	wcex.lpszClassName = L"OpenGL";
+	wcex.hIconSm = NULL;
+
+	// Attempt to register the window class
+	if (!RegisterClassEx(&wcex))
+	{
+		MessageBox(NULL, L"Failed to register the window class.", L"ERROR", MB_OK | MB_ICONEXCLAMATION);
+		return false;
+	}
+
+	// Setup window styles, window position and size based on screen mode
+	DWORD dwStyle, dwExStyle;
+	Vec2i windowPosition;
+	if (mFullscreen)
+	{
+		// Compute window dimensions to use after we come out of fullscreen.
+		// inWidth and inHeight specify scene size, not window size
+		mLastWindowedSceneSize = Vec2i(inWidth, inHeight);
+
+		// Adjust window to true requested size
+		RECT windowRect = { 0, 0, mLastWindowedSceneSize.x, mLastWindowedSceneSize.y };
+		AdjustWindowRectEx(&windowRect, mWindowedStyle, (wcex.lpszMenuName != NULL) ? TRUE : FALSE, mWindowedExStyle);
+		mLastWindowSize.x = windowRect.right - windowRect.left;
+		mLastWindowSize.y = windowRect.bottom - windowRect.top;
+
+		// Center window in desktop
+		mLastWindowPosition = (desktopSize - mLastWindowSize) / 2;
+
+		// Set window position, window size and scene size to desktop
+		windowPosition = Vec2i(GetSystemMetrics(SM_XVIRTUALSCREEN), GetSystemMetrics(SM_YVIRTUALSCREEN));
+		mWindowSize = desktopSize;
+		mSceneSize = desktopSize;
+		mFullscreen = true;
+
+		dwStyle = mFullScreenStyle;
+		dwExStyle = mFullScreenExStyle;
+	}
+	else
+	{
+		dwStyle = mWindowedStyle;
+		dwExStyle = mWindowedExStyle;
+
+		// inWidth and inHeight specify scene size, not window size
+		mSceneSize = Vec2i(inWidth, inHeight);
+
+		// Adjust window to true requested size
+		RECT windowRect = { 0, 0, mSceneSize.x, mSceneSize.y };
+		AdjustWindowRectEx(&windowRect, dwStyle, (wcex.lpszMenuName != NULL) ? TRUE : FALSE, dwExStyle);
+		mWindowSize.x = windowRect.right - windowRect.left;
+		mWindowSize.y = windowRect.bottom - windowRect.top;
+
+		// Center window in desktop
+		windowPosition = (desktopSize - mWindowSize) / 2;
+
+		mFullscreen = false;
+	}
+
+	mhWnd = CreateWindowEx(dwExStyle,					// Extended style for the window
+							L"OpenGL",					// Class name
+							inTitle,					// Window title
+							dwStyle |					// Defined window style
+							WS_CLIPSIBLINGS |			// Required window style
+							WS_CLIPCHILDREN,			// Required window style
+							windowPosition.x,			// Window horizontal position
+							windowPosition.y,			// Window vertical position
+							mWindowSize.x,				// Window width
+							mWindowSize.y,				// Window height
+							NULL,						// No parent window
+							NULL,						// No menu
+							mhInstance,					// Instance
+							NULL);						// Dont pass anything to WM_CREATE
+
+	// Create the window
+	if (mhWnd == NULL)
+	{
+		destroy();
+		MessageBox(NULL, L"Window creation error.", L"ERROR", MB_OK | MB_ICONEXCLAMATION);
+		return false;
+	}
+
+	// We need this for switching back from fullscreen
+	mWindowMenu = GetMenu(mhWnd);
+
+	return true;
+}
+
+bool OpenGLWindow::setupOpenGLForWindow(GLuint inPixelFormat, PIXELFORMATDESCRIPTOR* inPFD)
+{
+	// Did we get a device context?
+	if (!(mhDC = GetDC(mhWnd)))
+	{
+		destroy();
+		MessageBox(NULL, L"Can't create a GL device context.", L"ERROR", MB_OK | MB_ICONEXCLAMATION);
+		return false;
+	}
+
+	// Are we able to set the pixel format?
+	if (!SetPixelFormat(mhDC, inPixelFormat, inPFD))
+	{
+		destroy();
+		MessageBox(NULL, L"Can't set the pixelformat.", L"ERROR", MB_OK | MB_ICONEXCLAMATION);
+		return false;
+	}
+
+	// Are we able to get a rendering context?
+	if (!(mhRC = wglCreateContext(mhDC)))
+	{
+		destroy();
+		MessageBox(NULL, L"Can't create a GL rendering context.", L"ERROR", MB_OK | MB_ICONEXCLAMATION);
+		return false;
+	}
+
+	// Try to activate the rendering context
+	if (!wglMakeCurrent(mhDC, mhRC))
+	{
+		destroy();
+		MessageBox(NULL, L"Can't activate the GL rendering context.", L"ERROR", MB_OK | MB_ICONEXCLAMATION);
+		return false;
+	}
+
+	return true;
+}
+
+//---------------------------------------------------------------------------
+//	The modern method of choosing an appropriate pixel format.
+//---------------------------------------------------------------------------
+GLuint OpenGLWindow::selectBestPixelFormatUsingWGL(HDC hDC)
+{
+	GLuint result = 0;
+
+	int attributeList[] = { WGL_PIXEL_TYPE_ARB,		// 0
+		WGL_DRAW_TO_WINDOW_ARB,	// 1
+		WGL_SUPPORT_OPENGL_ARB,	// 2
+		WGL_ACCELERATION_ARB,	// 3
+		WGL_DOUBLE_BUFFER_ARB,	// 4
+		WGL_COLOR_BITS_ARB,		// 5
+		WGL_ALPHA_BITS_ARB,		// 6
+		WGL_STENCIL_BITS_ARB,	// 7
+		WGL_SAMPLE_BUFFERS_ARB,	// 8
+		WGL_SAMPLES_ARB,		// 9
+		WGL_DEPTH_BITS_ARB,		// 10
+		0, };
+
+	// Figure out how many attribs we've specified. Could hardcode a value, but that's lame because we will likely add
+	// more items in the future.
+	UINT numAttributes = 0;
+	int i;
+	for (i = 0; i < sizeof(attributeList); i++)
+	{
+		if (attributeList[i] == 0)
+			break;
+		numAttributes++;
+	}
+
+	const bool kUseMultisampling = true;
+	const char *WGLExtensionString = wglGetExtensionsStringARB(hDC);
+	GLboolean hasMultisample = GLEW_ARB_multisample;
+	bool wantMultisample = (hasMultisample && kUseMultisampling);
+
+	int maxPixelFormats = DescribePixelFormat(hDC, 1, 0, NULL);
+	if (maxPixelFormats > 0)
+	{
+		UINT* pixelFormatScores = new UINT[maxPixelFormats + 1];
+		if (pixelFormatScores)
+		{
+			// Zero-out the pixel format scores array
+			memset(pixelFormatScores, 0, sizeof(UINT)* (maxPixelFormats + 1));
+
+			int* attributeValues = new int[numAttributes];
+			if (attributeValues)
+			{
+				// Enumerate all available pixel formats assigning score to each one
+				for (int pfIndex = 1; pfIndex <= maxPixelFormats; pfIndex++)
+				{
+					if (wglGetPixelFormatAttribivARB(hDC, pfIndex, 0, numAttributes, attributeList, attributeValues))
+					{
+						// This stuff is mandatory. We skip all pixel formats that are missing any of these
+						if (attributeValues[0] != WGL_TYPE_RGBA_ARB)			// Must have RGBA pixel data
+							continue;
+						if (attributeValues[1] == 0)							// Must have window support
+							continue;
+						if (attributeValues[2] == 0)							// Must support OpenGL
+							continue;
+						if (attributeValues[3] != WGL_FULL_ACCELERATION_ARB)	// Must have full hardware acceleration
+							continue;
+						if (attributeValues[4] == 0)							// Must have double buffer support
+							continue;
+
+						// This stuff is optional but we prioritize the attributes we want so that the most important attributes
+						// contribute most to the score we compute.
+
+						// Must have 16, 24, or 32-bit color buffer
+						if (attributeValues[5] == 32)		// 32-bit color?
+							pixelFormatScores[pfIndex] |= (1 << 31);
+						else if (attributeValues[5] == 24)	// 24-bit color?
+							pixelFormatScores[pfIndex] |= (1 << 30);
+						else if (attributeValues[5] == 16)	// 16-bit color?
+							pixelFormatScores[pfIndex] |= (1 << 29);
+
+						// Alpha would be nice
+						if (attributeValues[6] >= 8)		// Have we got at least 8-bit alpha?
+							pixelFormatScores[pfIndex] |= (1 << 28);
+						else if (attributeValues[6] == 1)	// Have we got 1-bit alpha?
+							pixelFormatScores[pfIndex] |= (1 << 27);
+
+						// Stencil would be good, but not mission-critical
+						if (attributeValues[7] > 8)			// Have we got more than 8-bit stencil?
+							pixelFormatScores[pfIndex] |= (1 << 26);
+						else if (attributeValues[7] == 8)	// Have we got 8-bit stencil?
+							pixelFormatScores[pfIndex] |= (1 << 25);
+
+						// Multisampling support
+						if (wantMultisample)
+						{
+							if (attributeValues[8] > 0)	// Have we got a multisample buffer?
+								pixelFormatScores[pfIndex] |= (1 << 24);
+
+							if (attributeValues[9] == 6)		// 6 samples per pixel
+								pixelFormatScores[pfIndex] |= (1 << 23);
+							else if (attributeValues[9] == 4)	// 4 samples per pixel
+								pixelFormatScores[pfIndex] |= (1 << 22);
+							else if (attributeValues[9] == 2)	// 2 samples per pixel
+								pixelFormatScores[pfIndex] |= (1 << 21);
+						}
+
+						// We should have some depth buffer for 3DS model rendering, but it appears that this can cause
+						// SN to break on some older model laptops. We will leave it out for now.
+						if (attributeValues[10] == 32)		// Have we got 32-bit depth buffer?
+							pixelFormatScores[pfIndex] |= (1 << 20);
+						else if (attributeValues[10] == 24)	// Have we got 24-bit depth buffer?
+							pixelFormatScores[pfIndex] |= (1 << 19);
+						else if (attributeValues[10] == 16)	// Have we got 16-bit depth buffer?
+							pixelFormatScores[pfIndex] |= (1 << 18);
+						else if ((attributeValues[10] > 0) && (attributeValues[10] < 16))	// Have we got less than 16-bit depth buffer?
+							pixelFormatScores[pfIndex] |= (1 << 17);
+					}
+				}
+
+				delete[] attributeValues;
+			}
+
+			// Now find the index in pixelFormatScore array with largest value
+			UINT bestScore = 0;
+			for (i = 1; i <= maxPixelFormats; i++)
+			{
+				if (pixelFormatScores[i] > bestScore)
+				{
+					bestScore = pixelFormatScores[i];
+					result = i;
+				}
+			}
+
+			// Set fMultisampleBuffer
+			mHasMultisampleBuffer = hasMultisample && wantMultisample && (pixelFormatScores[result] & (1 << 24));
+
+			delete[] pixelFormatScores;
+		}
+	}
+
+	return result;
+}
+
+//——————————————————————————————————————————————————————————————————————
+//——————————————————————————————————————————————————————————————————————
+// Mouse and keyboard event handlers
+//——————————————————————————————————————————————————————————————————————
+//——————————————————————————————————————————————————————————————————————
 
 void OpenGLWindow::mouseEvent(WORD inXPos, WORD inYPos, bool inCtrlDown, bool inShiftDown, bool inLeftDown, bool inMiddleDown, bool inRightDown)
 {
@@ -109,458 +636,15 @@ void OpenGLWindow::handleKeys()
 	}
 }
 
-// ---------------------------------------------------------------------------
-// TOpenGLDrawer::SelectBestPixelFormatUsingWGL					  [protected]
-//
-//	Date		Initials	Version		Comments
-//  ----------	---------	----------	---------------------------
-//	24/07/2007	CLW			6.0.7		
-//	14/11/2007	CLW			6.2.1		Re-implemented for more reliable pixel format selection
-//	
-//	The modern method of choosing an appropriate pixel format.
-// ---------------------------------------------------------------------------
-GLuint OpenGLWindow::selectBestPixelFormatUsingWGL(HDC hDC)
-{
-	GLuint result = 0;
-
-	int attributeList[] = {	WGL_PIXEL_TYPE_ARB,		// 0
-							WGL_DRAW_TO_WINDOW_ARB,	// 1
-							WGL_SUPPORT_OPENGL_ARB,	// 2
-							WGL_ACCELERATION_ARB,	// 3
-							WGL_DOUBLE_BUFFER_ARB,	// 4
-							WGL_COLOR_BITS_ARB,		// 5
-							WGL_ALPHA_BITS_ARB,		// 6
-							WGL_STENCIL_BITS_ARB,	// 7
-							WGL_SAMPLE_BUFFERS_ARB,	// 8
-							WGL_SAMPLES_ARB,		// 9
-							WGL_DEPTH_BITS_ARB,		// 10
-							0,};
-	
-	// Figure out how many attribs we've specified. Could hardcode a value, but that's lame because we will likely add
-	// more items in the future.
-	UINT numAttributes = 0;
-	int i;
-	for (i = 0; i < sizeof(attributeList); i++)
-	{
-		if (attributeList[i] == 0)
-			break;
-		numAttributes++;
-	}
-
-	const bool kUseMultisampling = true;
-	const char *WGLExtensionString = wglGetExtensionsStringARB(hDC);
-	GLboolean hasMultisample = GLEW_ARB_multisample;
-	bool wantMultisample = (hasMultisample && kUseMultisampling);
-
-	int maxPixelFormats = DescribePixelFormat(hDC, 1, 0, NULL);
-	if (maxPixelFormats > 0)
-	{
-		UINT* pixelFormatScores = new UINT[maxPixelFormats + 1];
-		if (pixelFormatScores)
-		{
-			// Zero-out the pixel format scores array
-			memset(pixelFormatScores, 0, sizeof(UINT) * (maxPixelFormats + 1));
-
-			int* attributeValues = new int[numAttributes];
-			if (attributeValues)
-			{
-				// Enumerate all available pixel formats assigning score to each one
-				for (int pfIndex = 1; pfIndex <= maxPixelFormats; pfIndex++)
-				{
-					if (wglGetPixelFormatAttribivARB(hDC, pfIndex, 0, numAttributes, attributeList, attributeValues))
-					{
-						// This stuff is mandatory. We skip all pixel formats that are missing any of these
-						if (attributeValues[0] != WGL_TYPE_RGBA_ARB )			// Must have RGBA pixel data
-							continue;
-						if (attributeValues[1] == 0)							// Must have window support
-							continue;
-						if (attributeValues[2] == 0)							// Must support OpenGL
-							continue;
-						if (attributeValues[3] != WGL_FULL_ACCELERATION_ARB)	// Must have full hardware acceleration
-							continue;
-						if (attributeValues[4] == 0)							// Must have double buffer support
-							continue;
-
-						// This stuff is optional but we prioritize the attributes we want so that the most important attributes
-						// contribute most to the score we compute.
-
-						// Must have 16, 24, or 32-bit color buffer
-						if (attributeValues[5] == 32)		// 32-bit color?
-							pixelFormatScores[pfIndex] |= (1 << 31);
-						else if (attributeValues[5] == 24)	// 24-bit color?
-							pixelFormatScores[pfIndex] |= (1 << 30);
-						else if (attributeValues[5] == 16)	// 16-bit color?
-							pixelFormatScores[pfIndex] |= (1 << 29);
-
-						// Alpha would be nice
-						if (attributeValues[6] >= 8)		// Have we got at least 8-bit alpha?
-							pixelFormatScores[pfIndex] |= (1 << 28);
-						else if (attributeValues[6] == 1)	// Have we got 1-bit alpha?
-							pixelFormatScores[pfIndex] |= (1 << 27);
-						
-						// Stencil would be good, but not mission-critical
-						if (attributeValues[7] > 8)			// Have we got more than 8-bit stencil?
-							pixelFormatScores[pfIndex] |= (1 << 26);
-						else if (attributeValues[7] == 8)	// Have we got 8-bit stencil?
-							pixelFormatScores[pfIndex] |= (1 << 25);
-
-						// Multisampling support
-						if (wantMultisample)
-						{
-							if (attributeValues[8] > 0)	// Have we got a multisample buffer?
-								pixelFormatScores[pfIndex] |= (1 << 24);
-
-							if (attributeValues[9] == 6)		// 6 samples per pixel
-								pixelFormatScores[pfIndex] |= (1 << 23);
-							else if (attributeValues[9] == 4)	// 4 samples per pixel
-								pixelFormatScores[pfIndex] |= (1 << 22);
-							else if (attributeValues[9] == 2)	// 2 samples per pixel
-								pixelFormatScores[pfIndex] |= (1 << 21);
-						}
-
-						// We should have some depth buffer for 3DS model rendering, but it appears that this can cause
-						// SN to break on some older model laptops. We will leave it out for now.
-						if (attributeValues[10] == 32)		// Have we got 32-bit depth buffer?
-							pixelFormatScores[pfIndex] |= (1 << 20);
-						else if (attributeValues[10] == 24)	// Have we got 24-bit depth buffer?
-							pixelFormatScores[pfIndex] |= (1 << 19);
-						else if (attributeValues[10] == 16)	// Have we got 16-bit depth buffer?
-							pixelFormatScores[pfIndex] |= (1 << 18);
-						else if ((attributeValues[10] > 0) && (attributeValues[10] < 16))	// Have we got less than 16-bit depth buffer?
-							pixelFormatScores[pfIndex] |= (1 << 17);
-					}
-				}
-
-				delete [] attributeValues;
-			}
-
-			// Now find the index in pixelFormatScore array with largest value
-			UINT bestScore = 0;
-			for (i = 1; i <= maxPixelFormats; i++)
-			{
-				if (pixelFormatScores[i] > bestScore)
-				{
-					bestScore = pixelFormatScores[i];
-					result = i;
-				}
-			}
-
-			// Set fMultisampleBuffer
-			mHasMultisampleBuffer = hasMultisample && wantMultisample && (pixelFormatScores[result] & (1 << 24));
-
-			delete [] pixelFormatScores;
-		}
-	}
-
-	return result;
-}
-
-bool OpenGLWindow::createWindow(HINSTANCE inInstance, WNDPROC inWndProc, WORD inMenuID,
-								TCHAR* inTitle, int inWidth, int inHeight, int inBitsPerPixel, bool inFullscreenFlag)
-{
-	DWORD		dwExStyle;				// Window extended style
-	DWORD		dwStyle;				// Window style
-	RECT		windowRect;				// Grabs rectangle upper left / lower right values
-
-	mhInstance = inInstance;
-	mWindowTitle = inTitle;
-	mFullscreen = inFullscreenFlag;	// Set the global fullscreen flag
-
-	windowRect.left = 0;
-	windowRect.right = (long)inWidth;
-	windowRect.top = 0;
-	windowRect.bottom = (long)inHeight;
-
-	WNDCLASSEX wcex;
-	wcex.cbSize = sizeof(WNDCLASSEX);
-	wcex.style			= CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-	wcex.lpfnWndProc	= inWndProc;
-	wcex.cbClsExtra		= 0;
-	wcex.cbWndExtra		= 0;
-	wcex.hInstance		= mhInstance;
-	wcex.hIcon			= LoadIcon(NULL, IDI_WINLOGO);
-	wcex.hCursor		= LoadCursor(NULL, IDC_ARROW);
-	wcex.hbrBackground	= (HBRUSH)GetStockObject(BLACK_BRUSH);
-	wcex.lpszMenuName	= ((inMenuID > 0) && !mFullscreen)? MAKEINTRESOURCE(inMenuID): NULL;
-	wcex.lpszClassName	= L"OpenGL";
-	wcex.hIconSm		= NULL;
-
-	// Attempt to register the window class
-	if (!RegisterClassEx(&wcex))
-	{
-		MessageBox(NULL, L"Failed to register the window class.", L"ERROR", MB_OK | MB_ICONEXCLAMATION);
-		return false;
-	}
-	
-	// Attempt fullscreen mode?
-	if (mFullscreen)
-	{
-		// Make some assumptions about screen size in case we fail to determine the actual size
-		windowRect.right = 1024;
-		windowRect.bottom = 768;
-
-		// Get the screen size that the console window is in. Need this for calibrating mouse motion
-		HMONITOR hMonitor = MonitorFromWindow(NULL, MONITOR_DEFAULTTOPRIMARY);
-		if (hMonitor)
-		{
-			MONITORINFO mi;
-			mi.cbSize = sizeof(MONITORINFO);
-			if (GetMonitorInfo(hMonitor, &mi))
-			{
-				windowRect.right = mi.rcMonitor.right - mi.rcMonitor.left;
-				windowRect.bottom = mi.rcMonitor.bottom - mi.rcMonitor.top;
-			}
-		}
-
-		DEVMODE dmScreenSettings;
-		memset(&dmScreenSettings, 0, sizeof(dmScreenSettings));
-		dmScreenSettings.dmSize = sizeof(dmScreenSettings);
-		dmScreenSettings.dmPelsWidth = windowRect.right;
-		dmScreenSettings.dmPelsHeight = windowRect.bottom;
-		dmScreenSettings.dmBitsPerPel = inBitsPerPixel;
-		dmScreenSettings.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
-
-		// Try to set selected mode and get results.  NOTE: CDS_FULLSCREEN getsrRid of start bar.
-		if (ChangeDisplaySettings(&dmScreenSettings, CDS_FULLSCREEN) != DISP_CHANGE_SUCCESSFUL)
-		{
-			// If The Mode Fails, Offer Two Options.  Quit Or Use Windowed Mode.
-			if (MessageBox(NULL, L"The requested fullscreen mode is not supported by\nyour video card. Use windowed mode instead?", L"OPENGL", MB_YESNO | MB_ICONEXCLAMATION) == IDYES)
-			{
-				mFullscreen = FALSE;			// Windowed mode delected.
-				mCmdShow = SW_SHOWMAXIMIZED;	// Maximize window
-			}
-			else
-			{
-				// Pop up a message box letting user know the program is closing.
-				MessageBox(NULL, L"Program will now close.", L"ERROR", MB_OK | MB_ICONSTOP);
-				return false;
-			}
-		}
-	}
-
-	// Are we still in fullscreen mode?
-	if (mFullscreen)
-	{
-		dwExStyle = WS_EX_APPWINDOW;
-		dwStyle = WS_POPUP;
-		ShowCursor(FALSE);	// Hide mouse pointer
-	}
-	else
-	{
-		dwExStyle = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
-		dwStyle = WS_OVERLAPPEDWINDOW;
-
-		// Adjust window to true requested size
-		AdjustWindowRectEx(&windowRect, dwStyle, (wcex.lpszMenuName != NULL)?TRUE:FALSE, dwExStyle);
-	}
-
-	mSceneSize.x = windowRect.right - windowRect.left;
-	mSceneSize.y = windowRect.bottom - windowRect.top;
-
-	mhWnd = CreateWindowEx(dwExStyle,					// Extended style for the window
-						   L"OpenGL",					// Class name
-						   inTitle,						// Window title
-						   dwStyle |					// Defined tindow style
-						   WS_CLIPSIBLINGS |			// Required window style
-						   WS_CLIPCHILDREN,				// Required window style
-						   0, 0,						// Window position
-						   mSceneSize.x,				// Window width
-						   mSceneSize.y,				// Window height
-						   NULL,						// No parent window
-						   NULL,						// No menu
-						   mhInstance,					// Instance
-						   NULL);						// Dont pass anything to WM_CREATE
-
-	// Create the window
-	if (mhWnd == NULL)
-	{
-		destroy();										// Reset The Display
-		MessageBox(NULL, L"Window creation error.", L"ERROR", MB_OK | MB_ICONEXCLAMATION);
-		return false;
-	}
-
-	return true;
-}
-
-bool OpenGLWindow::setupOpenGLForWindow(GLuint inPixelFormat, PIXELFORMATDESCRIPTOR* inPFD)
-{
-	if (!(mhDC = GetDC(mhWnd)))							// Did we get a device context?
-	{
-		destroy();										// Reset the display
-		MessageBox(NULL, L"Can't create a GL device context.", L"ERROR", MB_OK | MB_ICONEXCLAMATION);
-		return false;
-	}
-
-	if (!SetPixelFormat(mhDC, inPixelFormat, inPFD))	// Are we able to set the pixel format?
-	{
-		destroy();										// Reset the display
-		MessageBox(NULL, L"Can't set the pixelformat.", L"ERROR", MB_OK | MB_ICONEXCLAMATION);
-		return false;
-	}
-
-	if (!(mhRC = wglCreateContext(mhDC)))				// Are we able to get a rendering context?
-	{
-		destroy();										// Reset the display
-		MessageBox(NULL, L"Can't create a GL rendering context.", L"ERROR", MB_OK | MB_ICONEXCLAMATION);
-		return false;
-	}
-
-	if (!wglMakeCurrent(mhDC, mhRC))					// Try to activate the rendering context
-	{
-		destroy();										// Reset the display
-		MessageBox(NULL, L"Can't activate the GL rendering context.", L"ERROR", MB_OK | MB_ICONEXCLAMATION);
-		return false;
-	}
-
-	return true;
-}
-
-bool OpenGLWindow::create(HINSTANCE inInstance, WNDPROC inWndProc, WORD inMenuID,
-						  TCHAR* inTitle, int inWidth, int inHeight, int inBitsPerPixel, bool inFullscreenFlag)
-{
-	PIXELFORMATDESCRIPTOR pfd =							// pfd Tells Windows How We Want Things To Be
-	{
-		sizeof(PIXELFORMATDESCRIPTOR),					// Size Of This Pixel Format Descriptor
-		1,												// Version Number
-		PFD_DRAW_TO_WINDOW |							// Format Must Support Window
-		PFD_SUPPORT_OPENGL |							// Format Must Support OpenGL
-		PFD_DOUBLEBUFFER,								// Must Support Double Buffering
-		PFD_TYPE_RGBA,									// Request An RGBA Format
-		inBitsPerPixel,									// Select Our Color Depth
-		0, 0, 0, 0, 0, 0,								// Color Bits Ignored
-		0,												// No Alpha Buffer
-		0,												// Shift Bit Ignored
-		0,												// No Accumulation Buffer
-		0, 0, 0, 0,										// Accumulation Bits Ignored
-		16,												// 16Bit Z-Buffer (Depth Buffer)  
-		0,												// No Stencil Buffer
-		0,												// No Auxiliary Buffer
-		PFD_MAIN_PLANE,									// Main Drawing Layer
-		0,												// Reserved
-		0, 0, 0											// Layer Masks Ignored
-	};
-
-	if (createWindow(inInstance, inWndProc, inMenuID, inTitle, inWidth, inHeight, inBitsPerPixel, false))
-	{
-		if (!(mhDC = GetDC(mhWnd)))							// Did we get a device context?
-		{
-			destroy();										// Reset the display
-			MessageBox(NULL, L"Can't create a GL device context.", L"ERROR", MB_OK | MB_ICONEXCLAMATION);
-			return false;
-		}
-
-		GLuint basicPixelFormat;
-		if (!(basicPixelFormat = ChoosePixelFormat(mhDC, &pfd)))	// Did Windows find a matching pixel format?
-		{
-			destroy();										// Reset the display
-			MessageBox(NULL, L"Can't find a suitable pixelformat.", L"ERROR", MB_OK | MB_ICONEXCLAMATION);
-			return false;
-		}
-
-		if (setupOpenGLForWindow(basicPixelFormat, &pfd))
-		{
-			if (!sEnabledGLExtensions)							// We only need to do this once
-			{
-				GLenum err = glewInit();
-				if (err == GLEW_OK)
-					sEnabledGLExtensions = true;
-				else
-				{
-					/* Problem: glewInit failed, something is seriously wrong. */
-					char errMsg[256];
-					sprintf(errMsg, "Error: %s\n", glewGetErrorString(err));
-					fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
-				}
-			}
-
-			// Now try to obtain a pixel format with extended capabilities
-			GLuint uberPixelFormat = selectBestPixelFormatUsingWGL(mhDC);
-			if ((uberPixelFormat > 0) && (uberPixelFormat != basicPixelFormat))
-			{
-				// Windows only allows a pixel format to be set once in a window,
-				// therefore, we must destroy and re-create our window.
-				destroy();
-				if (createWindow(inInstance, inWndProc, inMenuID, inTitle, inWidth, inHeight, inBitsPerPixel, inFullscreenFlag))
-				{
-					if (!setupOpenGLForWindow(uberPixelFormat, &pfd))
-					{
-						// Well, this is lame! We can't use the uber pixel format
-						// Destroy and re-create our window using basic pixel format
-						destroy();
-						if (createWindow(inInstance, inWndProc, inMenuID, inTitle, inWidth, inHeight, inBitsPerPixel, inFullscreenFlag))
-						{
-							if (!setupOpenGLForWindow(basicPixelFormat, &pfd))
-								return false;
-						}
-						mHasMultisampleBuffer = false;
-					}
-				}
-				else
-					return false;
-			}
-
-			// Enable VSYNC
-			if (wglSwapIntervalEXT)
-				wglSwapIntervalEXT(1);
-
-			ShowWindow(mhWnd, mCmdShow);						// Make the window visible
-			SetForegroundWindow(mhWnd);							// Slightly higher priority
-			SetFocus(mhWnd);									// Sets keyboard focus to the window
-			resizeScene(mSceneSize.x, mSceneSize.y);
-
-			initGL();											// Initialize our newly created GL window
-			mFrameCount = 0;									// Reset frame count
-
-			mCreated = true;
-		}
-	}
-
-	return true;										// Success
-}
-
-void OpenGLWindow::destroy()							// Properly kill the window
-{
-	if (mFullscreen)									// Are we in fullscreen mode?
-	{
-		ChangeDisplaySettings(NULL, 0);					// If so switch back to the desktop
-		ShowCursor(TRUE);								// Show mouse pointer
-	}
-
-	if (mhRC)											// Do we have a rendering context?
-	{
-		if (!wglMakeCurrent(NULL, NULL))				// Are we able to release the DC And RC contexts?
-			MessageBox(NULL, L"Release of DC and RC failed.", L"SHUTDOWN ERROR", MB_OK | MB_ICONINFORMATION);
-
-		if (!wglDeleteContext(mhRC))					// Are we able to delete the RC?
-			MessageBox(NULL, L"Release rendering context failed.", L"SHUTDOWN ERROR", MB_OK | MB_ICONINFORMATION);
-
-		mhRC = NULL;									// Set RC to NULL
-	}
-
-	if (mhDC && !ReleaseDC(mhWnd, mhDC))				// Are we able to Release the DC?
-	{
-		MessageBox(NULL, L"Release device context failed.", L"SHUTDOWN ERROR", MB_OK | MB_ICONINFORMATION);
-		mhDC = NULL;									// Set DC to NULL
-	}
-
-	if (mhWnd && !DestroyWindow(mhWnd))					// Are we able to destroy the window?
-	{
-		MessageBox(NULL, L"Could not release window handle.", L"SHUTDOWN ERROR", MB_OK | MB_ICONINFORMATION);
-		mhWnd = NULL;									// Set ghWnd to NULL
-	}
-
-	if (!UnregisterClass(L"OpenGL", mhInstance))			// Are we able to unregister class
-	{
-		MessageBox(NULL, L"Could not unregister class.", L"SHUTDOWN ERROR", MB_OK | MB_ICONINFORMATION);
-		mhInstance = NULL;								// Set ghInstance To NULL
-	}
-
-	mCreated = false;
-}
+//——————————————————————————————————————————————————————————————————————
+//——————————————————————————————————————————————————————————————————————
+// OpenGL-related methods
+//——————————————————————————————————————————————————————————————————————
+//——————————————————————————————————————————————————————————————————————
 
 // This method is called once on app startup.
 // Good place to initialize any global OpenGL resources.
-void OpenGLWindow::initGL()								// All setup for OpenGL goes here
+void OpenGLWindow::initGL()
 {
 	// Make sure all our factory instances are created
 	FontFactory* ff = FontFactory::inst();
@@ -570,7 +654,7 @@ void OpenGLWindow::initGL()								// All setup for OpenGL goes here
 		return;
 
 
-
+/*
 	// For testing 3DS models
 	glDrawBuffer(GL_BACK); // draw into the back buffer
 	// anti aliasing -- see page 236, example 6-3 OpenGL programming guide, 3rd ed.
@@ -610,7 +694,7 @@ void OpenGLWindow::initGL()								// All setup for OpenGL goes here
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);	// turn off the depth buffer:
 
 	glDisable(GL_DEPTH_TEST);
-	glDepthMask(GL_FALSE);		// RSW 8/28/2002
+	glDepthMask(GL_FALSE);
 
 	// alpha cut off by default
 	glDisable(GL_ALPHA_TEST);
@@ -633,7 +717,7 @@ void OpenGLWindow::initGL()								// All setup for OpenGL goes here
 	//	{
 	if (mHasMultisampleBuffer && GLEW_ARB_multisample)
 	{
-		glEnable(GL_MULTISAMPLE_ARB);
+		glEnable(GL_MULTISAMPLE);
 		glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST);
 	}
 	else
@@ -684,24 +768,24 @@ void OpenGLWindow::initGL()								// All setup for OpenGL goes here
 
 	// No blending to start with
 	glDisable(GL_BLEND);	// 3DS model objects are sorted by material opacity so blending is off to start with
+*/
 
 
 
-
-/*
-	glShadeModel(GL_SMOOTH);							// Enable smooth shading
+///*
+	glShadeModel(GL_SMOOTH);
 	glClearColor(mClearColor.x, mClearColor.y, mClearColor.z, 1.0f);
-	glClearDepth(1.0f);									// Depth buffer setup
-//	glEnable(GL_DEPTH_TEST);							// Enables depth testing
-//	glDepthFunc(GL_LEQUAL);								// The type of depth testing to do
-	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);	// Really nice perspective calculations
+	glClearDepth(1.0f);
+//	glEnable(GL_DEPTH_TEST);
+//	glDepthFunc(GL_LEQUAL);
+	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	if (mHasMultisampleBuffer)
 	{
 		glEnable(GL_MULTISAMPLE_ARB);
 		glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST);
 	}
-*/
+//*/
 //	File texFile("data/TestImage.dds");
 //	theTexture = new Texture(texFile);
 	theTexture = new Texture("Data/TestImage.dds");
@@ -711,30 +795,26 @@ void OpenGLWindow::initGL()								// All setup for OpenGL goes here
 	mGLInitialized = true;
 }
 
-void OpenGLWindow::resizeScene(GLsizei inWidth, GLsizei inHeight)		// Resize and initialize the GL window
+void OpenGLWindow::resizeScene(Vec2i inNewSize)
 {
-	if (inHeight == 0)									// Prevent a divide by zero by
-		inHeight = 1;									// making height equal one
+	if (mIgnoreResizeEvents)
+		return;
 
-	mSceneSize.x = inWidth;								// Remember width
-	mSceneSize.y = inHeight;							// Remember height
+	if ((inNewSize.x == 0) || (inNewSize.y == 0))
+		return;
 
-	glViewport(0, 0, mSceneSize.x, mSceneSize.y);		// Reset the current viewport
+	LOG(INFO) << "resizeScene(" << inNewSize.x << "," << inNewSize.y << ")";
+
+	mSceneSize = inNewSize;
+
+	if (!mGLInitialized)
+		return;
+
+	// Reset the current viewport
+	glViewport(0, 0, mSceneSize.x, mSceneSize.y);
 
 	// Notify FontFactory of scene size change
 	FontFactory::inst()->sceneSizeChanged(mSceneSize);
-
-/*
-	glMatrixMode(GL_PROJECTION);						// Select the projection matrix
-	glLoadIdentity();									// Reset the projection matrix
-
-	// Calculate the aspect ratio of the window
-	GLfloat aspectRatio = (GLfloat)mWindowSize.cx / (GLfloat)mWindowSize.cy;
-	gluPerspective(45.0f, aspectRatio, 0.1f, 200.0f);
-
-	glMatrixMode(GL_MODELVIEW);							// Select the modelview matrix
-	glLoadIdentity();									// Reset the modelview matrix
-*/
 }
 
 void OpenGLWindow::drawScene()
@@ -782,7 +862,7 @@ void OpenGLWindow::render()
 	// Clear screen and modelview matrix
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	// Clear screen and depth buffer
 
-/*
+///*
 	// Testing texture loading
 	glMatrixMode(GL_PROJECTION);						// Select the projection matrix
 	glLoadIdentity();									// Reset the projection matrix
@@ -804,7 +884,7 @@ void OpenGLWindow::render()
 	glTexCoord2f(texCoords.s, texCoords.t); glVertex2i(screenLocationBR.x, screenLocationBR.y);
 	glTexCoord2f(texCoords.s, 0);			glVertex2i(screenLocationBR.x, screenLocationTL.y);
 	glEnd();
-*/
+//*/
 
 /*
 	// FontFactory testing
@@ -840,10 +920,10 @@ void OpenGLWindow::render()
 	fontRenderer->render(text, 30, Vec2f(100, 100), Vec4f(1.0f, 1.0f, 1.0f, 1.0f), 30);
 */
 
-
+/*
 	// Testing 3DS model loading
-	T3DSModel* model = T3DSModelFactory::inst()->get("Apollo_3rdStage.3ds");
-//	T3DSModel* model = T3DSModelFactory::inst()->get("ISS.3ds");
+//	T3DSModel* model = T3DSModelFactory::inst()->get("Apollo_3rdStage.3ds");
+	T3DSModel* model = T3DSModelFactory::inst()->get("ISS.3ds");
 	if (model)
 	{
 		glEnable(GL_LIGHTING);
@@ -883,6 +963,7 @@ void OpenGLWindow::render()
 	}
 
 //	T3DSModelFactory::inst()->RemoveAll();
+*/
 }
 
 void OpenGLWindow::postRender()

@@ -28,7 +28,6 @@
 #define MAX_LOADSTRING 100
 
 // Global Variables:
-HINSTANCE hInst;								// current instance
 TCHAR szTitle[MAX_LOADSTRING];					// The title bar text
 TCHAR szWindowClass[MAX_LOADSTRING];			// the main window class name
 OpenGLWindow* gOpenGLWindow;
@@ -42,10 +41,10 @@ BOOL				InitInstance(HINSTANCE, int);
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 
-int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
-                     _In_opt_ HINSTANCE hPrevInstance,
-                     _In_ LPTSTR    lpCmdLine,
-                     _In_ int       nCmdShow)
+int APIENTRY _tWinMain(	_In_ HINSTANCE hInstance,
+						_In_opt_ HINSTANCE hPrevInstance,
+						_In_ LPTSTR lpCmdLine,
+						_In_ int nCmdShow)
 {
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
@@ -115,7 +114,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	gOpenGLWindow = new OpenGLWindow();
 	if (gOpenGLWindow)
 	{
-		gOpenGLWindow->create(hInst, WndProc, IDI_ARMAND, szTitle, windowSize.x, windowSize.y, 24, fullscreen);
+		gOpenGLWindow->create(hInstance, WndProc, IDI_ARMAND, szTitle, windowSize.x, windowSize.y, 24, fullscreen);
 		if (!gOpenGLWindow->getIsCreated())
 			return 0;
 	}
@@ -149,16 +148,8 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 			{
 				gOpenGLWindow->getKeys()[VK_F1] = false;	// If so, make key FALSE
 
-				if (!fullscreen)
-					gOpenGLWindow->getSceneSize(windowSize);
-
-				gOpenGLWindow->destroy();			// Destroy our OpenGLWindow instance
 				fullscreen = !fullscreen;			// Toggle fullscreen / windowed mode
-
-				// Recreate our OpenGL window
-				gOpenGLWindow->create(hInst, WndProc, IDI_ARMAND, szTitle, windowSize.x, windowSize.y, 24, fullscreen);
-				if (!gOpenGLWindow->getIsCreated())
-					return 0;
+				gOpenGLWindow->setFullScreen(fullscreen);
 			}
 		}
 	}
@@ -212,9 +203,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			return 0;
 		}
 
-		case WM_SYSCOMMAND:							// Intercept system commands
+		case WM_SYSCOMMAND:						// Intercept system commands
 		{
-			switch (wParam)							// Check system calls
+			switch (wParam)						// Check system calls
 			{
 			case SC_SCREENSAVE:					// Screensaver trying to start?
 			case SC_MONITORPOWER:				// Monitor trying to enter powersave?
@@ -260,7 +251,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 
 		case WM_SIZE:
-			gOpenGLWindow->resizeScene(LOWORD(lParam), HIWORD(lParam));
+			gOpenGLWindow->resizeScene(Vec2i(LOWORD(lParam), HIWORD(lParam)));
 			gOpenGLWindow->drawScene();
 			return 0;
 

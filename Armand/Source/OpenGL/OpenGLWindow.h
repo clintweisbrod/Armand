@@ -33,7 +33,7 @@ class OpenGLWindow
 
 		// Creation / destruction
 		bool			create(HINSTANCE inInstance, WNDPROC inWndProc, WORD inMenuID,
-							   TCHAR* inTitle, int inWidth, int inHeight, int inBitsPerPixel, bool inFullscreenFlag);
+							   TCHAR* inTitle, int inWidth, int inHeight, int inBitsPerPixel, bool inFullscreen);
 		void			destroy();
 		HINSTANCE		getAppInstance() { return mhInstance; };
 		HWND			getHWND() { return mhWnd; };
@@ -44,7 +44,7 @@ class OpenGLWindow
 
 		// OpenGL
 		void			drawScene();
-		void			resizeScene(GLsizei inWidth, GLsizei inHeight);
+		void			resizeScene(Vec2i inNewSize);
 		
 		// User input
 		void			mouseEvent(WORD inXPos, WORD inYPos, bool inCtrlDown, bool inShiftDown, bool inLeftDown, bool inMiddleDown, bool inRightDown);
@@ -52,6 +52,9 @@ class OpenGLWindow
 		void			keyboardKeyDown(WPARAM inKey);
 		void			keyboardKeyUp(WPARAM inKey);
 		bool*			getKeys() { return mKeys; };
+
+		// Fullscreen
+		void			setFullScreen(bool inFullScreen);
 		
 		// Harness state
 		void			setClearColor(const GLfloat inRed, const GLfloat inGreen, const GLfloat inBlue);
@@ -60,7 +63,7 @@ class OpenGLWindow
 		static bool		sEnabledGLExtensions;
 
 		bool			createWindow(HINSTANCE inInstance, WNDPROC inWndProc, WORD inMenuID,
-									 TCHAR* inTitle, int inWidth, int inHeight, int inBitsPerPixel, bool inFullscreenFlag);
+									 TCHAR* inTitle, int inWidth, int inHeight, int inBitsPerPixel, bool inFullscreen);
 		bool			setupOpenGLForWindow(GLuint inPixelFormat, PIXELFORMATDESCRIPTOR* inPFD);
 		GLuint			selectBestPixelFormatUsingWGL(HDC hDC);
 		double			getCurrentSeconds() const;
@@ -76,14 +79,30 @@ class OpenGLWindow
 		bool			mGLInitialized;
 		bool			mHasMultisampleBuffer;
 
-		HINSTANCE		mhInstance;		// Holds the instance of the application
-		HWND			mhWnd;			// Holds our window handle
-		HDC				mhDC;			// Private GDI device context
-		HGLRC			mhRC;			// Permanent rendering context
+		HINSTANCE		mhInstance;				// Holds the instance of the application
+		HWND			mhWnd;					// Holds our window handle
+		HDC				mhDC;					// Private GDI device context
+		HGLRC			mhRC;					// Permanent rendering context
 		wstring			mWindowTitle;
-		bool			mFullscreen;
-		Vec2i			mSceneSize;
+
+		bool			mFullscreen;			// True when in fullscreen
+
+		Vec2i			mSceneSize;				// Current size of windows's client area
+		Vec2i			mWindowSize;			// Current size of window including frame
+
+		Vec2i			mLastWindowedSceneSize;	// Used when switching to and from fullscreen
+		Vec2i			mLastWindowSize;		// Size of window including frame
+		Vec2i			mLastWindowPosition;	// In screen coordinates
+
+		HMENU			mWindowMenu;
 		int				mCmdShow;
+
+		DWORD			mWindowedStyle;
+		DWORD			mWindowedExStyle;
+		DWORD			mFullScreenStyle;
+		DWORD			mFullScreenExStyle;
+
+		bool			mIgnoreResizeEvents;
 
 		// Frame rate determination
 		double			mFrameStartTime;
