@@ -606,11 +606,6 @@
 //	Purpose:	Holds lighting normal for a face. We need this struct to keep track
 //				of how many normals were combined to make fNormal so that we can then
 //				compute the correct averaged normal.
-//
-//	Date		Initials	Version		Comments
-//  ----------	---------	----------	---------------------------
-//	05/12/13	CLW			5.0.0		first release
-//
 //----------------------------------------------------------------------
 struct T3DSNormalInfo
 {
@@ -619,28 +614,23 @@ struct T3DSNormalInfo
 	Vec3f	mNormal;
 	int		mSharedCount;
 };
-typedef map<int, T3DSNormalInfo>	T3DSNormalMap;
+typedef map<int, T3DSNormalInfo> T3DSNormalMap_t;
 
 //----------------------------------------------------------------------
 //	Struct:		T3DSVertex
 //
 //	Purpose:	Holds vertex information. Each vertex can have a lighing normal
 //				and smoothing group associated with it.
-//
-//	Date		Initials	Version		Comments
-//  ----------	---------	----------	---------------------------
-//	05/12/13	CLW			5.0.0		first release
-//
 //----------------------------------------------------------------------
-typedef list<int>	T3DSFaceList;
+typedef list<int> T3DSFaceList_t;
 struct T3DSVertex
 {
 	T3DSVertex();
 
 	Vec3f			mVertex;
-	T3DSFaceList	mFaceList;
+	T3DSFaceList_t	mFaceList;
 	uint32_t		mSmoothingGroups;
-	T3DSNormalMap	mNormalMap;
+	T3DSNormalMap_t	mNormalMap;
 };
 
 //----------------------------------------------------------------------
@@ -649,11 +639,6 @@ struct T3DSVertex
 //	Purpose:	This is is used for indexing into the vertex and texture coordinate arrays.
 //				From this information we know which vertices from our vertex array go to
 //				which face, along with the correct texture coordinates.
-//
-//	Date		Initials	Version		Comments
-//  ----------	---------	----------	---------------------------
-//	05/12/13	CLW			5.0.0		first release
-//
 //----------------------------------------------------------------------
 struct T3DSFace
 {
@@ -673,11 +658,6 @@ struct T3DSFace
 //				material definitions like shininess, diffuse color, etc.
 //				Some of these members are not used, but I left them because we will likely
 //				want to read in the UV tile ratio and the UV tile offset for some models.
-//
-//	Date		Initials	Version		Comments
-//  ----------	---------	----------	---------------------------
-//	05/12/13	CLW			5.0.0		first release
-//
 //----------------------------------------------------------------------
 struct T3DSMaterialInfo
 {
@@ -701,28 +681,23 @@ struct T3DSMaterialInfo
 //
 //	Purpose:	This holds the object/references information which includes all the
 //				vertices, texture coordinates, face info, material info.
-//
-//	Date		Initials	Version		Comments
-//  ----------	---------	----------	---------------------------
-//	05/12/13	CLW			5.0.0		first release
-//
 //----------------------------------------------------------------------
-typedef vector<T3DSFace> T3DSFaceVec;
+typedef vector<T3DSFace> T3DSFaceVec_t;
 struct T3DSObject
 {
 	T3DSObject();
 	
-	string		mName;			// The name of the object
-	uint16_t	mNumVertices;	// The number of vertices in this object
-	uint16_t	mNumFaces;		// The number of faces in this object
-	uint16_t	mNumTexCoords;	// The number of texture coordinates
-	T3DSVertex*	mVertices;		// The object's vertices
-	Vec2f*		mTexCoords;		// The texture's UV coordinates
-	T3DSFaceVec mFaces;			// The faces information of the object. STL vector so we can sort the items.
-	Mat3f		mTranslation;
-	Vec3f		mLocalCenter;
-	bool		mHasSmoothingInfo;	// True if smoothing groups have been specified for this object
-	bool		mPerVertexNormals;	// True if per-vertex lighting normals have been calculated
+	string			mName;			// The name of the object
+	uint16_t		mNumVertices;	// The number of vertices in this object
+	uint16_t		mNumFaces;		// The number of faces in this object
+	uint16_t		mNumTexCoords;	// The number of texture coordinates
+	T3DSVertex*		mVertices;		// The object's vertices
+	Vec2f*			mTexCoords;		// The texture's UV coordinates
+	T3DSFaceVec_t	mFaces;			// The faces information of the object. STL vector so we can sort the items.
+	Mat3f			mTranslation;
+	Vec3f			mLocalCenter;
+	bool			mHasSmoothingInfo;	// True if smoothing groups have been specified for this object
+	bool			mPerVertexNormals;	// True if per-vertex lighting normals have been calculated
 };
 
 //----------------------------------------------------------------------
@@ -730,11 +705,6 @@ struct T3DSObject
 //
 //	Purpose:	This holds the 3DS chunk information which is essentially a header for
 //				the actual chunk data.
-//
-//	Date		Initials	Version		Comments
-//  ----------	---------	----------	---------------------------
-//	05/12/13	CLW			5.0.0		first release
-//
 //----------------------------------------------------------------------
 struct T3DSChunk
 {
@@ -744,111 +714,106 @@ struct T3DSChunk
 };
 
 
-typedef vector<T3DSMaterialInfo>	TMaterialVec;
-typedef vector<T3DSObject>			T3DSObjectVec;
-typedef map<string, Texture*>		TModelTextureMap;
+typedef vector<T3DSMaterialInfo>	TMaterialVec_t;
+typedef vector<T3DSObject>			T3DSObjectVec_t;
+typedef map<string, Texture*>		TModelTextureMap_t;
 
 //----------------------------------------------------------------------
 //	Class:		T3DSModel
 //
 //	Purpose:	This is the actual class that is instantiated to load and render a 3DS
 //				model.
-//
-//	Date		Initials	Version		Comments
-//  ----------	---------	----------	---------------------------
-//	05/12/13	CLW			5.0.0		first release
-//
 //----------------------------------------------------------------------
 class T3DSModel
 {
-	friend class T3DSFaceComparator;
-	friend class T3DSModelFactory;
+friend class T3DSFaceComparator;
+friend class T3DSModelFactory;
 
-	public:
-		T3DSModel();	// This inits the data members
-		~T3DSModel();
+public:
+	T3DSModel();	// This inits the data members
+	~T3DSModel();
 
-		// This is the function that you call to load the 3DS
-		bool		Load(File& inFile, bool inLoadMetaOnly = false, bool inIsAUserModel = false);
-		void		Render(/* TOGLDrawer* inOpenGL */);
-		double_t	GetModelBoundingRadius() const { return mModelBoundingRadius; };
-		double_t	GetPhysicalRadius() const {	return mPhysicalRadius;	};
-		Vec3f		GetModelUpVector() const { return mModelUpVector; };
-		Vec3f		GetModelRotationAxis() const { return mModelUpVector; };
-		double_t	GetRotationRate() const { return mRotationRateInRadiansPerCentury; };
-		double_t	GetInclinationAngle() const { return mInclinationAngleInDegrees; };
-		string		GetName() const { return mFilename; };
-		bool		IsLoaded() const { return mModelDataLoaded; };
-		string		GetTextureFolderName() const { return mTextureFolderName; };
+	// This is the function that you call to load the 3DS
+	bool		load(File& inFile, bool inLoadMetaOnly = false);
+	void		render();
+	double_t	getModelBoundingRadius() const { return mModelBoundingRadius; };
+	double_t	getPhysicalRadius() const {	return mPhysicalRadius;	};
+	Vec3f		getModelUpVector() const { return mModelUpVector; };
+	Vec3f		getModelRotationAxis() const { return mModelUpVector; };
+	double_t	getRotationRate() const { return mRotationRateInRadiansPerCentury; };
+	double_t	getInclinationAngle() const { return mInclinationAngleInDegrees; };
+	string		getName() const { return mFilename; };
+	bool		isLoaded() const { return mModelDataLoaded; };
+	string		getTextureFolderName() const { return mTextureFolderName; };
 
-		//
-		// Support for rendering atmospheres around 3DS models
-		//
-	public:
-		void		SetRenderAtmosphere(bool inRenderAtmosphere) { mRenderAtmosphere = inRenderAtmosphere; };
-		bool		GetRenderAtmosphere() const { return mRenderAtmosphere;	};
-		void		SetRenderCoordinateAxes(bool inRenderCoordinateAxes) { mRenderCoordinateAxes = inRenderCoordinateAxes; };
-		void		SetAtmosphereParameters(GLint inExpansionIterations, GLint inConvolutionIterations);
-//		void		RenderAtmosphere();
-		void		SetFBOSize(GLuint inWidth, GLuint inHeight);
-		GLuint		GetConvolvedTextureID() const { return mConvolvedTextureID; };
+	//
+	// Support for rendering atmospheres around 3DS models
+	//
+public:
+	void		setRenderAtmosphere(bool inRenderAtmosphere) { mRenderAtmosphere = inRenderAtmosphere; };
+	bool		getRenderAtmosphere() const { return mRenderAtmosphere;	};
+	void		setRenderCoordinateAxes(bool inRenderCoordinateAxes) { mRenderCoordinateAxes = inRenderCoordinateAxes; };
+	void		setAtmosphereParameters(GLint inExpansionIterations, GLint inConvolutionIterations);
+//	void		renderAtmosphere();
+	void		setFBOSize(GLuint inWidth, GLuint inHeight);
+	GLuint		getConvolvedTextureID() const { return mConvolvedTextureID; };
 	
-	private:
-//		GLuint		PerformConvolution(GLuint inSrcTextureID, int inIterations = 1);
-//		GLuint		PerformImageExpansion(GLuint inSrcTextureID, int inIterations = 1);
+private:
+//	GLuint		performConvolution(GLuint inSrcTextureID, int inIterations = 1);
+//	GLuint		performImageExpansion(GLuint inSrcTextureID, int inIterations = 1);
 
-		bool		mRenderAtmosphere;
-		bool		mRenderCoordinateAxes;
-		Vec2i		mFBOSize;
-		GLuint		mConvolvedTextureID;
-		GLint		mExpansionIterations;
-		GLint		mConvolutionIterations;
+	bool		mRenderAtmosphere;
+	bool		mRenderCoordinateAxes;
+	Vec2i		mFBOSize;
+	GLuint		mConvolvedTextureID;
+	GLint		mExpansionIterations;
+	GLint		mConvolutionIterations;
 
-	private:
-		size_t		ReadString(FILE* inFileHandle, string& outString);
-		void		ReadChunk(FILE* inFileHandle, T3DSChunk* outChunk);
-		size_t		Read(FILE* inFileHandle, size_t inSize, size_t inCount);
-		size_t		Read(FILE* inFileHandle, size_t inSize, size_t inCount, void* ioBuf);
-		size_t		ReadFloat(FILE* inFileHandle, GLfloat* ioFloatValue);
-		void		ProcessNextChunk(FILE* inFileHandle, T3DSChunk* ioPreviousChunk);
-		void		ProcessNextObjectChunk(FILE* inFileHandle, T3DSObject* ioObject, T3DSChunk* ioChunk);
-		void		ProcessNextMaterialChunk(FILE* inFileHandle, T3DSChunk* ioPreviousChunk);
-		void		ReadColorChunk(FILE* inFileHandle, float* ioColor, T3DSChunk* ioChunk);
-		void		ReadPercentageChunk(FILE* inFileHandle, float* ioPercent, T3DSChunk* ioChunk);
-		void		ReadVertices(FILE* inFileHandle, T3DSObject* ioObject, T3DSChunk* ioPreviousChunk);
-		void		ReadVertexIndices(FILE* inFileHandle, T3DSObject* ioObject, T3DSChunk* ioPreviousChunk);
-		void		ReadUVCoordinates(FILE* inFileHandle, T3DSObject* ioObject, T3DSChunk* ioPreviousChunk);
-		void		ReadSmoothingGroups(FILE* inFileHandle, T3DSObject* ioObject, T3DSChunk* ioPreviousChunk);
-		void		ReadTranslationMatrix(FILE* inFileHandle, T3DSObject* ioObject, T3DSChunk* ioPreviousChunk);
-		void		ReadObjectMaterial(FILE* inFileHandle, T3DSObject* ioObject, T3DSChunk* ioPreviousChunk);
-		void		ComputeNormals();
-		void		SortFaces();
-		void		ComputeBoundingRadius();
-		void		LoadTextures();
-		void		LoadMetaData(File& inModelFile);
-		void		AdjustTextureCoordinates();
-		void		CleanUp();
-		bool		SetupOpenGLMaterialState(int inMaterialID, bool& ioIsTexturing);
+private:
+	size_t		readString(FILE* inFileHandle, string& outString);
+	void		readChunk(FILE* inFileHandle, T3DSChunk* outChunk);
+	size_t		read(FILE* inFileHandle, size_t inSize, size_t inCount);
+	size_t		read(FILE* inFileHandle, size_t inSize, size_t inCount, void* ioBuf);
+	size_t		readFloat(FILE* inFileHandle, GLfloat* ioFloatValue);
+	void		processNextChunk(FILE* inFileHandle, T3DSChunk* ioPreviousChunk);
+	void		processNextObjectChunk(FILE* inFileHandle, T3DSObject* ioObject, T3DSChunk* ioChunk);
+	void		processNextMaterialChunk(FILE* inFileHandle, T3DSChunk* ioPreviousChunk);
+	void		readColorChunk(FILE* inFileHandle, float* ioColor, T3DSChunk* ioChunk);
+	void		readPercentageChunk(FILE* inFileHandle, float* ioPercent, T3DSChunk* ioChunk);
+	void		readVertices(FILE* inFileHandle, T3DSObject* ioObject, T3DSChunk* ioPreviousChunk);
+	void		readVertexIndices(FILE* inFileHandle, T3DSObject* ioObject, T3DSChunk* ioPreviousChunk);
+	void		readUVCoordinates(FILE* inFileHandle, T3DSObject* ioObject, T3DSChunk* ioPreviousChunk);
+	void		readSmoothingGroups(FILE* inFileHandle, T3DSObject* ioObject, T3DSChunk* ioPreviousChunk);
+	void		readTranslationMatrix(FILE* inFileHandle, T3DSObject* ioObject, T3DSChunk* ioPreviousChunk);
+	void		readObjectMaterial(FILE* inFileHandle, T3DSObject* ioObject, T3DSChunk* ioPreviousChunk);
+	void		computeNormals();
+	void		sortFaces();
+	void		computeBoundingRadius();
+	void		loadTextures();
+	void		loadMetaData(File& inModelFile);
+	void		adjustTextureCoordinates();
+	void		cleanUp();
+	bool		setupOpenGLMaterialState(int inMaterialID, bool& ioIsTexturing);
 		
-		TMaterialVec		mMaterials;		// The list of material information (Textures and colors)
-		T3DSObjectVec		mObjects;		// The object list for our model
-		TModelTextureMap	mTextureMap;
+	TMaterialVec_t		mMaterials;		// The list of material information (Textures and colors)
+	T3DSObjectVec_t		mObjects;		// The object list for our model
+	TModelTextureMap_t	mTextureMap;
 		
-		File				mFile;
-		string				mFilename;
-		string				mTextureFolderName;
-		uint32_t*			mBuffer;
-		size_t				mBufferSize;
-		GLuint				mDisplayList;
+	File				mFile;
+	string				mFilename;
+	string				mTextureFolderName;
+	uint32_t*			mBuffer;
+	size_t				mBufferSize;
+	GLuint				mDisplayList;
 
-		double_t			mModelBoundingRadius;
-		double_t			mPhysicalRadius;
-		Vec3f				mModelUpVector;
-		double_t			mInclinationAngleInDegrees;
-		double_t			mRotationRateInRadiansPerCentury;
+	double_t			mModelBoundingRadius;
+	double_t			mPhysicalRadius;
+	Vec3f				mModelUpVector;
+	double_t			mInclinationAngleInDegrees;
+	double_t			mRotationRateInRadiansPerCentury;
 	
-		bool				mModelDataLoaded;
-		bool				mMetaDataLoaded;
+	bool				mModelDataLoaded;
+	bool				mMetaDataLoaded;
 };
 
 //----------------------------------------------------------------------

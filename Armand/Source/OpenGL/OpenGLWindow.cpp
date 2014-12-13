@@ -854,7 +854,7 @@ void OpenGLWindow::render()
 		GLfloat aspectRatio = (GLfloat)mSceneSize.x / (GLfloat)mSceneSize.y;
 
 		// Get bounding radius of model
-		double_t boundingRadius = model->GetModelBoundingRadius();
+		double_t boundingRadius = model->getModelBoundingRadius();
 
 		// Set perspective projection
 		gluPerspective(30.0f, aspectRatio, boundingRadius * 0.1, 3 * boundingRadius);
@@ -879,7 +879,7 @@ void OpenGLWindow::render()
 		if (rot.z > 360)
 			rot.z -= 360;
 		
-		model->Render();
+		model->render();
 	}
 
 //	T3DSModelFactory::inst()->RemoveAll();

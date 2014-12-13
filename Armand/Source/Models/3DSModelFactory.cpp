@@ -47,7 +47,7 @@ T3DSModel* T3DSModelFactory::get(const char* inModelFileName, bool inLoadMetaOnl
 
 		// We may need to load the model data. This happens when we've previously asked only for meta data
 		if (!inLoadMetaOnly && !mapItem.mModel->mModelDataLoaded)
-			mapItem.mModel->Load(modelFile, inLoadMetaOnly);
+			mapItem.mModel->load(modelFile, inLoadMetaOnly);
 	}
 	else
 	{
@@ -55,7 +55,7 @@ T3DSModel* T3DSModelFactory::get(const char* inModelFileName, bool inLoadMetaOnl
 		mapItem.mModel = new T3DSModel;
 		if (mapItem.mModel)
 		{
-			if (mapItem.mModel->Load(modelFile, inLoadMetaOnly))
+			if (mapItem.mModel->load(modelFile, inLoadMetaOnly))
 			{
 				// Add new reference for this model
 				//				mapItem.fPlanetRefs[inReferrer] = 1;
