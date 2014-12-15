@@ -21,9 +21,11 @@
 
 #include <GL/glew.h>
 #include <GL/wglew.h>
+#include <freetype-gl/mat4.h>
 
 #include "Math/vecmath.h"
 #include "OpenGL/Textures/Texture.h"
+#include "OpenGL/ShaderFactory.h"
 
 class OpenGLWindow
 {
@@ -118,7 +120,10 @@ class OpenGLWindow
 		double			mLastMouseMoveSeconds;
 		Vec2i			mLastMousePosition;
 
-		Texture*		theTexture;
-
 		Vec3f			mClearColor;
+
+		// Temporary stuff for testing
+		Texture*		theTexture;
+		ShaderProgram*	shaderProg;
+		mat4			mProjectionMatrix;
 };

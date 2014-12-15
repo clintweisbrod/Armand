@@ -24,6 +24,7 @@
 #include "ShaderFactory.h"
 #include "Fonts/FontFactory.h"
 #include "Models/3DSModelFactory.h"
+#include "Math/constants.h"
 
 bool OpenGLWindow::sEnabledGLExtensions = false;
 
@@ -653,7 +654,7 @@ void OpenGLWindow::initGL()
 		return;
 
 
-/*
+///*
 	// For testing 3DS models
 	glDrawBuffer(GL_BACK); // draw into the back buffer
 	// anti aliasing -- see page 236, example 6-3 OpenGL programming guide, 3rd ed.
@@ -767,11 +768,11 @@ void OpenGLWindow::initGL()
 
 	// No blending to start with
 	glDisable(GL_BLEND);	// 3DS model objects are sorted by material opacity so blending is off to start with
-*/
+//*/
 
 
 
-///*
+/*
 	glShadeModel(GL_SMOOTH);
 	glClearColor(mClearColor.x, mClearColor.y, mClearColor.z, 1.0f);
 	glClearDepth(1.0f);
@@ -784,12 +785,13 @@ void OpenGLWindow::initGL()
 		glEnable(GL_MULTISAMPLE_ARB);
 		glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST);
 	}
-//*/
-//	File texFile("data/TestImage.dds");
-//	theTexture = new Texture(texFile);
-	theTexture = new Texture("Data/TestImage.dds");
-	if (theTexture->getImageBufferOK())
-		theTexture->sendToGPU();
+*/
+//	theTexture = new Texture("Data/TestImage.dds");
+//	if (theTexture->getImageBufferOK())
+//		theTexture->sendToGPU();
+
+	shaderProg = ShaderFactory::inst()->getShaderProgram("Projection/Fisheye.vert",
+														 "Projection/Fisheye.frag");
 
 	mGLInitialized = true;
 }
@@ -811,6 +813,13 @@ void OpenGLWindow::resizeScene(Vec2i inNewSize)
 
 	// Reset the current viewport
 	glViewport(0, 0, mSceneSize.x, mSceneSize.y);
+
+	float h = 1, v = 1;
+	if (mSceneSize.x > mSceneSize.y)
+		h = (float)mSceneSize.x / (float)mSceneSize.y;
+	else
+		v = (float)mSceneSize.y / (float)mSceneSize.x;
+	mat4_set_orthographic(&mProjectionMatrix, -h, h, -v, v, -1, 1);
 
 	// Notify FontFactory of scene size change
 	FontFactory::inst()->sceneSizeChanged(mSceneSize);
@@ -861,7 +870,7 @@ void OpenGLWindow::render()
 	// Clear screen and modelview matrix
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	// Clear screen and depth buffer
 
-///*
+/*
 	// Testing texture loading
 	glMatrixMode(GL_PROJECTION);						// Select the projection matrix
 	glLoadIdentity();									// Reset the projection matrix
@@ -883,7 +892,7 @@ void OpenGLWindow::render()
 	glTexCoord2f(texCoords.s, texCoords.t); glVertex2i(screenLocationBR.x, screenLocationBR.y);
 	glTexCoord2f(texCoords.s, 0);			glVertex2i(screenLocationBR.x, screenLocationTL.y);
 	glEnd();
-//*/
+*/
 
 /*
 	// FontFactory testing
@@ -919,12 +928,39 @@ void OpenGLWindow::render()
 	fontRenderer->render(text, 30, Vec2f(100, 100), Vec4f(1.0f, 1.0f, 1.0f, 1.0f), 30);
 */
 
-/*
+
 	// Testing 3DS model loading
-//	T3DSModel* model = T3DSModelFactory::inst()->get("Apollo_3rdStage.3ds");
-	T3DSModel* model = T3DSModelFactory::inst()->get("ISS.3ds");
+	T3DSModel* model = T3DSModelFactory::inst()->get("Apollo_3rdStage.3ds");
+//	T3DSModel* model = T3DSModelFactory::inst()->get("ISS.3ds");
 	if (model)
 	{
+///*
+		// Get bounding radius of model
+		GLfloat cameraZ = (GLfloat)model->getModelBoundingRadius() * 2;
+		static GLfloat cameraX = 0;
+		static GLfloat dCameraX = 1.0f;
+
+		GLuint shaderHandle = shaderProg->getHandle();
+		glUseProgram(shaderHandle);
+		{
+			glUniform1f(glGetUniformLocation(shaderHandle, "uAperture"), (GLfloat)kPi);
+
+			glUniform3f(glGetUniformLocation(shaderHandle, "uVD"), 0.707f, 0, 0.707f);
+			glUniform3f(glGetUniformLocation(shaderHandle, "uVU"), 0, 1, 0);
+			glUniform3f(glGetUniformLocation(shaderHandle, "uVR"), 1, 0, 0);
+			glUniform3f(glGetUniformLocation(shaderHandle, "uVP"), cameraX, 0, cameraZ);
+
+			glUniformMatrix4fv(glGetUniformLocation(shaderHandle, "uProjection"), 1, 0, mProjectionMatrix.data);
+			model->render();
+
+			glUseProgram(0);
+		}
+
+//		cameraX += dCameraX;
+//		if (((dCameraX > 0) && (cameraX > 200)) || ((dCameraX < 0) && (cameraX < -200)))
+//			dCameraX = -dCameraX;
+//*/
+/*
 		glEnable(GL_LIGHTING);
 		glMatrixMode(GL_PROJECTION);						// Select the projection matrix
 		glLoadIdentity();									// Reset the projection matrix
@@ -936,7 +972,7 @@ void OpenGLWindow::render()
 		double_t boundingRadius = model->getModelBoundingRadius();
 
 		// Set perspective projection
-		gluPerspective(30.0f, aspectRatio, boundingRadius * 0.1, 3 * boundingRadius);
+		gluPerspective(90.0f, aspectRatio, boundingRadius * 0.1, 3 * boundingRadius);
 
 		glMatrixMode(GL_MODELVIEW);							// Select the modelview matrix
 		glLoadIdentity();									// Reset the modelview matrix
@@ -946,23 +982,24 @@ void OpenGLWindow::render()
 	
 		GLdouble translate = -boundingRadius * 2;
 		glTranslated(0.0, 0.0, translate);
-		glRotated(rot.x, 1, 0, 0);
-		glRotated(rot.y, 0, 1, 0);
-		glRotated(rot.z, 0, 0, 1);
-		
-		rot += dRot;
-		if (rot.x > 360)
-			rot.x -= 360;
-		if (rot.y > 360)
-			rot.y -= 360;
-		if (rot.z > 360)
-			rot.z -= 360;
+
+//		glRotated(rot.x, 1, 0, 0);
+//		glRotated(rot.y, 0, 1, 0);
+//		glRotated(rot.z, 0, 0, 1);
+//		rot += dRot;
+//		if (rot.x > 360)
+//			rot.x -= 360;
+//		if (rot.y > 360)
+//			rot.y -= 360;
+//		if (rot.z > 360)
+//			rot.z -= 360;
 		
 		model->render();
+*/
 	}
 
 //	T3DSModelFactory::inst()->RemoveAll();
-*/
+//*/
 }
 
 void OpenGLWindow::postRender()
