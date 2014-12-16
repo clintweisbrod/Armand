@@ -936,16 +936,16 @@ void OpenGLWindow::render()
 	{
 ///*
 		// Get bounding radius of model
-		GLfloat cameraZ = (GLfloat)model->getModelBoundingRadius() * 2;
+		GLfloat cameraZ = (GLfloat)model->getModelBoundingRadius();
 		static GLfloat cameraX = 0;
-		static GLfloat dCameraX = 1.0f;
+		static GLfloat dCameraX = 0.5f;
 
 		GLuint shaderHandle = shaderProg->getHandle();
 		glUseProgram(shaderHandle);
 		{
 			glUniform1f(glGetUniformLocation(shaderHandle, "uAperture"), (GLfloat)kPi);
 
-			glUniform3f(glGetUniformLocation(shaderHandle, "uVD"), 0.707f, 0, 0.707f);
+			glUniform3f(glGetUniformLocation(shaderHandle, "uVD"), 0, 0, -1);
 			glUniform3f(glGetUniformLocation(shaderHandle, "uVU"), 0, 1, 0);
 			glUniform3f(glGetUniformLocation(shaderHandle, "uVR"), 1, 0, 0);
 			glUniform3f(glGetUniformLocation(shaderHandle, "uVP"), cameraX, 0, cameraZ);
@@ -956,9 +956,9 @@ void OpenGLWindow::render()
 			glUseProgram(0);
 		}
 
-//		cameraX += dCameraX;
-//		if (((dCameraX > 0) && (cameraX > 200)) || ((dCameraX < 0) && (cameraX < -200)))
-//			dCameraX = -dCameraX;
+		cameraX += dCameraX;
+		if (((dCameraX > 0) && (cameraX > cameraZ)) || ((dCameraX < 0) && (cameraX < -cameraZ)))
+			dCameraX = -dCameraX;
 //*/
 /*
 		glEnable(GL_LIGHTING);

@@ -6,8 +6,8 @@ uniform vec3	uVP;	// Eye position
 
 uniform mat4 	uProjection;
 
-attribute vec3 vertex;
-attribute vec4 color;
+//attribute vec3 vertex;
+//attribute vec4 color;
 
 void main()
 {
@@ -15,7 +15,7 @@ void main()
 	
 	// Compute: ||p-vp||
 //	vec3 eyePoint = vertex - uVP;
-	vec3 eyePoint = uVP - vertex;
+	vec3 eyePoint = uVP - gl_Vertex;
 	vec3 eyePointNorm = normalize(eyePoint);
 	
 	// Compute: acos(vd . ||p-vp||)
@@ -27,8 +27,9 @@ void main()
 	float halfAperture = uAperture * 0.5;
 	vec2 point;
 	point.x = eyePointViewDirectionAngle * dot(eyePointNorm, uVR) / halfAperture;
-	point.y = eyePointViewDirectionAngle * dot(eyePointNorm, uVU) / halfAperture;
+	point.y = -eyePointViewDirectionAngle * dot(eyePointNorm, uVU) / halfAperture;
 	
-	gl_FrontColor = color;
+//	gl_FrontColor = color;
+//	gl_FrontColor = gl_Color;
 	gl_Position = uProjection * vec4(point, 0.0, 1.0);
 }
