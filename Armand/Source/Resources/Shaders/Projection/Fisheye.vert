@@ -1,7 +1,5 @@
 uniform float	uAperture;
 uniform vec3	uVD;	// View direction
-//uniform vec3	uVU;	// View up
-//uniform vec3	uVR;	// View right
 
 uniform mat4	uView;
 uniform mat4 	uProjection;

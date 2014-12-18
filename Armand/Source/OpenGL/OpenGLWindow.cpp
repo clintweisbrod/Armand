@@ -974,7 +974,7 @@ void OpenGLWindow::render()
 		Vec3f uVD(0, 0, 1);
 		Vec3f uVU(0, 1, 0);
 		Vec3f uVR(1, 0, 0);
-		Vec4f gl_Vertex(offset, 0, 0, 1);
+		Vec4f gl_Vertex(offset, offset, 0, 1);
 		Vec4f eyePoint = viewMatrix * gl_Vertex;
 		Vec3f eyePointNorm = Vec3f(eyePoint.x, eyePoint.y, eyePoint.z);
 		eyePointNorm.normalize();
@@ -1000,11 +1000,7 @@ void OpenGLWindow::render()
 		glUseProgram(shaderHandle);
 		{
 			glUniform1f(glGetUniformLocation(shaderHandle, "uAperture"), (GLfloat)kPi);
-
 			glUniform3f(glGetUniformLocation(shaderHandle, "uVD"), 0, 0, 1);
-//			glUniform3f(glGetUniformLocation(shaderHandle, "uVU"), 0, 1, 0);
-//			glUniform3f(glGetUniformLocation(shaderHandle, "uVR"), 1, 0, 0);
-
 			glUniformMatrix4fv(glGetUniformLocation(shaderHandle, "uView"), 1, 0, viewMatrix.data);
 			glUniformMatrix4fv(glGetUniformLocation(shaderHandle, "uProjection"), 1, 0, mProjectionMatrix.data);
 			
@@ -1014,7 +1010,7 @@ void OpenGLWindow::render()
 		}
 //*/
 		cameraX += dCameraX;
-		if (((dCameraX > 0) && (cameraX > 5 * cameraZ)) || ((dCameraX < 0) && (cameraX < -5 * cameraZ)))
+		if (((dCameraX > 0) && (cameraX > 3 * cameraZ)) || ((dCameraX < 0) && (cameraX < -3 * cameraZ)))
 			dCameraX = -dCameraX;
 //*/
 /*
