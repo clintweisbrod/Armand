@@ -40,8 +40,8 @@ private:
 
 
 typedef Math<int> Mathi;
-typedef Math<float> Mathf;
-typedef Math<double> Mathd;
+typedef Math<float_t> Mathf;
+typedef Math<double_t> Mathd;
 
 
 template<class T> T degToRad(T d)
