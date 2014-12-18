@@ -886,15 +886,15 @@ void T3DSModel::readSmoothingGroups(FILE* inFileHandle, T3DSObject* ioObject, T3
 void T3DSModel::readTranslationMatrix(FILE* inFileHandle, T3DSObject* ioObject, T3DSChunk* ioPreviousChunk)
 {
 	// Read matrix elements
-	ioPreviousChunk->mBytesRead += readFloat(inFileHandle, (GLfloat*)&ioObject->mTranslation[0].x);
-	ioPreviousChunk->mBytesRead += readFloat(inFileHandle, (GLfloat*)&ioObject->mTranslation[0].y);
-	ioPreviousChunk->mBytesRead += readFloat(inFileHandle, (GLfloat*)&ioObject->mTranslation[0].z);
-	ioPreviousChunk->mBytesRead += readFloat(inFileHandle, (GLfloat*)&ioObject->mTranslation[1].x);
-	ioPreviousChunk->mBytesRead += readFloat(inFileHandle, (GLfloat*)&ioObject->mTranslation[1].y);
-	ioPreviousChunk->mBytesRead += readFloat(inFileHandle, (GLfloat*)&ioObject->mTranslation[1].z);
-	ioPreviousChunk->mBytesRead += readFloat(inFileHandle, (GLfloat*)&ioObject->mTranslation[2].x);
-	ioPreviousChunk->mBytesRead += readFloat(inFileHandle, (GLfloat*)&ioObject->mTranslation[2].y);
-	ioPreviousChunk->mBytesRead += readFloat(inFileHandle, (GLfloat*)&ioObject->mTranslation[2].z);
+	ioPreviousChunk->mBytesRead += readFloat(inFileHandle, (GLfloat*)&ioObject->mTranslation.m00);
+	ioPreviousChunk->mBytesRead += readFloat(inFileHandle, (GLfloat*)&ioObject->mTranslation.m10);
+	ioPreviousChunk->mBytesRead += readFloat(inFileHandle, (GLfloat*)&ioObject->mTranslation.m20);
+	ioPreviousChunk->mBytesRead += readFloat(inFileHandle, (GLfloat*)&ioObject->mTranslation.m01);
+	ioPreviousChunk->mBytesRead += readFloat(inFileHandle, (GLfloat*)&ioObject->mTranslation.m11);
+	ioPreviousChunk->mBytesRead += readFloat(inFileHandle, (GLfloat*)&ioObject->mTranslation.m21);
+	ioPreviousChunk->mBytesRead += readFloat(inFileHandle, (GLfloat*)&ioObject->mTranslation.m02);
+	ioPreviousChunk->mBytesRead += readFloat(inFileHandle, (GLfloat*)&ioObject->mTranslation.m12);
+	ioPreviousChunk->mBytesRead += readFloat(inFileHandle, (GLfloat*)&ioObject->mTranslation.m22);
 
 	// Read local center vector
 	ioPreviousChunk->mBytesRead += readFloat(inFileHandle, &ioObject->mLocalCenter.x);
