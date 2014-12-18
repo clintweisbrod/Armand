@@ -125,5 +125,5 @@ class OpenGLWindow
 		// Temporary stuff for testing
 		Texture*		theTexture;
 		ShaderProgram*	shaderProg;
-		mat4			mProjectionMatrix;
+		Mat4f			mProjectionMatrix;
 };

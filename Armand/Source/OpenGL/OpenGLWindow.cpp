@@ -25,6 +25,7 @@
 #include "Fonts/FontFactory.h"
 #include "Models/3DSModelFactory.h"
 #include "Math/constants.h"
+#include "Math/mathlib.h"
 
 bool OpenGLWindow::sEnabledGLExtensions = false;
 
@@ -819,7 +820,12 @@ void OpenGLWindow::resizeScene(Vec2i inNewSize)
 		h = (float)mSceneSize.x / (float)mSceneSize.y;
 	else
 		v = (float)mSceneSize.y / (float)mSceneSize.x;
-	mat4_set_orthographic(&mProjectionMatrix, -h, h, -v, v, -1, 1);
+	mProjectionMatrix = Mat4f::orthographic(-h, h, -v, v, -1, 1);
+//	mat4_set_orthographic(&mProjectionMatrix, -h, h, -v, v, -1, 1);
+
+	glMatrixMode(GL_PROJECTION);						// Select the projection matrix
+	glLoadIdentity();
+	glOrtho(-h, h, -v, v, -1, 1);
 
 	// Notify FontFactory of scene size change
 	FontFactory::inst()->sceneSizeChanged(mSceneSize);
@@ -869,6 +875,24 @@ void OpenGLWindow::render()
 {
 	// Clear screen and modelview matrix
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	// Clear screen and depth buffer
+
+	glDisable(GL_LIGHTING);
+	glDisable(GL_TEXTURE_2D);
+
+	glMatrixMode(GL_MODELVIEW);							// Select the modelview matrix
+	glLoadIdentity();
+
+	glColor3f(1.0, 1.0, 1.0);
+	glBegin(GL_LINE_STRIP);
+	for (int i = 0; i <= 360; i++)
+	{
+		double_t angle = degToRad((double_t)i);
+		GLdouble x = cos(angle);
+		GLdouble y = sin(angle);
+
+		glVertex2d(x, y);
+	}
+	glEnd();
 
 /*
 	// Testing texture loading
@@ -936,28 +960,61 @@ void OpenGLWindow::render()
 	{
 ///*
 		// Get bounding radius of model
-		GLfloat cameraZ = (GLfloat)model->getModelBoundingRadius();
+		GLfloat cameraZ = (GLfloat)model->getModelBoundingRadius() * 1.5f;
 		static GLfloat cameraX = 0;
 		static GLfloat dCameraX = 0.5f;
 
+		Mat4f viewMatrix = Mat4f::translation(Vec3f(cameraX, 0, cameraZ));
+
+		// Debugging shader
+/*
+		GLfloat offsetAngle = degToRad(5.0f);
+		GLfloat offset = cameraZ * tan(offsetAngle);
+		GLfloat uAperture = (GLfloat)kPi;
+		Vec3f uVD(0, 0, 1);
+		Vec3f uVU(0, 1, 0);
+		Vec3f uVR(1, 0, 0);
+		Vec4f gl_Vertex(offset, 0, 0, 1);
+		Vec4f eyePoint = viewMatrix * gl_Vertex;
+		Vec3f eyePointNorm = Vec3f(eyePoint.x, eyePoint.y, eyePoint.z);
+		eyePointNorm.normalize();
+		GLfloat dotProd = dot(uVD, eyePointNorm);
+		GLfloat eyePointViewDirectionAngle = acos(dotProd);
+		Vec2f xyComponents(eyePointNorm.x, eyePointNorm.y);
+		xyComponents.normalize();
+
+		GLfloat halfAperture = uAperture * 0.5f;
+		Vec2f point;
+//		point.x = eyePointViewDirectionAngle * dot(eyePointNorm, uVR) / halfAperture;
+//		point.y = -eyePointViewDirectionAngle * dot(eyePointNorm, uVU) / halfAperture;
+		point.x = eyePointViewDirectionAngle * xyComponents.x / halfAperture;
+		point.y = -eyePointViewDirectionAngle * xyComponents.y / halfAperture;
+
+		//	gl_FrontColor = color;
+		//	gl_FrontColor = gl_Color;
+		Vec4f gl_Position = mProjectionMatrix * Vec4f(point.x, point.y, 0.0f, 1.0f);
+*/
+
+///*
 		GLuint shaderHandle = shaderProg->getHandle();
 		glUseProgram(shaderHandle);
 		{
 			glUniform1f(glGetUniformLocation(shaderHandle, "uAperture"), (GLfloat)kPi);
 
-			glUniform3f(glGetUniformLocation(shaderHandle, "uVD"), 0, 0, -1);
-			glUniform3f(glGetUniformLocation(shaderHandle, "uVU"), 0, 1, 0);
-			glUniform3f(glGetUniformLocation(shaderHandle, "uVR"), 1, 0, 0);
-			glUniform3f(glGetUniformLocation(shaderHandle, "uVP"), cameraX, 0, cameraZ);
+			glUniform3f(glGetUniformLocation(shaderHandle, "uVD"), 0, 0, 1);
+//			glUniform3f(glGetUniformLocation(shaderHandle, "uVU"), 0, 1, 0);
+//			glUniform3f(glGetUniformLocation(shaderHandle, "uVR"), 1, 0, 0);
 
+			glUniformMatrix4fv(glGetUniformLocation(shaderHandle, "uView"), 1, 0, viewMatrix.data);
 			glUniformMatrix4fv(glGetUniformLocation(shaderHandle, "uProjection"), 1, 0, mProjectionMatrix.data);
+			
 			model->render();
 
 			glUseProgram(0);
 		}
-
+//*/
 		cameraX += dCameraX;
-		if (((dCameraX > 0) && (cameraX > cameraZ)) || ((dCameraX < 0) && (cameraX < -cameraZ)))
+		if (((dCameraX > 0) && (cameraX > 5 * cameraZ)) || ((dCameraX < 0) && (cameraX < -5 * cameraZ)))
 			dCameraX = -dCameraX;
 //*/
 /*
