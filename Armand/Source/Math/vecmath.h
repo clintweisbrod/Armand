@@ -225,6 +225,8 @@ public:
 	static Matrix3<T> scaling(const Vector3<T>&);
 	static Matrix3<T> scaling(T);
 
+	static void setIdentity(Matrix3<T>&);
+
 	inline const Vector3<T>& operator[](int) const;
 	inline Vector3<T> row(int) const;
 	inline Vector3<T> column(int) const;
@@ -240,9 +242,9 @@ public:
 		T data[9];
 		struct
 		{
-			T m00, m01, m02;	// Column 0
-			T m10, m11, m12;	// Column 1
-			T m20, m21, m22;	// Column 2
+			T m00, m10, m20;	// Column 0
+			T m01, m11, m21;	// Column 1
+			T m02, m12, m22;	// Column 2
 		};
 	};
 
@@ -257,14 +259,10 @@ template<class T> class Matrix4
 	Matrix4(const Matrix4<T>& m);
 	Matrix4(const Vector4<T>&, const Vector4<T>&, const Vector4<T>&, const Vector4<T>&);
 
-	inline const Vector4<T>& operator[](int) const;
-	inline Vector4<T> row(int) const;
-	inline Vector4<T> column(int) const;
-
 	static Matrix4<T> identity();
 	static Matrix4<T> translation(const Point3<T>&);
 	static Matrix4<T> translation(const Vector3<T>&);
-	static Matrix4<T> rotation(const Vector3<T>&, T);
+	static Matrix4<T> rotation(const Vector3<T>&, const T);
 	static Matrix4<T> xrotation(T);
 	static Matrix4<T> yrotation(T);
 	static Matrix4<T> zrotation(T);
@@ -273,6 +271,15 @@ template<class T> class Matrix4
 	static Matrix4<T> orthographic(	const T l, const T r,
 									const T b, const T t,
 									const T n, const T f);
+
+	static void setIdentity(Matrix4<T>&);
+	static void setRotation(Matrix4<T>&, const Vector3<T>&, const T);
+	static void setTranslation(Matrix4<T>&, const Vector3<T>&);
+	static void setTranslation(Matrix4<T>&, const Point3<T>&);
+
+	inline const Vector4<T>& operator[](int) const;
+	inline Vector4<T> row(int) const;
+	inline Vector4<T> column(int) const;
 
 	void translate(const Point3<T>&);
 
@@ -284,10 +291,10 @@ template<class T> class Matrix4
 		T data[16];
 		struct
 		{
-			T m00, m01, m02, m03;	// Column 0
-			T m10, m11, m12, m13;	// Column 1
-			T m20, m21, m22, m23;	// Column 2
-			T m30, m31, m32, m33;	// Column 3
+			T m00, m10, m20, m30;	// Column 0
+			T m01, m11, m21, m31;	// Column 1
+			T m02, m12, m22, m32;	// Column 2
+			T m03, m13, m23, m33;	// Column 3
 		};
 	};
 
@@ -950,9 +957,9 @@ template<class T> Polar3<T>::Polar3(const Vector3<T>& a)
 
 template<class T> Matrix3<T>::Matrix3()
 {
-	m00 = m10 = m20 = 0;
-	m01 = m11 = m21 = 0;
-	m02 = m12 = m22 = 0;
+	m00 = m01 = m02 = 0;
+	m10 = m11 = m12 = 0;
+	m20 = m21 = m22 = 0;
 }
 
 template<class T> Matrix3<T>::Matrix3(T* inData)
@@ -962,18 +969,18 @@ template<class T> Matrix3<T>::Matrix3(T* inData)
 
 template<class T> Matrix3<T>::Matrix3(const Matrix3<T>& m)
 {
-	m00 = m.m00; m10 = m.m10; m20 = m.m20;
-	m01 = m.m01; m11 = m.m11; m21 = m.m21;
-	m02 = m.m02; m12 = m.m12; m22 = m.m22;
+	m00 = m.m00; m01 = m.m01; m02 = m.m02;
+	m10 = m.m10; m11 = m.m11; m12 = m.m12;
+	m20 = m.m20; m21 = m.m21; m22 = m.m22;
 }
 
 template<class T> Matrix3<T>::Matrix3(const Vector3<T>& c0,
                                       const Vector3<T>& c1,
                                       const Vector3<T>& c2)
 {
-	m00 = c0.x; m10 = c1.x; m20 = c2.x;
-	m01 = c0.y; m11 = c1.y; m21 = c2.y;
-	m02 = c0.z; m12 = c1.z; m22 = c2.z;
+	m00 = c0.x; m01 = c1.x; m02 = c2.x;
+	m10 = c0.y; m11 = c1.y; m12 = c2.y;
+	m20 = c0.z; m21 = c1.z; m22 = c2.z;
 }
 
 template<class T> const Vector3<T>& Matrix3<T>::operator[](int n) const	// n refers to column
@@ -994,56 +1001,56 @@ template<class T> Vector3<T> Matrix3<T>::column(int n) const
 
 template<class T> Matrix3<T>& Matrix3<T>::operator*=(T s)
 {
-	m00 *= s; m10 *= s; m20 *= s;
-	m01 *= s; m11 *= s; m21 *= s;
-	m02 *= s; m12 *= s; m22 *= s;
+	m00 *= s; m01 *= s; m02 *= s;
+	m10 *= s; m11 *= s; m12 *= s;
+	m20 *= s; m21 *= s; m22 *= s;
     return *this;
 }
 
 // pre-multiply column vector by a 3x3 matrix
 template<class T> Vector3<T> operator*(const Matrix3<T>& m, const Vector3<T>& v)
 {
-    return Vector3<T>(	m.m00 * v.x + m.m10 * v.y + m.m20 * v.z,
-						m.m01 * v.x + m.m11 * v.y + m.m21 * v.z,
-						m.m02 * v.x + m.m12 * v.y + m.m22 * v.z);
+    return Vector3<T>(	m.m00 * v.x + m.m01 * v.y + m.m02 * v.z,
+						m.m10 * v.x + m.m11 * v.y + m.m12 * v.z,
+						m.m20 * v.x + m.m21 * v.y + m.m22 * v.z);
 }
 
 // post-multiply row vector by a 3x3 matrix
 template<class T> Vector3<T> operator*(const Vector3<T>& v, const Matrix3<T>& m)
 {
-    return Vector3<T>(m.m00 * v.x + m.m01 * v.y + m.m02 * v.z,
-                      m.m10 * v.x + m.m11 * v.y + m.m12 * v.z,
-                      m.m20 * v.x + m.m21 * v.y + m.m22 * v.z);
+    return Vector3<T>(m.m00 * v.x + m.m10 * v.y + m.m20 * v.z,
+                      m.m01 * v.x + m.m11 * v.y + m.m21 * v.z,
+                      m.m02 * v.x + m.m12 * v.y + m.m22 * v.z);
 }
 
 // pre-multiply column point by a 3x3 matrix
 template<class T> Point3<T> operator*(const Matrix3<T>& m, const Point3<T>& p)
-{
-	return Vector3<T>(	m.m00 * p.x + m.m10 * p.y + m.m20 * p.z,
-						m.m01 * p.x + m.m11 * p.y + m.m21 * p.z,
-						m.m02 * p.x + m.m12 * p.y + m.m22 * p.z);
-}
-
-// post-multiply row point by a 3x3 matrix
-template<class T> Point3<T> operator*(const Point3<T>& p, const Matrix3<T>& m)
 {
 	return Vector3<T>(	m.m00 * p.x + m.m01 * p.y + m.m02 * p.z,
 						m.m10 * p.x + m.m11 * p.y + m.m12 * p.z,
 						m.m20 * p.x + m.m21 * p.y + m.m22 * p.z);
 }
 
+// post-multiply row point by a 3x3 matrix
+template<class T> Point3<T> operator*(const Point3<T>& p, const Matrix3<T>& m)
+{
+	return Vector3<T>(	m.m00 * p.x + m.m10 * p.y + m.m20 * p.z,
+						m.m01 * p.x + m.m11 * p.y + m.m21 * p.z,
+						m.m02 * p.x + m.m12 * p.y + m.m22 * p.z);
+}
+
 template<class T> Matrix3<T> operator*(const Matrix3<T>& a,
                                        const Matrix3<T>& b)
 {
-	return Matrix3<T>(	Vector3<T>(	a.m00 * b.m00 + a.m10 * b.m01 + a.m20 * b.m02,
-									a.m01 * b.m00 + a.m11 * b.m01 + a.m21 * b.m02,
-									a.m02 * b.m00 + a.m12 * b.m01 + a.m22 * b.m02),
-						Vector3<T>(	a.m00 * b.m10 + a.m10 * b.m11 + a.m20 * b.m12,
-									a.m01 * b.m10 + a.m11 * b.m11 + a.m21 * b.m12,
-									a.m02 * b.m10 + a.m12 * b.m11 + a.m22 * b.m12),
-						Vector3<T>(	a.m00 * b.m20 + a.m10 * b.m21 + a.m20 * b.m22,
-									a.m01 * b.m20 + a.m11 * b.m21 + a.m21 * b.m22,
-									a.m02 * b.m20 + a.m12 * b.m21 + a.m22 * b.m22));
+	return Matrix3<T>(	Vector3<T>(	a.m00 * b.m00 + a.m01 * b.m10 + a.m02 * b.m20,
+									a.m10 * b.m00 + a.m11 * b.m10 + a.m12 * b.m20,
+									a.m20 * b.m00 + a.m21 * b.m10 + a.m22 * b.m20),
+						Vector3<T>(	a.m00 * b.m01 + a.m01 * b.m11 + a.m02 * b.m21,
+									a.m10 * b.m01 + a.m11 * b.m11 + a.m12 * b.m21,
+									a.m20 * b.m01 + a.m21 * b.m11 + a.m22 * b.m21),
+						Vector3<T>(	a.m00 * b.m02 + a.m01 * b.m12 + a.m02 * b.m22,
+									a.m10 * b.m02 + a.m11 * b.m12 + a.m12 * b.m22,
+									a.m20 * b.m02 + a.m21 * b.m12 + a.m22 * b.m22));
 }
 
 template<class T> Matrix3<T> operator+(const Matrix3<T>& a,
@@ -1058,18 +1065,25 @@ template<class T> Matrix3<T> operator+(const Matrix3<T>& a,
 
 template<class T> Matrix3<T> Matrix3<T>::identity()
 {
+	Matrix4<T> result;
+	setIdentity(result);
+
+	return resut;
+}
+
+template<class T> void Matrix3<T>::setIdentity(Matrix3<T>& m)
+{
 	T d[] = { 1, 0, 0,
 			  0, 1, 0,
 			  0, 0, 1 };
-
-	return Matrix3<T>(d);
+	memcpy(m.data, d, 9 * sizeof(T));
 }
 
 template<class T> Matrix3<T> Matrix3<T>::transpose() const
 {
-	T d[] = { m00, m10, m20,
-			  m01, m11, m21,
-			  m02, m12, m22 };
+	T d[] = { m00, m01, m02,
+			  m10, m11, m12,
+			  m20, m21, m22 };
 
 	return Matrix3<T>(d);
 }
@@ -1081,7 +1095,7 @@ template<class T> T det2x2(T a, T b, T c, T d)
 
 template<class T> T Matrix3<T>::determinant() const
 {
-	return (m00 * m11 * m22 + m10 * m21 * m02 + m20 * m01 * m12 - (m20 * m11 * m02 + m10 * m01 * m22 + m00 * m21 * m12));
+	return (m00 * m11 * m22 + m01 * m12 * m20 + m02 * m10 * m21 - (m02 * m11 * m20 + m01 * m10 * m22 + m00 * m12 * m21));
 }
 
 template<class T> Matrix3<T> Matrix3<T>::inverse() const
@@ -1089,15 +1103,15 @@ template<class T> Matrix3<T> Matrix3<T>::inverse() const
 	T d[9];
 
 	// Just use Cramer's rule for now . . .
-	d[0] = det2x2(m11, m21, m12, m22);
-	d[3] = -det2x2(m01, m21, m02, m22);
-	d[6] = det2x2(m01, m11, m02, m12);
-	d[1] = -det2x2(m10, m20, m12, m22);
-	d[4] = det2x2(m00, m20, m02, m22);
-	d[7] = -det2x2(m00, m10, m02, m12);
-	d[2] = det2x2(m10, m20, m11, m21);
-	d[5] = -det2x2(m00, m20, m01, m21);
-	d[8] = det2x2(m00, m10, m01, m11);
+	d[0] = det2x2(m11, m12, m21, m22);
+	d[3] = -det2x2(m10, m12, m20, m22);
+	d[6] = det2x2(m10, m11, m20, m21);
+	d[1] = -det2x2(m01, m02, m21, m22);
+	d[4] = det2x2(m00, m02, m20, m22);
+	d[7] = -det2x2(m00, m01, m20, m21);
+	d[2] = det2x2(m01, m02, m11, m12);
+	d[5] = -det2x2(m00, m02, m10, m12);
+	d[8] = det2x2(m00, m01, m10, m11);
 
 	Matrix3<T> result(d);
 	result *= 1 / determinant();
@@ -1107,65 +1121,70 @@ template<class T> Matrix3<T> Matrix3<T>::inverse() const
 
 template<class T> Matrix3<T> Matrix3<T>::xrotation(T angle)
 {
-    T c = (T) cos(angle);
-    T s = (T) sin(angle);
+	T c = (T)cos(angle);
+	T s = (T)sin(angle);
 
-	T d[] = { 1, 0, 0,
-			  0, c, -s,
-			  0, s, c };
+	Matrix3<T> r;
 
-	Matrix3<T> result(d);
-	return result.transpose();
+	r.m00 = 1;	r.m01 = 0;	r.m02 = 0;
+	r.m10 = 0;	r.m11 = c;	r.m12 = -s;
+	r.m20 = 0;	r.m21 = s;	r.m22 = c;
+
+	return r;
 }
 
 template<class T> Matrix3<T> Matrix3<T>::yrotation(T angle)
 {
-    T c = (T) cos(angle);
-    T s = (T) sin(angle);
+	T c = (T)cos(angle);
+	T s = (T)sin(angle);
 
-	T d[] = { c, 0, s,
-			  0, 1, 0,
-			 -s, 0, c };
+	Matrix3<T> r;
 
-	Matrix3<T> result(d);
-	return result.transpose();
+	r.m00 = c;	r.m01 = 0;	r.m02 = s;
+	r.m10 = 0;	r.m11 = 1;	r.m12 = 0;
+	r.m20 = -s;	r.m21 = 0;	r.m22 = c;
+
+	return r;
 }
 
 template<class T> Matrix3<T> Matrix3<T>::zrotation(T angle)
 {
-    T c = (T) cos(angle);
-    T s = (T) sin(angle);
+	T c = (T)cos(angle);
+	T s = (T)sin(angle);
 
-	T d[] = { c, -s, 0,
-			  s, c, 0,
-			  0, 0, 1 };
+	Matrix3<T> r;
 
-	Matrix3<T> result(d);
-	return result.transpose();
+	r.m00 = c;	r.m01 = -s;	r.m02 = 0;
+	r.m10 = s;	r.m11 = c;	r.m12 = 0;
+	r.m20 = 0;	r.m21 = 0;	r.m22 = 1;
+
+	return r;
 }
 
-template<class T> Matrix3<T> Matrix3<T>::scaling(const Vector3<T>& scale)
+template<class T> Matrix3<T> Matrix3<T>::scaling(const Vector3<T>& s)
 {
-	T d[] = { scale.x, 0, 0,
-			  0, scale.y, 0,
-			  0, 0, scale.z };
+	Matrix3<T> r;
 
-	return Matrix3<T>(d);
+	r.m00 = s;	r.m01 = 0;	r.m02 = 0;
+	r.m10 = 0;	r.m11 = s;	r.m12 = 0;
+	r.m20 = 0;	r.m21 = 0;	r.m22 = s;
+
+	return r;
 }
 
-template<class T> Matrix3<T> Matrix3<T>::scaling(T scale)
+template<class T> Matrix3<T> Matrix3<T>::scaling(T s)
 {
-    return scaling(Vector3<T>(scale, scale, scale));
+    return scaling(Vector3<T>(s, s, s));
 }
 
 ///////////////////////////////////////////////////////////////////////
 
 template<class T> Matrix4<T>::Matrix4()
 {
-	m00 = m10 = m20 = m30 = 0;
-	m01 = m11 = m21 = m31 = 0;
-	m02 = m12 = m22 = m32 = 0;
-	m03 = m13 = m23 = m33 = 0;
+	m00 = m01 = m02 = m03 = 0;
+	m10 = m11 = m12 = m13 = 0;
+	m20 = m21 = m22 = m23 = 0;
+	m30 = m31 = m32 = m33 = 0;
 }
 
 template<class T> Matrix4<T>::Matrix4(T* inData)
@@ -1175,18 +1194,18 @@ template<class T> Matrix4<T>::Matrix4(T* inData)
 
 template<class T> Matrix4<T>::Matrix4(const Matrix4<T>& m)
 {
-	m00 = m.m00; m10 = m.m10; m20 = m.m20; m30 = m.m30;
-	m01 = m.m01; m11 = m.m11; m21 = m.m21; m31 = m.m31;
-	m02 = m.m02; m12 = m.m12; m22 = m.m22; m32 = m.m32;
-	m03 = m.m03; m13 = m.m13; m23 = m.m23; m33 = m.m33;
+	m00 = m.m00; m01 = m.m01; m02 = m.m02; m03 = m.m03;
+	m10 = m.m10; m11 = m.m11; m12 = m.m12; m13 = m.m13;
+	m20 = m.m20; m21 = m.m21; m22 = m.m22; m23 = m.m23;
+	m30 = m.m30; m31 = m.m31; m32 = m.m32; m33 = m.m33;
 }
 
 template<class T> Matrix4<T>::Matrix4(const Vector4<T>& c0, const Vector4<T>& c1, const Vector4<T>& c2, const Vector4<T>& c3)
 {
-	m00 = c0.x; m10 = c1.x; m20 = c2.x; m30 = c3.x;
-	m01 = c0.y; m11 = c1.y; m21 = c2.y; m31 = c3.y;
-	m02 = c0.z; m12 = c1.z; m22 = c2.z; m32 = c3.z;
-	m03 = c0.w; m13 = c1.w; m23 = c2.w; m33 = c3.w;
+	m00 = c0.x; m01 = c1.x; m02 = c2.x; m03 = c3.x;
+	m10 = c0.y; m11 = c1.y; m12 = c2.y; m13 = c3.y;
+	m20 = c0.z; m21 = c1.z; m22 = c2.z; m23 = c3.z;
+	m30 = c0.w; m31 = c1.w; m32 = c2.w; m33 = c3.w;
 }
 
 template<class T> const Vector4<T>& Matrix4<T>::operator[](int n) const	// n refers to column
@@ -1207,56 +1226,78 @@ template<class T> Vector4<T> Matrix4<T>::column(int n) const
 
 template<class T> Matrix4<T> Matrix4<T>::identity()
 {
+	Matrix4<T> result;
+	setIdentity(result);
+
+	return result;
+}
+
+template<class T> void Matrix4<T>::setIdentity(Matrix4<T>& m)
+{
 	T d[] = { 1, 0, 0, 0,
 			  0, 1, 0, 0,
 			  0, 0, 1, 0,
 			  0, 0, 0, 1 };
-
-	return Matrix4<T>(d);
+	memcpy(m.data, d, 16 * sizeof(T));
 }
 
 template<class T> Matrix4<T> Matrix4<T>::translation(const Point3<T>& p)
 {
-	T d[] = { 1, 0, 0, 0,
-			  0, 1, 0, 0,
-			  0, 0, 1, 0,
-			  p.x, p.y, p.z, 1 };
-	Matrix4<T> result(d);
+	Matrix4<T> result;
+	setTranslation(result, p);
 
-	return result.transpose();
+	return result;
 }
 
 template<class T> Matrix4<T> Matrix4<T>::translation(const Vector3<T>& v)
 {
-	T d[] = { 1, 0, 0, v.x,
-			  0, 1, 0, v.y,
-			  0, 0, 1, v.z,
-			  0, 0, 0, 1 };
-	Matrix4<T> result(d);
+	Matrix4<T> result;
+	setTranslation(result, v);
 
-	return result.transpose();
+	return result;
+}
+
+template<class T> void Matrix4<T>::setTranslation(Matrix4<T>& m, const Vector3<T>& v)
+{
+	m.m00 = 1;		m.m01 = 0;		m.m02 = 0;		m.m03 = v.x;
+	m.m10 = 0;		m.m11 = 1;		m.m12 = 0;		m.m13 = v.y;
+	m.m20 = 0;		m.m21 = 0;		m.m22 = 1;		m.m23 = v.z;
+	m.m30 = 0;		m.m31 = 0;		m.m32 = 0;		m.m33 = 1;
+}
+
+template<class T> void Matrix4<T>::setTranslation(Matrix4<T>& m, const Point3<T>& p)
+{
+	m.m00 = 1;		m.m01 = 0;		m.m02 = 0;		m.m03 = p.x;
+	m.m10 = 0;		m.m11 = 1;		m.m12 = 0;		m.m13 = p.y;
+	m.m20 = 0;		m.m21 = 0;		m.m22 = 1;		m.m23 = p.z;
+	m.m30 = 0;		m.m31 = 0;		m.m32 = 0;		m.m33 = 1;
 }
 
 template<class T> void Matrix4<T>::translate(const Point3<T>& p)
 {
-	m03 += p.x;
-	m13 += p.y;
-	m23 += p.z;
+	m30 += p.x;
+	m31 += p.y;
+	m32 += p.z;
 }
 
 template<class T> Matrix4<T> Matrix4<T>::rotation(const Vector3<T>& axis, T angle)
 {
-    T c = (T) cos(angle);
-    T s = (T) sin(angle);
-    T t = 1 - c;
+	Matrix4<T> result;
+	setRotation(result, axis, angle);
 
-	T d[] = { t * axis.x * axis.x + c, t * axis.x * axis.y - s * axis.z, t * axis.x * axis.z + s * axis.y, 0,
-			  t * axis.x * axis.y + s * axis.z, t * axis.y * axis.y + c, t * axis.y * axis.z - s * axis.x, 0,
-			  t * axis.x * axis.z - s * axis.y, t * axis.y * axis.z + s * axis.x, t * axis.z * axis.z + c, 0,
-			  0, 0, 0, 1 };
-	Matrix4<T> result(d);
+	return result;
+}
 
-	return result.transpose();
+template<class T> void Matrix4<T>::setRotation(Matrix4<T>& m, const Vector3<T>& axis, const T angle)
+{
+	T c = (T)cos(angle);
+	T s = (T)sin(angle);
+	T t = 1 - c;
+
+	m.m00 = t * axis.x * axis.x + c;			m.m01 = t * axis.x * axis.y - s * axis.z;	m.m02 = t * axis.x * axis.z + s * axis.y;	m.m03 = 0;
+	m.m10 = t * axis.x * axis.y + s * axis.z;	m.m11 = t * axis.y * axis.y + c;			m.m12 = t * axis.y * axis.z - s * axis.x;	m.m13 = 0;
+	m.m20 = t * axis.x * axis.z - s * axis.y;	m.m21 = t * axis.y * axis.z + s * axis.x;	m.m22 = t * axis.z * axis.z + c;			m.m23 = 0;
+	m.m30 = 0;									m.m31 = 0;									m.m32 = 0;									m.m33 = 1;
 }
 
 template<class T> Matrix4<T> Matrix4<T>::xrotation(T angle)
@@ -1264,13 +1305,14 @@ template<class T> Matrix4<T> Matrix4<T>::xrotation(T angle)
 	T c = (T)cos(angle);
 	T s = (T)sin(angle);
 
-	T d[] = { 1, 0, 0, 0,
-			  0, c, -s, 0,
-			  0, s, c, 0,
-			  0, 0, 0, 1};
-	Matrix4<T> result(d);
+	Matrix4<T> r;
 
-	return result.transpose();
+	r.m00 = 1;	r.m01 = 0;	r.m02 = 0;	r.m03 = 0;
+	r.m10 = 0;	r.m11 = c;	r.m12 = -s;	r.m13 = 0;
+	r.m20 = 0;	r.m21 = s;	r.m22 = c;	r.m23 = 0;
+	r.m30 = 0;	r.m31 = 0;	r.m32 = 0;	r.m33 = 1;
+
+	return r;
 }
 
 template<class T> Matrix4<T> Matrix4<T>::yrotation(T angle)
@@ -1278,13 +1320,14 @@ template<class T> Matrix4<T> Matrix4<T>::yrotation(T angle)
 	T c = (T)cos(angle);
 	T s = (T)sin(angle);
 
-	T d[] = { c, 0, s, 0,
-			  0, 1, 0, 0,
-			  -s, 0, c, 0,
-			  0, 0, 0, 1 };
-	Matrix4<T> result(d);
+	Matrix4<T> r;
 
-	return result.transpose();
+	r.m00 = c;	r.m01 = 0;	r.m02 = s;	r.m03 = 0;
+	r.m10 = 0;	r.m11 = 1;	r.m12 = 0;	r.m13 = 0;
+	r.m20 = -s;	r.m21 = 0;	r.m22 = c;	r.m23 = 0;
+	r.m30 = 0;	r.m31 = 0;	r.m32 = 0;	r.m33 = 1;
+
+	return r;
 }
 
 template<class T> Matrix4<T> Matrix4<T>::zrotation(T angle)
@@ -1292,28 +1335,31 @@ template<class T> Matrix4<T> Matrix4<T>::zrotation(T angle)
 	T c = (T)cos(angle);
 	T s = (T)sin(angle);
 
-	T d[] = { c, -s, 0, 0,
-			  s, c, 0, 0,
-			  0, 0, 1, 0,
-			  0, 0, 0, 1 };
-	Matrix4<T> result(d);
+	Matrix4<T> r;
 
-	return result.transpose();
+	r.m00 = c;	r.m01 = -s;	r.m02 = 0;	r.m03 = 0;
+	r.m10 = s;	r.m11 = c;	r.m12 = 0;	r.m13 = 0;
+	r.m20 = 0;	r.m21 = 0;	r.m22 = 1;	r.m23 = 0;
+	r.m30 = 0;	r.m31 = 0;	r.m32 = 0;	r.m33 = 1;
+
+	return r;
 }
 
-template<class T> Matrix4<T> Matrix4<T>::scaling(const Vector3<T>& scale)
+template<class T> Matrix4<T> Matrix4<T>::scaling(const Vector3<T>& s)
 {
-	T d[] = { scale.x, 0, 0, 0,
-			  0, scale.y, 0, 0,
-			  0, 0, scale.z, 0,
-			  0, 0, 0, 1};
+	Matrix4<T> r;
 
-	return Matrix4<T>(d);
+	r.m00 = s;	r.m01 = 0;	r.m02 = 0;	r.m03 = 0;
+	r.m10 = 0;	r.m11 = s;	r.m12 = 0;	r.m13 = 0;
+	r.m20 = 0;	r.m21 = 0;	r.m22 = s;	r.m23 = 0;
+	r.m30 = 0;	r.m31 = 0;	r.m32 = 0;	r.m33 = 1;
+
+	return r;
 }
 
-template<class T> Matrix4<T> Matrix4<T>::scaling(T scale)
+template<class T> Matrix4<T> Matrix4<T>::scaling(T s)
 {
-    return scaling(Vector3<T>(scale, scale, scale));
+    return scaling(Vector3<T>(s, s, s));
 }
 
 template<class T> Matrix4<T> Matrix4<T>::orthographic(const T l, const T r,
@@ -1324,48 +1370,59 @@ template<class T> Matrix4<T> Matrix4<T>::orthographic(const T l, const T r,
 	T ty = -(t + b) / (t - b);
 	T tz = -(f + n) / (f - n);
 
-	T d[] = { 2 / (r - l), 0, 0, tx,
-			  0, 2 / (t - b), 0, ty,
-			  0, 0, -2 / (f - n), tz,
-			  0, 0, 0, 1};
+	Matrix4<T> m;
 
-	return Matrix4<T>(d);
+	m.m00 = 2 / (r - l);	m.m01 = 0;				m.m02 = 0;				m.m03 = tx;
+	m.m10 = 0;				m.m11 = 2 / (t - b);	m.m12 = 0;				m.m13 = ty;
+	m.m20 = 0;				m.m21 = 0;				m.m22 = -2 / (f - n);	m.m23 = tz;
+	m.m30 = 0;				m.m31 = 0;				m.m32 = 0;				m.m33 = 1;
+
+	return m;
 }
 
 // multiply column vector by a 4x4 matrix
 template<class T> Vector3<T> operator*(const Matrix4<T>& m, const Vector3<T>& v)
 {
-	return Vector3<T>(	m.m00 * v.x + m.m10 * v.y + m.m20 * v.z,
-						m.m01 * v.x + m.m11 * v.y + m.m21 * v.z,
-						m.m02 * v.x + m.m12 * v.y + m.m22 * v.z);
+	return Vector3<T>(	m.m00 * v.x + m.m01 * v.y + m.m02 * v.z,
+						m.m10 * v.x + m.m11 * v.y + m.m12 * v.z,
+						m.m20 * v.x + m.m21 * v.y + m.m22 * v.z);
 }
 
 // multiply row vector by a 4x4 matrix
 template<class T> Vector3<T> operator*(const Vector3<T>& v, const Matrix4<T>& m)
 {
-    return Vector3<T>(m.m00 * v.x + m.m01 * v.y + m.m02 * v.z,
-                      m.m10 * v.x + m.m11 * v.y + m.m12 * v.z,
-                      m.m20 * v.x + m.m21 * v.y + m.m22 * v.z);
+    return Vector3<T>(m.m00 * v.x + m.m10 * v.y + m.m20 * v.z,
+                      m.m01 * v.x + m.m11 * v.y + m.m21 * v.z,
+                      m.m02 * v.x + m.m12 * v.y + m.m22 * v.z);
 }
 
 // multiply column point by a 4x4 matrix; no projection is performed
 template<class T> Point3<T> operator*(const Matrix4<T>& m, const Point3<T>& p)
-{
-	return Point3<T>(m.m00 * p.x + m.m10 * p.y + m.m20 * p.z + m.m30,
-					 m.m01 * p.x + m.m11 * p.y + m.m21 * p.z + m.m31,
-					 m.m02 * p.x + m.m12 * p.y + m.m22 * p.z + m.m32);
-}
-
-// multiply row point by a 4x4 matrix; no projection is performed
-template<class T> Point3<T> operator*(const Point3<T>& p, const Matrix4<T>& m)
 {
 	return Point3<T>(m.m00 * p.x + m.m01 * p.y + m.m02 * p.z + m.m03,
 					 m.m10 * p.x + m.m11 * p.y + m.m12 * p.z + m.m13,
 					 m.m20 * p.x + m.m21 * p.y + m.m22 * p.z + m.m23);
 }
 
+// multiply row point by a 4x4 matrix; no projection is performed
+template<class T> Point3<T> operator*(const Point3<T>& p, const Matrix4<T>& m)
+{
+	return Point3<T>(m.m00 * p.x + m.m10 * p.y + m.m20 * p.z + m.m30,
+					 m.m01 * p.x + m.m11 * p.y + m.m21 * p.z + m.m31,
+					 m.m02 * p.x + m.m12 * p.y + m.m22 * p.z + m.m32);
+}
+
 // multiply column vector by a 4x4 matrix
 template<class T> Vector4<T> operator*(const Matrix4<T>& m, const Vector4<T>& v)
+{
+	return Vector4<T>(m.m00 * v.x + m.m01 * v.y + m.m02 * v.z + m.m03 * v.w,
+					  m.m10 * v.x + m.m11 * v.y + m.m12 * v.z + m.m13 * v.w,
+					  m.m20 * v.x + m.m21 * v.y + m.m22 * v.z + m.m23 * v.w,
+					  m.m30 * v.x + m.m31 * v.y + m.m32 * v.z + m.m33 * v.w);
+}
+
+// multiply row vector by a 4x4 matrix
+template<class T> Vector4<T> operator*(const Vector4<T>& v, const Matrix4<T>& m)
 {
 	return Vector4<T>(m.m00 * v.x + m.m10 * v.y + m.m20 * v.z + m.m30 * v.w,
 					  m.m01 * v.x + m.m11 * v.y + m.m21 * v.z + m.m31 * v.w,
@@ -1373,21 +1430,12 @@ template<class T> Vector4<T> operator*(const Matrix4<T>& m, const Vector4<T>& v)
 					  m.m03 * v.x + m.m13 * v.y + m.m23 * v.z + m.m33 * v.w);
 }
 
-// multiply row vector by a 4x4 matrix
-template<class T> Vector4<T> operator*(const Vector4<T>& v, const Matrix4<T>& m)
-{
-	return Vector4<T>(m.m00 * v.x + m.m01 * v.y + m.m02 * v.z + m.m03 * v.w,
-					  m.m10 * v.x + m.m11 * v.y + m.m12 * v.z + m.m13 * v.w,
-					  m.m20 * v.x + m.m21 * v.y + m.m22 * v.z + m.m23 * v.w,
-					  m.m20 * v.x + m.m21 * v.y + m.m22 * v.z + m.m33 * v.w);
-}
-
 template<class T> Matrix4<T> Matrix4<T>::transpose() const
 {
-	T d[] = { m00, m10, m20, m30,
-			  m01, m11, m21, m31,
-			  m02, m12, m22, m32,
-			  m03, m13, m23, m33};
+	T d[] = { m00, m01, m02, m03,
+			  m10, m11, m12, m13,
+			  m20, m21, m22, m23,
+			  m30, m31, m32, m33};
 
 	return Matrix4<T>(d);
 }
@@ -1395,22 +1443,22 @@ template<class T> Matrix4<T> Matrix4<T>::transpose() const
 template<class T> Matrix4<T> operator*(const Matrix4<T>& a,
                                        const Matrix4<T>& b)
 {
-	return Matrix4<T>(	Vector4<T>(	a.m00 * b.m00 + a.m10 * b.m01 + a.m20 * b.m02 + a.m30 * b.m03,
-									a.m01 * b.m00 + a.m11 * b.m01 + a.m21 * b.m02 + a.m31 * b.m03,
-									a.m02 * b.m00 + a.m12 * b.m01 + a.m22 * b.m02 + a.m32 * b.m03,
-									a.m03 * b.m00 + a.m13 * b.m01 + a.m23 * b.m02 + a.m33 * b.m03),
-						Vector4<T>(	a.m00 * b.m10 + a.m10 * b.m11 + a.m20 * b.m12 + a.m30 * b.m13,
-									a.m01 * b.m10 + a.m11 * b.m11 + a.m21 * b.m12 + a.m31 * b.m13,
-									a.m02 * b.m10 + a.m12 * b.m11 + a.m22 * b.m12 + a.m32 * b.m13,
-									a.m03 * b.m10 + a.m13 * b.m11 + a.m23 * b.m12 + a.m33 * b.m13),
-						Vector4<T>(	a.m00 * b.m20 + a.m10 * b.m21 + a.m20 * b.m22 + a.m30 * b.m23,
-									a.m01 * b.m20 + a.m11 * b.m21 + a.m21 * b.m22 + a.m31 * b.m23,
-									a.m02 * b.m20 + a.m12 * b.m21 + a.m22 * b.m22 + a.m32 * b.m23,
-									a.m03 * b.m20 + a.m13 * b.m21 + a.m23 * b.m22 + a.m33 * b.m23),
-						Vector4<T>(	a.m00 * b.m30 + a.m10 * b.m31 + a.m20 * b.m32 + a.m30 * b.m33,
-									a.m01 * b.m30 + a.m11 * b.m31 + a.m21 * b.m32 + a.m31 * b.m33,
-									a.m02 * b.m30 + a.m12 * b.m31 + a.m22 * b.m32 + a.m32 * b.m33,
-									a.m03 * b.m30 + a.m13 * b.m31 + a.m23 * b.m32 + a.m33 * b.m33));
+	return Matrix4<T>(	Vector4<T>(	a.m00 * b.m00 + a.m01 * b.m10 + a.m02 * b.m20 + a.m03 * b.m30,
+									a.m10 * b.m00 + a.m11 * b.m10 + a.m12 * b.m20 + a.m13 * b.m30,
+									a.m20 * b.m00 + a.m21 * b.m10 + a.m22 * b.m20 + a.m23 * b.m30,
+									a.m30 * b.m00 + a.m31 * b.m10 + a.m32 * b.m20 + a.m33 * b.m30),
+						Vector4<T>(	a.m00 * b.m01 + a.m01 * b.m11 + a.m02 * b.m21 + a.m03 * b.m31,
+									a.m10 * b.m01 + a.m11 * b.m11 + a.m12 * b.m21 + a.m13 * b.m31,
+									a.m20 * b.m01 + a.m21 * b.m11 + a.m22 * b.m21 + a.m23 * b.m31,
+									a.m30 * b.m01 + a.m31 * b.m11 + a.m32 * b.m21 + a.m33 * b.m31),
+						Vector4<T>(	a.m00 * b.m02 + a.m01 * b.m12 + a.m02 * b.m22 + a.m03 * b.m32,
+									a.m10 * b.m02 + a.m11 * b.m12 + a.m12 * b.m22 + a.m13 * b.m32,
+									a.m20 * b.m02 + a.m21 * b.m12 + a.m22 * b.m22 + a.m23 * b.m32,
+									a.m30 * b.m02 + a.m31 * b.m12 + a.m32 * b.m22 + a.m33 * b.m32),
+						Vector4<T>(	a.m00 * b.m03 + a.m01 * b.m13 + a.m02 * b.m23 + a.m03 * b.m33,
+									a.m10 * b.m03 + a.m11 * b.m13 + a.m12 * b.m23 + a.m13 * b.m33,
+									a.m20 * b.m03 + a.m21 * b.m13 + a.m22 * b.m23 + a.m23 * b.m33,
+									a.m30 * b.m03 + a.m31 * b.m13 + a.m32 * b.m23 + a.m33 * b.m33));
 }
 
 template<class T> Matrix4<T> operator+(const Matrix4<T>& a, const Matrix4<T>& b)
