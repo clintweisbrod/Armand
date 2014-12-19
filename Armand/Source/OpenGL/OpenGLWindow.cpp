@@ -821,7 +821,6 @@ void OpenGLWindow::resizeScene(Vec2i inNewSize)
 	else
 		v = (float)mSceneSize.y / (float)mSceneSize.x;
 	mProjectionMatrix = Mat4f::orthographic(-h, h, -v, v, -1, 1);
-//	mat4_set_orthographic(&mProjectionMatrix, -h, h, -v, v, -1, 1);
 
 	glMatrixMode(GL_PROJECTION);						// Select the projection matrix
 	glLoadIdentity();
@@ -879,21 +878,6 @@ void OpenGLWindow::render()
 	glDisable(GL_LIGHTING);
 	glDisable(GL_TEXTURE_2D);
 
-	glMatrixMode(GL_MODELVIEW);							// Select the modelview matrix
-	glLoadIdentity();
-
-	glColor3f(1.0, 1.0, 1.0);
-	glBegin(GL_LINE_STRIP);
-	for (int i = 0; i <= 360; i++)
-	{
-		double_t angle = degToRad((double_t)i);
-		GLdouble x = cos(angle);
-		GLdouble y = sin(angle);
-
-		glVertex2d(x, y);
-	}
-	glEnd();
-
 /*
 	// Testing texture loading
 	glMatrixMode(GL_PROJECTION);						// Select the projection matrix
@@ -918,7 +902,7 @@ void OpenGLWindow::render()
 	glEnd();
 */
 
-/*
+///*
 	// FontFactory testing
 	string fontName("Verdana");
 	wstring text(L"\260 A quick brown fox jumped over the lazy dog. !@#$%^&*()-=+{}[];:'<>,.?/`~");
@@ -929,36 +913,36 @@ void OpenGLWindow::render()
 	// and angles. On my 2010 Macbook Pro, framerate was 26.6 fps. Pretty damn good
 	// under normal circumstances far fewer than 1000 text items will be rendered per frame
 	// and each item will certainly be much smaller than the 72-char string we're using.
-
+#if 0
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	std::uniform_int_distribution<> xDis(0, mWindowSize.cx);
 	std::uniform_int_distribution<> yDis(0, mWindowSize.cy);
 	std::uniform_int_distribution<> sizeDis(10, 36);
 	std::uniform_int_distribution<> angleDis(0, 359);
-	TVector2f position;
+	Vec2f position;
 	int fontSize;
 	float angle;
 	for (int n = 0; n < 50; ++n)
 	{
-	position.x = (GLfloat)xDis(gen);
-	position.y = (GLfloat)yDis(gen);
-	fontSize = sizeDis(gen);
-	angle = (float)angleDis(gen);
-	fontRenderer->render(text, fontSize, position, TVector4f(1.0f, 1.0f, 1.0f, 1.0f), angle);
+		position.x = (GLfloat)xDis(gen);
+		position.y = (GLfloat)yDis(gen);
+		fontSize = sizeDis(gen);
+		angle = (float)angleDis(gen);
+		fontRenderer->render(text, fontSize, position, Vec4f(1.0f, 1.0f, 1.0f, 1.0f), angle);
 	}
+#endif
 
 	glEnable(GL_BLEND);
 	fontRenderer->render(text, 30, Vec2f(100, 100), Vec4f(1.0f, 1.0f, 1.0f, 1.0f), 30);
-*/
+//*/
 
-
-	// Testing 3DS model loading
+/*
+	// Testing 3DS model loading and fisheye projection shader
 	T3DSModel* model = T3DSModelFactory::inst()->get("Apollo_3rdStage.3ds");
 //	T3DSModel* model = T3DSModelFactory::inst()->get("ISS.3ds");
 	if (model)
 	{
-///*
 		// Get bounding radius of model
 		GLfloat cameraZ = (GLfloat)model->getModelBoundingRadius() * 1.5f;
 		static GLfloat cameraX = 0;
@@ -967,7 +951,7 @@ void OpenGLWindow::render()
 		Mat4f viewMatrix = Mat4f::translation(Vec3f(cameraX, 0, cameraZ));
 
 		// Debugging shader
-/*
+#if 0
 		GLfloat offsetAngle = degToRad(5.0f);
 		GLfloat offset = cameraZ * tan(offsetAngle);
 		GLfloat uAperture = (GLfloat)kPi;
@@ -993,9 +977,24 @@ void OpenGLWindow::render()
 		//	gl_FrontColor = color;
 		//	gl_FrontColor = gl_Color;
 		Vec4f gl_Position = mProjectionMatrix * Vec4f(point.x, point.y, 0.0f, 1.0f);
-*/
+#endif
 
-///*
+		// Draw boundary of projection area
+		// TODO: Use vertex buffer object to eliminate glBegin() crap.
+		glMatrixMode(GL_MODELVIEW);							// Select the modelview matrix
+		glLoadIdentity();
+
+		glColor3f(1.0, 1.0, 1.0);
+		glBegin(GL_LINE_STRIP);
+		for (int i = 0; i <= 360; i++)
+		{
+			double_t angle = degToRad((double_t)i);
+			GLdouble x = cos(angle);
+			GLdouble y = sin(angle);
+			glVertex2d(x, y);
+		}
+		glEnd();
+
 		GLuint shaderHandle = shaderProg->getHandle();
 		glUseProgram(shaderHandle);
 		{
@@ -1008,12 +1007,11 @@ void OpenGLWindow::render()
 
 			glUseProgram(0);
 		}
-//*/
+
 		cameraX += dCameraX;
 		if (((dCameraX > 0) && (cameraX > 3 * cameraZ)) || ((dCameraX < 0) && (cameraX < -3 * cameraZ)))
 			dCameraX = -dCameraX;
-//*/
-/*
+#if 0
 		glEnable(GL_LIGHTING);
 		glMatrixMode(GL_PROJECTION);						// Select the projection matrix
 		glLoadIdentity();									// Reset the projection matrix
@@ -1046,9 +1044,8 @@ void OpenGLWindow::render()
 //			rot.y -= 360;
 //		if (rot.z > 360)
 //			rot.z -= 360;
-		
+#endif	
 		model->render();
-*/
 	}
 
 //	T3DSModelFactory::inst()->RemoveAll();

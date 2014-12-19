@@ -21,12 +21,10 @@
 #pragma once
 
 #include <freetype-gl/freetype-gl.h>
-#include <freetype-gl/mat4.h>
 #include <freetype-gl/shader.h>
 #include <freetype-gl/vertex-buffer.h>
 
 #include "Utilities/Singleton.h"
-
 #include "Math/vecmath.h"
 
 typedef map<int, texture_font_t*> FontMap_t;
@@ -51,9 +49,9 @@ class FontRenderer
 		int						mLargestFontSize;
 
 		// Transformation matrices used to transform every vertex passing through shader
-		mat4					mModelMatrix;
-		mat4					mViewMatrix;
-		mat4					mProjectionMatrix;
+		Mat4f					mModelMatrix;
+		Mat4f					mViewMatrix;
+		Mat4f					mProjectionMatrix;
 		GLuint					mShaderHandle;
 };
 

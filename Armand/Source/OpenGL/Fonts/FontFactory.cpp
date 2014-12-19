@@ -146,8 +146,8 @@ FontRenderer::FontRenderer(string& inFontName, GLuint inShader) : mAtlas(NULL),
 	mVertexBuffer = vertex_buffer_new("vertex:3f,tex_coord:2f,color:4f");
 
 	// Setup transform matrices
-	mat4_set_identity(&mModelMatrix);
-	mat4_set_identity(&mViewMatrix);
+	Mat4f::setIdentity(mModelMatrix);
+	Mat4f::setIdentity(mViewMatrix);
 	Vec2i sceneSize;
 	gOpenGLWindow->getSceneSize(sceneSize);
 	setSceneSize(sceneSize);
@@ -236,8 +236,8 @@ bool FontRenderer::render(wstring& inString, int inFontSize, Vec2f& inPen, Vec4f
 	}
 
 	// Apply rotation and translation transformations
-	mat4_set_rotation(&mModelMatrix, inRotationInDegrees, 0, 0, 1);
-	mat4_set_translation(&mViewMatrix, inPen.x, inPen.y, 0);
+	Mat4f::setRotation(mModelMatrix, Vec3f(0, 0, 1), degToRad(inRotationInDegrees));
+	Mat4f::setTranslation(mViewMatrix, Vec3f(inPen.x, inPen.y, 0));
 
 	// Enable blending and blend function
 	glEnable(GL_BLEND);
@@ -268,7 +268,8 @@ bool FontRenderer::render(wstring& inString, int inFontSize, Vec2f& inPen, Vec4f
 
 void FontRenderer::setSceneSize(Vec2i& inSceneSize)
 {
-	mat4_set_orthographic(&mProjectionMatrix, 0, (float)inSceneSize.x, 0, (float)inSceneSize.y, -1, 1);
+	mProjectionMatrix = Mat4f::orthographic(0, (float)inSceneSize.x, 0, (float)inSceneSize.y, -1, 1);
+//	mat4_set_orthographic(&mProjectionMatrix, 0, (float)inSceneSize.x, 0, (float)inSceneSize.y, -1, 1);
 }
 
 string FontRenderer::getSystemFontFile(const string &inFontName) const
