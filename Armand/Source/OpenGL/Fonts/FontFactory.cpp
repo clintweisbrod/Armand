@@ -236,7 +236,7 @@ bool FontRenderer::render(wstring& inString, int inFontSize, Vec2f& inPen, Vec4f
 	}
 
 	// Apply rotation and translation transformations
-	Mat4f::setRotation(mModelMatrix, Vec3f(0, 0, 1), degToRad(inRotationInDegrees));
+	Mat4f::setRotationZ(mModelMatrix, degToRad(inRotationInDegrees));
 	Mat4f::setTranslation(mViewMatrix, Vec3f(inPen.x, inPen.y, 0));
 
 	// Enable blending and blend function

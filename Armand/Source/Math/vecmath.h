@@ -219,9 +219,9 @@ public:
 	Matrix3(const Vector3<T>&, const Vector3<T>&, const Vector3<T>&);
 
 	static Matrix3<T> identity();
-	static Matrix3<T> xrotation(T);
-	static Matrix3<T> yrotation(T);
-	static Matrix3<T> zrotation(T);
+	static Matrix3<T> rotationX(const T);
+	static Matrix3<T> rotationY(const T);
+	static Matrix3<T> rotationZ(const T);
 	static Matrix3<T> scaling(const Vector3<T>&);
 	static Matrix3<T> scaling(T);
 
@@ -263,9 +263,9 @@ template<class T> class Matrix4
 	static Matrix4<T> translation(const Point3<T>&);
 	static Matrix4<T> translation(const Vector3<T>&);
 	static Matrix4<T> rotation(const Vector3<T>&, const T);
-	static Matrix4<T> xrotation(T);
-	static Matrix4<T> yrotation(T);
-	static Matrix4<T> zrotation(T);
+	static Matrix4<T> rotationX(const T);
+	static Matrix4<T> rotationY(const T);
+	static Matrix4<T> rotationZ(const T);
 	static Matrix4<T> scaling(const Vector3<T>&);
 	static Matrix4<T> scaling(T);
 	static Matrix4<T> orthographic(	const T l, const T r,
@@ -274,6 +274,9 @@ template<class T> class Matrix4
 
 	static void setIdentity(Matrix4<T>&);
 	static void setRotation(Matrix4<T>&, const Vector3<T>&, const T);
+	static void setRotationX(Matrix4<T>&, const T);
+	static void setRotationY(Matrix4<T>&, const T);
+	static void setRotationZ(Matrix4<T>&, const T);
 	static void setTranslation(Matrix4<T>&, const Vector3<T>&);
 	static void setTranslation(Matrix4<T>&, const Point3<T>&);
 
@@ -1119,7 +1122,7 @@ template<class T> Matrix3<T> Matrix3<T>::inverse() const
 	return result;
 }
 
-template<class T> Matrix3<T> Matrix3<T>::xrotation(T angle)
+template<class T> Matrix3<T> Matrix3<T>::rotationX(const T angle)
 {
 	T c = (T)cos(angle);
 	T s = (T)sin(angle);
@@ -1133,7 +1136,7 @@ template<class T> Matrix3<T> Matrix3<T>::xrotation(T angle)
 	return r;
 }
 
-template<class T> Matrix3<T> Matrix3<T>::yrotation(T angle)
+template<class T> Matrix3<T> Matrix3<T>::rotationY(const T angle)
 {
 	T c = (T)cos(angle);
 	T s = (T)sin(angle);
@@ -1147,7 +1150,7 @@ template<class T> Matrix3<T> Matrix3<T>::yrotation(T angle)
 	return r;
 }
 
-template<class T> Matrix3<T> Matrix3<T>::zrotation(T angle)
+template<class T> Matrix3<T> Matrix3<T>::rotationZ(const T angle)
 {
 	T c = (T)cos(angle);
 	T s = (T)sin(angle);
@@ -1280,7 +1283,7 @@ template<class T> void Matrix4<T>::translate(const Point3<T>& p)
 	m32 += p.z;
 }
 
-template<class T> Matrix4<T> Matrix4<T>::rotation(const Vector3<T>& axis, T angle)
+template<class T> Matrix4<T> Matrix4<T>::rotation(const Vector3<T>& axis, const T angle)
 {
 	Matrix4<T> result;
 	setRotation(result, axis, angle);
@@ -1300,49 +1303,61 @@ template<class T> void Matrix4<T>::setRotation(Matrix4<T>& m, const Vector3<T>& 
 	m.m30 = 0;									m.m31 = 0;									m.m32 = 0;									m.m33 = 1;
 }
 
-template<class T> Matrix4<T> Matrix4<T>::xrotation(T angle)
+template<class T> Matrix4<T> Matrix4<T>::rotationX(const T angle)
 {
-	T c = (T)cos(angle);
-	T s = (T)sin(angle);
-
 	Matrix4<T> r;
-
-	r.m00 = 1;	r.m01 = 0;	r.m02 = 0;	r.m03 = 0;
-	r.m10 = 0;	r.m11 = c;	r.m12 = -s;	r.m13 = 0;
-	r.m20 = 0;	r.m21 = s;	r.m22 = c;	r.m23 = 0;
-	r.m30 = 0;	r.m31 = 0;	r.m32 = 0;	r.m33 = 1;
+	setRotationX(r);
 
 	return r;
 }
 
-template<class T> Matrix4<T> Matrix4<T>::yrotation(T angle)
+template<class T> void Matrix4<T>::setRotationX(Matrix4<T>& m, const T angle)
 {
 	T c = (T)cos(angle);
 	T s = (T)sin(angle);
 
-	Matrix4<T> r;
+	m.m00 = 1;	m.m01 = 0;	m.m02 = 0;	m.m03 = 0;
+	m.m10 = 0;	m.m11 = c;	m.m12 = -s;	m.m13 = 0;
+	m.m20 = 0;	m.m21 = s;	m.m22 = c;	m.m23 = 0;
+	m.m30 = 0;	m.m31 = 0;	m.m32 = 0;	m.m33 = 1;
+}
 
-	r.m00 = c;	r.m01 = 0;	r.m02 = s;	r.m03 = 0;
-	r.m10 = 0;	r.m11 = 1;	r.m12 = 0;	r.m13 = 0;
-	r.m20 = -s;	r.m21 = 0;	r.m22 = c;	r.m23 = 0;
-	r.m30 = 0;	r.m31 = 0;	r.m32 = 0;	r.m33 = 1;
+template<class T> Matrix4<T> Matrix4<T>::rotationY(const T angle)
+{
+	Matrix4<T> r;
+	setRotationY(r);
 
 	return r;
 }
 
-template<class T> Matrix4<T> Matrix4<T>::zrotation(T angle)
+template<class T> void Matrix4<T>::setRotationY(Matrix4<T>& m, const T angle)
 {
 	T c = (T)cos(angle);
 	T s = (T)sin(angle);
 
-	Matrix4<T> r;
+	m.m00 = c;	m.m01 = 0;	m.m02 = s;	m.m03 = 0;
+	m.m10 = 0;	m.m11 = 1;	m.m12 = 0;	m.m13 = 0;
+	m.m20 = -s;	m.m21 = 0;	m.m22 = c;	m.m23 = 0;
+	m.m30 = 0;	m.m31 = 0;	m.m32 = 0;	m.m33 = 1;
+}
 
-	r.m00 = c;	r.m01 = -s;	r.m02 = 0;	r.m03 = 0;
-	r.m10 = s;	r.m11 = c;	r.m12 = 0;	r.m13 = 0;
-	r.m20 = 0;	r.m21 = 0;	r.m22 = 1;	r.m23 = 0;
-	r.m30 = 0;	r.m31 = 0;	r.m32 = 0;	r.m33 = 1;
+template<class T> Matrix4<T> Matrix4<T>::rotationZ(const T angle)
+{
+	Matrix4<T> r;
+	setRotationZ(r);
 
 	return r;
+}
+
+template<class T> void Matrix4<T>::setRotationZ(Matrix4<T>& m, const T angle)
+{
+	T c = (T)cos(angle);
+	T s = (T)sin(angle);
+
+	m.m00 = c;	m.m01 = -s;	m.m02 = 0;	m.m03 = 0;
+	m.m10 = s;	m.m11 = c;	m.m12 = 0;	m.m13 = 0;
+	m.m20 = 0;	m.m21 = 0;	m.m22 = 1;	m.m23 = 0;
+	m.m30 = 0;	m.m31 = 0;	m.m32 = 0;	m.m33 = 1;
 }
 
 template<class T> Matrix4<T> Matrix4<T>::scaling(const Vector3<T>& s)
