@@ -20,6 +20,8 @@
 #include <cmath>
 #include <stdlib.h>
 
+#include "constants.h"
+
 template<class T> class Math
 {
 public:
