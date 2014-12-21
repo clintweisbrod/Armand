@@ -1306,7 +1306,7 @@ template<class T> void Matrix4<T>::setRotation(Matrix4<T>& m, const Vector3<T>& 
 template<class T> Matrix4<T> Matrix4<T>::rotationX(const T angle)
 {
 	Matrix4<T> r;
-	setRotationX(r);
+	setRotationX(r, angle);
 
 	return r;
 }
@@ -1325,7 +1325,7 @@ template<class T> void Matrix4<T>::setRotationX(Matrix4<T>& m, const T angle)
 template<class T> Matrix4<T> Matrix4<T>::rotationY(const T angle)
 {
 	Matrix4<T> r;
-	setRotationY(r);
+	setRotationY(r, angle);
 
 	return r;
 }
@@ -1344,7 +1344,7 @@ template<class T> void Matrix4<T>::setRotationY(Matrix4<T>& m, const T angle)
 template<class T> Matrix4<T> Matrix4<T>::rotationZ(const T angle)
 {
 	Matrix4<T> r;
-	setRotationZ(r);
+	setRotationZ(r, angle);
 
 	return r;
 }
