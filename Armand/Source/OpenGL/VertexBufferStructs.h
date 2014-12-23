@@ -21,7 +21,18 @@
 
 typedef struct
 {
-	float x, y, z;    // position
-	float s, t;       // texture
-	float r, g, b, a; // color
+	float x, y;			// position
+} v2f;
+
+typedef struct
+{
+	float x, y;			// position
+	float r, g, b, a;	// color
+} v2f_c4f;
+
+typedef struct
+{
+	float x, y, z;		// position
+	float s, t;			// texture
+	float r, g, b, a;	// color
 } v3f_t2f_c4f;

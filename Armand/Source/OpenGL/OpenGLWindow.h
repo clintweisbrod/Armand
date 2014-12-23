@@ -26,6 +26,7 @@
 #include "Math/vecmath.h"
 #include "OpenGL/Textures/Texture.h"
 #include "OpenGL/ShaderFactory.h"
+#include "OpenGL/VertexBufferStructs.h"
 
 class OpenGLWindow
 {
@@ -126,4 +127,7 @@ class OpenGLWindow
 		Texture*		theTexture;
 		ShaderProgram*	shaderProg;
 		Mat4f			mProjectionMatrix;
+
+		// Fisheye projection boundary
+		v2f				mFisheyeBoundaryVertices[360];
 };

@@ -176,6 +176,9 @@ FontRenderer::~FontRenderer()
 
 bool FontRenderer::render(wstring& inString, int inFontSize, Vec2f& inPen, Vec4f& inColor, float inRotationInDegrees)
 {
+	if (!mShaderHandle)
+		return false;
+
 	int fontSize = inFontSize;
 
 	// We only maintain fonts with size kMinFontSize, kMinFontSize+2, kMinFontSize+4, etc.
@@ -247,6 +250,8 @@ bool FontRenderer::render(wstring& inString, int inFontSize, Vec2f& inPen, Vec4f
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, mAtlas->id);
 
+	glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT);
+
 	// Activate the font shader
 	glUseProgram(mShaderHandle);
 	{
@@ -259,6 +264,8 @@ bool FontRenderer::render(wstring& inString, int inFontSize, Vec2f& inPen, Vec4f
 		// Deactivate the shader
 		glUseProgram(0);
 	}
+
+	glPopClientAttrib();
 
 	glDisable(GL_TEXTURE_2D);
 	glDisable(GL_BLEND);

@@ -814,6 +814,8 @@ void OpenGLWindow::resizeScene(Vec2i inNewSize)
 	// Reset the current viewport
 	glViewport(0, 0, mSceneSize.x, mSceneSize.y);
 
+	// Construct ortho projection matrix that has origin in center of viewport, such that smaller
+	// dimension of viewport runs to +-1 and larger dimension is proportionally greater than 1.
 	float h = 1, v = 1;
 	if (mSceneSize.x > mSceneSize.y)
 		h = (float)mSceneSize.x / (float)mSceneSize.y;
@@ -821,9 +823,18 @@ void OpenGLWindow::resizeScene(Vec2i inNewSize)
 		v = (float)mSceneSize.y / (float)mSceneSize.x;
 //	mProjectionMatrix = Mat4f::orthographic(-h, h, -v, v, 0, 1);
 
-	glMatrixMode(GL_PROJECTION);						// Select the projection matrix
+	// Set the fixed pipeline projection to the same as described above
+	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	glOrtho(-h, h, -v, v, -1, 1);
+
+	// Compute the fisheye boundary vertices
+	for (int i = 0; i < 360; i++)
+	{
+		double_t angle = degToRad((double_t)i);
+		mFisheyeBoundaryVertices[i].x = (float)cos(angle);
+		mFisheyeBoundaryVertices[i].y = (float)sin(angle);
+	}
 
 	// Notify FontFactory of scene size change
 	FontFactory::inst()->sceneSizeChanged(mSceneSize);
@@ -877,6 +888,19 @@ void OpenGLWindow::render()
 	glDisable(GL_LIGHTING);
 	glDisable(GL_TEXTURE_2D);
 
+	// Draw boundary of projection area
+	glColor3f(1.0, 1.0, 1.0);
+	glDisable(GL_BLEND);
+	glMatrixMode(GL_MODELVIEW);							// Select the modelview matrix
+	glLoadIdentity();
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glVertexPointer(2,							// number of coordinates per vertex (x,y)
+					GL_FLOAT,					// they are floats
+					sizeof(v2f),				// stride
+					mFisheyeBoundaryVertices);	// the array pointer
+	glDrawArrays(GL_LINE_LOOP, 0, 360);
+	glDisableClientState(GL_VERTEX_ARRAY);
+
 /*
 	// Testing texture loading
 	glMatrixMode(GL_PROJECTION);						// Select the projection matrix
@@ -904,7 +928,7 @@ void OpenGLWindow::render()
 /*
 	// FontFactory testing
 	string fontName("Verdana");
-	wstring text(L"\260 A quick brown fox jumped over the lazy dog. !@#$%^&*()-=+{}[];:'<>,.?/`~");
+	wstring text(L"\260 A quick brown fox jumped over the lazy dog. !@#$%^&*()-=+{}[];:'<>,.?/`~\"");
 
 	FontRenderer* fontRenderer = FontFactory::inst()->getFontRenderer(fontName);
 
@@ -991,22 +1015,6 @@ void OpenGLWindow::render()
 
 		Vec4f gl_Position = mProjectionMatrix * Vec4f(point.x, point.y, -depthValue, 1.0f);
 #endif
-
-		// Draw boundary of projection area
-		// TODO: Use vertex buffer object to eliminate glBegin() crap.
-		glMatrixMode(GL_MODELVIEW);							// Select the modelview matrix
-		glLoadIdentity();
-
-		glColor3f(1.0, 1.0, 1.0);
-		glBegin(GL_LINE_STRIP);
-		for (int i = 0; i <= 360; i++)
-		{
-			double_t angle = degToRad((double_t)i);
-			GLdouble x = cos(angle);
-			GLdouble y = sin(angle);
-			glVertex2d(x, y);
-		}
-		glEnd();
 
 		GLuint shaderHandle = shaderProg->getHandle();
 		glUseProgram(shaderHandle);
