@@ -35,7 +35,7 @@ double_t Timer::seconds()		// static
 
 double_t Timer::microseconds()	// static
 {
-	return Timer::seconds() * 1e-6;
+	return Timer::seconds() * 1e6;
 }
 
 Timer::Timer(void)
