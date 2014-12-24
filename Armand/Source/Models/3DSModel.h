@@ -614,7 +614,6 @@ struct T3DSNormalInfo
 	Vec3f	mNormal;
 	int		mSharedCount;
 };
-typedef map<int, T3DSNormalInfo> T3DSNormalMap_t;
 
 //----------------------------------------------------------------------
 //	Struct:		T3DSVertex
@@ -623,6 +622,7 @@ typedef map<int, T3DSNormalInfo> T3DSNormalMap_t;
 //				and smoothing group associated with it.
 //----------------------------------------------------------------------
 typedef list<int> T3DSFaceList_t;
+typedef map<int, T3DSNormalInfo> T3DSNormalMap_t;
 struct T3DSVertex
 {
 	T3DSVertex();
