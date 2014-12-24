@@ -32,6 +32,19 @@ typedef struct
 
 typedef struct
 {
+	float x, y, z;
+	float n1, n2, n3;
+} v3f_n3f;
+
+typedef struct
+{
+	float x, y, z;
+	float n1, n2, n3;
+	float s, t;
+} v3f_n3f_t2f;
+
+typedef struct
+{
 	float x, y, z;		// position
 	float s, t;			// texture
 	float r, g, b, a;	// color
