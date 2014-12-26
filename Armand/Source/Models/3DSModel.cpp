@@ -26,6 +26,7 @@
 #include "Math/constants.h"
 #include "Utilities/ConfigReader.h"
 #include "OpenGL/GLUtils.h"
+#include "OpenGL/ShaderFactory.h"
 
 #define INITIAL_BUFFER_SIZE	2000000
 
@@ -120,6 +121,7 @@ T3DSModel::T3DSModel()
     }
 
 	mDisplayList = 0;
+	mShaderHandle = 0;
 	mRenderAtmosphere = false;
 	mRenderCoordinateAxes = false;
 	mConvolvedTextureID = 0;
@@ -1545,8 +1547,19 @@ bool T3DSModel::setupOpenGLMaterialState(int inMaterialID, bool& ioIsTexturing)
 //----------------------------------------------------------------------
 void T3DSModel::render()
 {
+	if (mShaderHandle == 0)
+	{
+		// This is a good time load the shader program
+		ShaderProgram* shaderProgram = ShaderFactory::inst()->getShaderProgram("Models/3ds.vert",
+																			   "Models/3ds.frag");
+		if (shaderProgram)
+			mShaderHandle = shaderProgram->getHandle();
+	}
+	if (mShaderHandle == 0)
+		return;
+
 	if (mDisplayList == 0)
-	{		
+	{
 		mDisplayList = glGenLists(1);
 		if (mDisplayList != 0)
 		{

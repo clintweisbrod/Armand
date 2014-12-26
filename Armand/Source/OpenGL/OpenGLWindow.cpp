@@ -790,9 +790,6 @@ void OpenGLWindow::initGL()
 //	if (theTexture->getImageBufferOK())
 //		theTexture->sendToGPU();
 
-	shaderProg = ShaderFactory::inst()->getShaderProgram("Projection/Fisheye.vert",
-														 "Projection/Fisheye.frag");
-
 	mGLInitialized = true;
 }
 
@@ -1016,6 +1013,8 @@ void OpenGLWindow::render()
 		Vec4f gl_Position = mProjectionMatrix * Vec4f(point.x, point.y, -depthValue, 1.0f);
 #endif
 
+		model->render();
+/*
 		GLuint shaderHandle = shaderProg->getHandle();
 		glUseProgram(shaderHandle);
 		{
@@ -1028,7 +1027,7 @@ void OpenGLWindow::render()
 
 			glUseProgram(0);
 		}
-
+*/
 		cameraX += dCameraX;
 		if (((dCameraX > 0) && (cameraX > 1 * cameraZ)) || ((dCameraX < 0) && (cameraX < -1 * cameraZ)))
 			dCameraX = -dCameraX;

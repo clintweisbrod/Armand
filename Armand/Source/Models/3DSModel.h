@@ -805,6 +805,7 @@ private:
 	uint32_t*			mBuffer;
 	size_t				mBufferSize;
 	GLuint				mDisplayList;
+	GLuint				mShaderHandle;
 
 	double_t			mModelBoundingRadius;
 	double_t			mPhysicalRadius;
