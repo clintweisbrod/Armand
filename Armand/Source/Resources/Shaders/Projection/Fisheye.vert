@@ -1,3 +1,7 @@
+// See: http://paulbourke.net/dome/domegeom/
+
+#version 140
+
 uniform float	uAperture;
 uniform vec3	uVD;	// View direction
 
