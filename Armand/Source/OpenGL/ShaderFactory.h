@@ -51,6 +51,7 @@ private:
 };
 
 typedef map<string, ShaderProgram*> ShaderProgramMap_t;
+typedef map<string, bool> BoolMap_t;
 class ShaderFactory : public Singleton<ShaderFactory>
 {
 	friend class Singleton<ShaderFactory>;
@@ -64,5 +65,6 @@ protected:
 
 private:
 	string genKey(const char* inVertexShader, const char* inFragmentShader);
+	BoolMap_t			mProgramLoadAttempts;
 	ShaderProgramMap_t	mPrograms;
 };

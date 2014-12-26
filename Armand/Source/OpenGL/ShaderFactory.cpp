@@ -101,6 +101,20 @@ ShaderProgram* ShaderFactory::getShaderProgram(const char* inVertexShader, const
 
 	// Generate key to lookup shader 
 	string key = genKey(inVertexShader, inFragmentShader);
+
+	// Have we attempted to load this shader already?
+	BoolMap_t::iterator loadAttempt = mProgramLoadAttempts.find(key);
+	if (loadAttempt != mProgramLoadAttempts.end())
+	{
+		// If we get here, load attempt has already been made.
+		if (loadAttempt->second == false)
+		{
+			// If the load attempt failed the first time, we bail.
+			return NULL;
+		}
+	}
+
+	// Attempt to locate the shader program
 	ShaderProgramMap_t::iterator it = mPrograms.find(key);
 
 	// If shader program is not found, attempt to create it. 
@@ -113,19 +127,27 @@ ShaderProgram* ShaderFactory::getShaderProgram(const char* inVertexShader, const
 			if (vertexShader == NULL)
 			{
 				LOG(ERROR) << "Unable to allocate ShaderObject instance.";
+				mProgramLoadAttempts[key] = false;
 				return NULL;
 			}
 			if (!vertexShader->isCompiled())
+			{
+				mProgramLoadAttempts[key] = false;
 				return NULL;
+			}
 
 			ShaderObject* fragmentShader = new ShaderObject(inFragmentShader, GL_FRAGMENT_SHADER);
 			if (fragmentShader == NULL)
 			{
 				LOG(ERROR) << "Unable to allocate ShaderObject instance.";
+				mProgramLoadAttempts[key] = false;
 				return NULL;
 			}
 			if (!fragmentShader->isCompiled())
+			{
+				mProgramLoadAttempts[key] = false;
 				return NULL;
+			}
 
 			// Attach shaders to program
 			GLuint programHandle = newProgram->getHandle();
@@ -143,12 +165,13 @@ ShaderProgram* ShaderFactory::getShaderProgram(const char* inVertexShader, const
 				GLchar messages[256];
 				glGetProgramInfoLog(programHandle, sizeof(messages), 0, &messages[0]);
 				LOG(ERROR) << "Shader link failure. " << key << ": " << messages;
-
+				mProgramLoadAttempts[key] = false;
 				delete newProgram;
 			}
 			else
 			{
 				mPrograms[key] = newProgram;
+				mProgramLoadAttempts[key] = true;
 				result = newProgram;
 			}
 		}
