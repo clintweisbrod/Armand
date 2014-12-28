@@ -210,12 +210,66 @@ public:
 	T	fRadius;
 };
 
+template<class T> class Matrix4
+{
+public:
+	Matrix4();
+	Matrix4(T*);
+	Matrix4(const Matrix4<T>& m);
+	Matrix4(const Vector4<T>&, const Vector4<T>&, const Vector4<T>&, const Vector4<T>&);
+
+	static Matrix4<T> identity();
+	static Matrix4<T> translation(const Point3<T>&);
+	static Matrix4<T> translation(const Vector3<T>&);
+	static Matrix4<T> rotation(const Vector3<T>&, const T);
+	static Matrix4<T> rotationX(const T);
+	static Matrix4<T> rotationY(const T);
+	static Matrix4<T> rotationZ(const T);
+	static Matrix4<T> scaling(const Vector3<T>&);
+	static Matrix4<T> scaling(T);
+	static Matrix4<T> orthographic(const T l, const T r,
+		const T b, const T t,
+		const T n, const T f);
+
+	static void setIdentity(Matrix4<T>&);
+	static void setRotation(Matrix4<T>&, const Vector3<T>&, const T);
+	static void setRotationX(Matrix4<T>&, const T);
+	static void setRotationY(Matrix4<T>&, const T);
+	static void setRotationZ(Matrix4<T>&, const T);
+	static void setTranslation(Matrix4<T>&, const Vector3<T>&);
+	static void setTranslation(Matrix4<T>&, const Point3<T>&);
+
+	inline const Vector4<T>& operator[](int) const;
+	inline Vector4<T> row(int) const;
+	inline Vector4<T> column(int) const;
+
+	void translate(const Point3<T>&);
+
+	Matrix4<T> transpose() const;
+	//	Matrix4<T> inverse() const;
+
+	union
+	{
+		T data[16];
+		struct
+		{
+			T m00, m10, m20, m30;	// Column 0
+			T m01, m11, m21, m31;	// Column 1
+			T m02, m12, m22, m32;	// Column 2
+			T m03, m13, m23, m33;	// Column 3
+		};
+	};
+
+	//Vector4<T> r[4];
+};
+
 template<class T> class Matrix3
 {
 public:
 	Matrix3();
 	Matrix3(T*);
 	Matrix3(const Matrix3<T>&);
+	Matrix3(const Matrix4<T>&);
 	Matrix3(const Vector3<T>&, const Vector3<T>&, const Vector3<T>&);
 
 	static Matrix3<T> identity();
@@ -249,59 +303,6 @@ public:
 	};
 
 //	Vector3<T> r[3];
-};
-
-template<class T> class Matrix4
-{
- public:
-	Matrix4();
-	Matrix4(T*);
-	Matrix4(const Matrix4<T>& m);
-	Matrix4(const Vector4<T>&, const Vector4<T>&, const Vector4<T>&, const Vector4<T>&);
-
-	static Matrix4<T> identity();
-	static Matrix4<T> translation(const Point3<T>&);
-	static Matrix4<T> translation(const Vector3<T>&);
-	static Matrix4<T> rotation(const Vector3<T>&, const T);
-	static Matrix4<T> rotationX(const T);
-	static Matrix4<T> rotationY(const T);
-	static Matrix4<T> rotationZ(const T);
-	static Matrix4<T> scaling(const Vector3<T>&);
-	static Matrix4<T> scaling(T);
-	static Matrix4<T> orthographic(	const T l, const T r,
-									const T b, const T t,
-									const T n, const T f);
-
-	static void setIdentity(Matrix4<T>&);
-	static void setRotation(Matrix4<T>&, const Vector3<T>&, const T);
-	static void setRotationX(Matrix4<T>&, const T);
-	static void setRotationY(Matrix4<T>&, const T);
-	static void setRotationZ(Matrix4<T>&, const T);
-	static void setTranslation(Matrix4<T>&, const Vector3<T>&);
-	static void setTranslation(Matrix4<T>&, const Point3<T>&);
-
-	inline const Vector4<T>& operator[](int) const;
-	inline Vector4<T> row(int) const;
-	inline Vector4<T> column(int) const;
-
-	void translate(const Point3<T>&);
-
-	Matrix4<T> transpose() const;
-//	Matrix4<T> inverse() const;
-
-	union
-	{
-		T data[16];
-		struct
-		{
-			T m00, m10, m20, m30;	// Column 0
-			T m01, m11, m21, m31;	// Column 1
-			T m02, m12, m22, m32;	// Column 2
-			T m03, m13, m23, m33;	// Column 3
-		};
-	};
-
-    //Vector4<T> r[4];
 };
 
 typedef Vector3<float_t>	Vec3f;
@@ -971,6 +972,13 @@ template<class T> Matrix3<T>::Matrix3(T* inData)
 }
 
 template<class T> Matrix3<T>::Matrix3(const Matrix3<T>& m)
+{
+	m00 = m.m00; m01 = m.m01; m02 = m.m02;
+	m10 = m.m10; m11 = m.m11; m12 = m.m12;
+	m20 = m.m20; m21 = m.m21; m22 = m.m22;
+}
+
+template<class T> Matrix3<T>::Matrix3(const Matrix4<T>& m)
 {
 	m00 = m.m00; m01 = m.m01; m02 = m.m02;
 	m10 = m.m10; m11 = m.m11; m12 = m.m12;
