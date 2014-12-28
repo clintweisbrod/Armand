@@ -385,12 +385,12 @@ void T3DSModel::buildArrays()
 	glBufferData(GL_ARRAY_BUFFER, mArrayDataUntextured.size() * sizeof(T3DSVBOInfo), mArrayDataUntextured.data(), GL_STATIC_DRAW);
 	glCheckForError();
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfo), BUFFER_OFFSET(0));						// VertexPosition
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfo), BUFFER_OFFSET(3 * sizeof(GLfloat)));	// VertexNormal
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfo), BUFFER_OFFSET(6 * sizeof(GLfloat)));	// MaterialAmbient
-	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfo), BUFFER_OFFSET(10 * sizeof(GLfloat)));	// MaterialDiffuse
-	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfo), BUFFER_OFFSET(14 * sizeof(GLfloat)));	// MaterialSpecular
-	glVertexAttribPointer(5, 1, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfo), BUFFER_OFFSET(18 * sizeof(GLfloat)));	// MaterialShininess
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfo), BUFFER_OFFSET(0));						// vPosition
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfo), BUFFER_OFFSET(3 * sizeof(GLfloat)));	// vNormal
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfo), BUFFER_OFFSET(6 * sizeof(GLfloat)));	// vMaterialAmbient
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfo), BUFFER_OFFSET(10 * sizeof(GLfloat)));	// vMaterialDiffuse
+	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfo), BUFFER_OFFSET(14 * sizeof(GLfloat)));	// vMaterialSpecular
+	glVertexAttribPointer(5, 1, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfo), BUFFER_OFFSET(18 * sizeof(GLfloat)));	// vMaterialShininess
 
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
@@ -465,13 +465,13 @@ void T3DSModel::buildArrays()
 	glBufferData(GL_ARRAY_BUFFER, mArrayDataTextured.size() * sizeof(T3DSVBOInfoTextured), mArrayDataTextured.data(), GL_STATIC_DRAW);
 	glCheckForError();
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(0));						// VertexPosition
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(3 * sizeof(GLfloat)));	// VertexNormal
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(6 * sizeof(GLfloat)));	// MaterialAmbient
-	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(10 * sizeof(GLfloat)));	// MaterialDiffuse
-	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(14 * sizeof(GLfloat)));	// MaterialSpecular
-	glVertexAttribPointer(5, 1, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(18 * sizeof(GLfloat)));	// MaterialShininess
-	glVertexAttribPointer(6, 2, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(19 * sizeof(GLfloat)));	// Texture coordinates
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(0));						// vPosition
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(3 * sizeof(GLfloat)));	// vNormal
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(6 * sizeof(GLfloat)));	// vMaterialAmbient
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(10 * sizeof(GLfloat)));	// vMaterialDiffuse
+	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(14 * sizeof(GLfloat)));	// vMaterialSpecular
+	glVertexAttribPointer(5, 1, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(18 * sizeof(GLfloat)));	// vMaterialShininess
+	glVertexAttribPointer(6, 2, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(19 * sizeof(GLfloat)));	// vTexture coordinates
 
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
@@ -588,7 +588,7 @@ void T3DSModel::processNextChunk(FILE* inFileHandle, T3DSChunk* ioPreviousChunk)
 		// Check the chunk ID
 		switch (currentChunk.mID)
 		{
-		case M3D_CHUNKTYPE_VERSION:							// This holds the version of the file
+		case M3D_CHUNKTYPE_VERSION: // This holds the version of the file
 			// If the file was made in 3D Studio Max, this chunk has an int that 
 			// holds the file version. Since there might be new additions to the 3DS file
 			// format in 4.0, we give a warning to that problem.
@@ -603,13 +603,13 @@ void T3DSModel::processNextChunk(FILE* inFileHandle, T3DSChunk* ioPreviousChunk)
 				LOG(WARNING) << "3DS file version greater than 3. Not expected.";
 			break;
 
-		case M3D_CHUNKTYPE_OBJECTINFO:						// This holds the version of the mesh
+		case M3D_CHUNKTYPE_OBJECTINFO: // This holds the version of the mesh
 			// This chunk holds the version of the mesh.  It is also the head of the MATERIAL
 			// and OBJECT chunks.  From here on we start reading in the material and object info.
 			processNextChunk(inFileHandle, &currentChunk);
 			break;
 
-		case M3D_CHUNKTYPE_MATERIAL:							// This holds the material information
+		case M3D_CHUNKTYPE_MATERIAL: // This holds the material information
 			// This chunk is the header for the material info chunks
 
 			// Add a empty texture structure to our texture list.
@@ -622,35 +622,35 @@ void T3DSModel::processNextChunk(FILE* inFileHandle, T3DSChunk* ioPreviousChunk)
 			processNextMaterialChunk(inFileHandle, &currentChunk);
 			break;
 
-		case M3D_CHUNKTYPE_OBJECT:							// This holds the name of the object being read
+		case M3D_CHUNKTYPE_OBJECT:	// This holds the name of the object being read
 		{
-																// This chunk is the header for the object info chunks.  It also
-																// holds the name of the object.
+			// This chunk is the header for the object info chunks.  It also
+			// holds the name of the object.
 
-																mObjects.push_back(newObject);
+			mObjects.push_back(newObject);
 
-																// Get the name of the object and store it, then add the read bytes to our byte counter.
-																currentChunk.mBytesRead += readString(inFileHandle, mObjects[mObjects.size() - 1].mName);
+			// Get the name of the object and store it, then add the read bytes to our byte counter.
+			currentChunk.mBytesRead += readString(inFileHandle, mObjects[mObjects.size() - 1].mName);
 
-																// Now proceed to read in the rest of the object information
-																processNextObjectChunk(inFileHandle, &(mObjects[mObjects.size() - 1]), &currentChunk);
+			// Now proceed to read in the rest of the object information
+			processNextObjectChunk(inFileHandle, &(mObjects[mObjects.size() - 1]), &currentChunk);
 
-																// Testing smoothing without smoothing groups
-																// (CLW) - Oct 5, 2006
-																// It appears reasonable and acceptable to assume that all faces composing an object can
-																// belong to the same smoothing group. This will obviously introduce some unwanted lighting
-																// artifacts, but the visual results are usually better than not forcing per-vertex
-																// lighting normal calculations. 
-																T3DSObject* theObject = &(mObjects[mObjects.size() - 1]);
-																if ((theObject->mNumFaces > 0) && (theObject->mHasSmoothingInfo == false))
-																{
-																	for (int i = 0; i < theObject->mNumFaces; i++)
-																		theObject->mFaces[i].mSmoothingGroup = 1;
+			// Testing smoothing without smoothing groups
+			// (CLW) - Oct 5, 2006
+			// It appears reasonable and acceptable to assume that all faces composing an object can
+			// belong to the same smoothing group. This will obviously introduce some unwanted lighting
+			// artifacts, but the visual results are usually better than not forcing per-vertex
+			// lighting normal calculations. 
+			T3DSObject* theObject = &(mObjects[mObjects.size() - 1]);
+			if ((theObject->mNumFaces > 0) && (theObject->mHasSmoothingInfo == false))
+			{
+				for (int i = 0; i < theObject->mNumFaces; i++)
+					theObject->mFaces[i].mSmoothingGroup = 1;
 
-																	theObject->mHasSmoothingInfo = true;
-																}
+				theObject->mHasSmoothingInfo = true;
+			}
 
-																break;
+			break;
 		}
 
 		case M3D_EDITKEYFRAME:
@@ -1848,12 +1848,14 @@ void T3DSModel::render()
 	static GLfloat cameraX = 0;
 	static GLfloat dCameraX = 0.5f;
 	static GLfloat rotationY = 0;
-	static GLfloat dRotationY = 1;
+	static GLfloat dRotationY = 0.5f;
 
-	Mat4f rotation = Mat4f::rotationY(degToRad(rotationY));
+	Mat4f rotationMatY = Mat4f::rotationY(degToRad(rotationY));
+	Mat4f rotationMatZ = Mat4f::rotationZ(degToRad(60.0f));
 //	Mat4f rotation = Mat4f::identity();
 	Mat4f translation = Mat4f::translation(Vec3f(0, 0, cameraZ));
-	Mat4f viewMatrix = translation * rotation;
+	Mat4f viewMatrix = translation * rotationMatY * rotationMatZ;
+	Mat3f normalMatrix(viewMatrix);
 
 	Vec2i sceneSize;
 	gOpenGLWindow->getSceneSize(sceneSize);
@@ -1871,9 +1873,18 @@ void T3DSModel::render()
 		// Draw the untextured vertices
 		glUniform1i(glGetUniformLocation(mShaderHandle, "uIsTexturing"), (GLint)false);
 		glUniform1f(glGetUniformLocation(mShaderHandle, "uAperture"), (GLfloat)kPi);
-		glUniform3f(glGetUniformLocation(mShaderHandle, "uVD"), 0, 0, 1);
-		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "uView"), 1, 0, viewMatrix.data);
-		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "uProjection"), 1, 0, projectionMatrix.data);
+		glUniform3f(glGetUniformLocation(mShaderHandle, "uViewDirection"), 0, 0, 1);
+
+		glUniform3f(glGetUniformLocation(mShaderHandle, "uLight.position"), 0, 0, 0);	// Located at eye
+		glUniform3f(glGetUniformLocation(mShaderHandle, "uLight.ambient"), 0.2f, 0.2f, 0.2f);
+		glUniform3f(glGetUniformLocation(mShaderHandle, "uLight.diffuse"), 1, 1, 1);
+		glUniform3f(glGetUniformLocation(mShaderHandle, "uLight.specular"), 1, 1, 1);
+		glUniform3f(glGetUniformLocation(mShaderHandle, "uLight.emission"), 0, 0, 0);
+
+		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "uViewMatrix"), 1, 0, viewMatrix.data);
+		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "uProjectionMatrix"), 1, 0, projectionMatrix.data);
+		glUniformMatrix3fv(glGetUniformLocation(mShaderHandle, "uNormalMatrix"), 1, 0, normalMatrix.data);
+		
 		glBindVertexArray(mVAOs[eUntexturedVAO]);
 		glMultiDrawArrays(GL_TRIANGLES, mArrayFirstUntextured.data(), mArrayCountUntextured.data(), (GLsizei)mArrayCountUntextured.size());
 		glBindVertexArray(0);

@@ -1,20 +1,24 @@
 #version 330
 
-in vec3 LightIntensity;
-in vec2 TexCoords;
+in vec3 lightIntensity;
+in vec2 texCoords;
 
-layout (location = 0) out vec4 FragColor;
+layout (location = 0) out vec4 outFragColor;
 
 uniform sampler2D	uTexture;
 uniform bool		uIsTexturing;
 
 void main()
 {
-//	gl_FragColor = gl_Color;
-//	gl_FragColor = gl_FrontMaterial.diffuse;
-	
 	if (uIsTexturing)
-		FragColor = texture2D(uTexture, TexCoords);
+	{
+		// Modulate the texture color with the lightIntensity
+		vec4 texColor = texture2D(uTexture, texCoords);
+		outFragColor.r = lightIntensity.r * texColor.r;
+		outFragColor.g = lightIntensity.g * texColor.g;
+		outFragColor.b = lightIntensity.b * texColor.b;
+		outFragColor.a = 1.0;
+	}
 	else
-		FragColor = vec4(LightIntensity, 1.0);
+		outFragColor = vec4(lightIntensity, 1.0);
 }

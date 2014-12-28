@@ -2,41 +2,63 @@
 
 #version 330
 
-layout (location = 0) in vec3 VertexPosition;
-layout (location = 1) in vec3 VertexNormal;
-layout (location = 2) in vec3 MaterialAmbient;
-layout (location = 3) in vec3 MaterialDiffuse;
-layout (location = 4) in vec3 MaterialSpecular;
-layout (location = 5) in float MaterialShininess;
-layout (location = 6) in vec2 TextureCoordinates;
+layout (location = 0) in vec3 vPosition;
+layout (location = 1) in vec3 vNormal;
+layout (location = 2) in vec3 vMaterialAmbient;
+layout (location = 3) in vec3 vMaterialDiffuse;
+layout (location = 4) in vec3 vMaterialSpecular;
+layout (location = 5) in float vMaterialShininess;
+layout (location = 6) in vec2 vTextureCoordinates;
 
-out vec3 LightIntensity;
-out vec2 TexCoords;
+out vec3 lightIntensity;
+out vec2 texCoords;
+
+struct LightInfo
+ {
+	vec4 position;	// Light position in eye coords.
+	vec3 ambient;	// Ambient light intensity
+	vec3 diffuse;	// Diffuse light intensity
+	vec3 specular;	// Specular light intensity
+	vec3 emission;	// Emissive light intensity
+};
+uniform LightInfo uLight;
 
 uniform float	uAperture;
-uniform vec3	uVD;	// View direction
+uniform vec3	uViewDirection;	// In eye coordinates
 
-uniform mat4	uView;
-uniform mat4 	uProjection;
-
-//attribute vec3 vertex;
-//attribute vec4 color;
+uniform mat4	uViewMatrix;
+uniform mat4 	uProjectionMatrix;
+uniform mat3	uNormalMatrix;
 
 void main()
 {
 	// Take vertex in world coordinates and transform to eye coordinates
-	vec4 eyePoint = uView * vec4(VertexPosition, 1.0);
-	
-	// Sensible depth value is uVD . eyePoint
-	float depthValue = dot(uVD, eyePoint.xyz);
+	vec4 eyePoint = uViewMatrix * vec4(vPosition, 1.0);
 	
 	// Compute: ||p-vp||
 	vec3 eyePointNorm = normalize(eyePoint.xyz);
 	
+	// Lighting calculations
+	vec3 tnorm = normalize(uNormalMatrix * vNormal);	
+	vec3 s = normalize(vec3(uLight.position - eyePoint));
+	vec3 v = -eyePointNorm;
+	vec3 r = reflect(-s, tnorm);
+	vec3 ambient = uLight.ambient * vMaterialAmbient;
+	float sDotN = max(dot(s, tnorm), 0.0);
+	vec3 diffuse = uLight.diffuse * vMaterialDiffuse * sDotN;
+	vec3 spec = vec3(0.0);
+	if (sDotN > 0.0)
+		spec = uLight.specular * vMaterialSpecular * pow(max(dot(r,v), 0.0), vMaterialShininess);
+
+	lightIntensity = ambient + diffuse + spec + uLight.emission;
+
+	// Sensible depth value is uViewDirection . eyePoint
+	float depthValue = dot(uViewDirection, eyePoint.xyz);
+	
 	vec2 point = vec2(0.0, 0.0);
 	
 	// Compute: acos(vd . ||p-vp||)
-	float eyePointViewDirectionAngle = acos(dot(uVD, eyePointNorm));
+	float eyePointViewDirectionAngle = acos(dot(uViewDirection, eyePointNorm));
 	if (eyePointViewDirectionAngle > 0.0)
 	{
 		// Compute: x = acos(vd . ||p-vp||) (||p-vp|| . vr) / (pi/2)
@@ -51,8 +73,7 @@ void main()
 	
 	// Why does depthValue need to be negated???
 	// I think this is because m22 in ortho matrix is negated
-	gl_Position = uProjection * vec4(point, -depthValue, 1.0);
+	gl_Position = uProjectionMatrix * vec4(point, -depthValue, 1.0);
 	
-	LightIntensity = MaterialDiffuse;
-	TexCoords = TextureCoordinates;
+	texCoords = vTextureCoordinates;
 }
