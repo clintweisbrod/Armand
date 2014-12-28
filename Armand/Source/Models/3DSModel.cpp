@@ -27,6 +27,9 @@
 #include "Utilities/ConfigReader.h"
 #include "OpenGL/GLUtils.h"
 #include "OpenGL/ShaderFactory.h"
+#include "OpenGL/VertexBufferStructs.h"
+#include "OpenGL/OpenGLWindow.h"
+#include "Math/mathlib.h"
 
 #define INITIAL_BUFFER_SIZE	2000000
 
@@ -120,13 +123,14 @@ T3DSModel::T3DSModel()
         mBufferSize = 0;
     }
 
-	mDisplayList = 0;
 	mShaderHandle = 0;
 	mRenderAtmosphere = false;
 	mRenderCoordinateAxes = false;
 	mConvolvedTextureID = 0;
 	mExpansionIterations = 5;
 	mConvolutionIterations = 10;
+	mVAOs[eUntexturedVAO] = mVAOs[eTexturedVAO] = 0;
+	mVBOs[eUntexturedVBO] = mVBOs[eTexturedVBO] = 0;
 
     // 1 meter by default instead of 0 so that's it's a bit more reasonable.
 	mPhysicalRadius = 1*kAuPerMetre;	// Is only possibly set by associated .meta file.
@@ -137,7 +141,7 @@ T3DSModel::T3DSModel()
 
 T3DSModel::~T3DSModel()
 {
-	// Go through all the objects in the scene
+	// Go through all the objects in the model. At this point, cleanup() should've done this already.
 	T3DSObjectVec_t::iterator object;
 	for (object = mObjects.begin(); object != mObjects.end(); object++)
 	{
@@ -163,8 +167,8 @@ T3DSModel::~T3DSModel()
 	if (mBuffer)
 		delete [] mBuffer;
 	
-	if (mDisplayList)
-		glDeleteLists(mDisplayList, 1);
+	glDeleteVertexArrays(eNumVAOs, mVAOs);
+	glDeleteBuffers(eNumVBOs, mVBOs);
 }
 
 //----------------------------------------------------------------------
@@ -180,6 +184,19 @@ void T3DSModel::cleanUp()
 		mBuffer = NULL;
 		mBufferSize = 0;
 	}
+
+	// Go through all the objects in the model.
+	T3DSObjectVec_t::iterator object;
+	for (object = mObjects.begin(); object != mObjects.end(); object++)
+	{
+		// Free the faces, normals, vertices, and texture coordinates.
+		object->mFaces.clear();
+		if (object->mVertices)
+			delete[] object->mVertices;
+		if (object->mTexCoords)
+			delete[] object->mTexCoords;
+	}
+	mObjects.clear();
 }
 
 //----------------------------------------------------------------------
@@ -235,7 +252,6 @@ bool T3DSModel::load(File& inModelFile, bool inLoadMetaOnly)
 			
 			// Clean up after everything, regardless if there was an error (still need to close file)
 			fclose(theFileHandle);
-			cleanUp();
 		
 			// For each T3DSObject in mObjects, sort the T3DSFace instances in mFaces by descending opacity so that
 			// at render time, we minimize state changes and transparent materials are rendered after opaque materials.
@@ -258,6 +274,12 @@ bool T3DSModel::load(File& inModelFile, bool inLoadMetaOnly)
 
 			// Adjust any texture coordinates by their material scaling and offset params
 			adjustTextureCoordinates();
+
+			// Construct arrays that will be used with glDrawArrays(), glMultiDrawArrays() and VBOs
+			buildArrays();
+
+			// Release any memory we no longer need for rendering
+			cleanUp();
 			
 			mModelDataLoaded = true;
 		}
@@ -272,6 +294,269 @@ bool T3DSModel::load(File& inModelFile, bool inLoadMetaOnly)
 		loadMetaData(inModelFile);
 
 	return bResult;
+}
+
+void T3DSModel::buildArrays()
+{
+	// Locate all the objects that require and don't require textures
+	vector<T3DSObject> texturedObjects, unTexturedObjects;
+	T3DSObjectVec_t::iterator object;
+	for (object = mObjects.begin(); object != mObjects.end(); object++)
+	{
+		// Shit happens
+		if (object->mNumFaces == 0)
+			continue;
+
+		// Go through all of the faces (polygons) of the object and draw them
+		bool hasTexture = false;
+		for (int face = 0; face < object->mNumFaces; face++)
+		{
+			T3DSFace* theFace = &(object->mFaces[face]);
+			if (theFace->mMaterialID >= 0)
+			{
+				T3DSMaterialInfo* theMaterial = &mMaterials[theFace->mMaterialID];
+				if (theMaterial->mTexture != NULL)
+				{
+					hasTexture = (object->mTexCoords != NULL);
+					break;
+				}
+			}
+		}
+		if (hasTexture)
+			texturedObjects.push_back(*object);
+		else
+			unTexturedObjects.push_back(*object);
+	}
+
+	// Add the untextured objects first
+	GLint firstValue = 0;
+	GLsizei countValue = 0;
+	for (object = unTexturedObjects.begin(); object != unTexturedObjects.end(); object++)
+	{
+		// Shit happens
+		if (object->mNumFaces == 0)
+			continue;
+
+		mArrayFirstUntextured.push_back(firstValue);
+		countValue = 0;
+
+		// Go through all of the faces (triangles) of the object
+		T3DSVBOInfo vertex;
+		for (int face = 0; face < object->mNumFaces; face++)
+		{
+			T3DSFace* theFace = &(object->mFaces[face]);
+
+			// Skip any face where setVertexMaterial() returns false
+			if (!setVertexMaterial(vertex, theFace->mMaterialID))
+				continue;
+
+			// Go through each corner of the triangle and draw it.
+			for (int whichVertex = 0; whichVertex < 3; whichVertex++)
+			{
+				int index = theFace->mVertIndex[whichVertex];
+				setVertexData(vertex, *object, theFace, index);
+
+				// Add the vertex
+				mArrayDataUntextured.push_back(vertex);
+
+				countValue++;
+				firstValue++;
+			}
+		}
+
+		mArrayCountUntextured.push_back(countValue);
+	}
+
+	// Now create the VBO and send the data up to it
+
+	// Allocate VAOs
+	glGenVertexArrays(eNumVAOs, mVAOs);
+
+	// Allocate VBOs
+	glGenBuffers(eNumVBOs, mVBOs);
+
+	// Bind the untextured VAO as the current used object
+	glBindVertexArray(mVAOs[eUntexturedVAO]);
+
+	// Bind the untextured VBO as being the active buffer and storing vertex attributes (coordinates)
+	glBindBuffer(GL_ARRAY_BUFFER, mVBOs[eUntexturedVBO]);
+
+	// Copy the vertex data
+	glBufferData(GL_ARRAY_BUFFER, mArrayDataUntextured.size() * sizeof(T3DSVBOInfo), mArrayDataUntextured.data(), GL_STATIC_DRAW);
+	glCheckForError();
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfo), BUFFER_OFFSET(0));						// VertexPosition
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfo), BUFFER_OFFSET(3 * sizeof(GLfloat)));	// VertexNormal
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfo), BUFFER_OFFSET(6 * sizeof(GLfloat)));	// MaterialAmbient
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfo), BUFFER_OFFSET(10 * sizeof(GLfloat)));	// MaterialDiffuse
+	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfo), BUFFER_OFFSET(14 * sizeof(GLfloat)));	// MaterialSpecular
+	glVertexAttribPointer(5, 1, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfo), BUFFER_OFFSET(18 * sizeof(GLfloat)));	// MaterialShininess
+
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(2);
+	glEnableVertexAttribArray(3);
+	glEnableVertexAttribArray(4);
+	glEnableVertexAttribArray(5);
+
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// Add the textured objects
+	firstValue = 0;
+	countValue = 0;
+	for (object = texturedObjects.begin(); object != texturedObjects.end(); object++)
+	{
+		// Shit happens
+		if (object->mNumFaces == 0)
+			continue;
+
+		mArrayFirstTextured.push_back(firstValue);
+		countValue = 0;
+
+		// Go through all of the faces (triangle) of the object
+		GLuint texID = 0;
+		T3DSVBOInfoTextured vertex;
+		for (int face = 0; face < object->mNumFaces; face++)
+		{
+			T3DSFace* theFace = &(object->mFaces[face]);
+
+			// Skip any face where setVertexMaterial() returns false
+			if (!setVertexMaterial(vertex, theFace->mMaterialID))
+				continue;
+
+			T3DSMaterialInfo* theMaterial = NULL;
+			if ((theFace->mMaterialID >= 0) && (texID == 0))
+			{
+				theMaterial = &mMaterials[theFace->mMaterialID];
+				if (theMaterial->mTexture)
+					texID = theMaterial->mTexture->getTextureID();
+			}
+
+			// Go through each corner of the triangle and draw it.
+			for (int whichVertex = 0; whichVertex < 3; whichVertex++)
+			{
+				int index = theFace->mVertIndex[whichVertex];
+				setVertexData(vertex, *object, theFace, index);
+
+				// Texcoords
+				vertex.mTexCoords[0] = object->mTexCoords[index].x;
+				vertex.mTexCoords[1] = object->mTexCoords[index].y;
+
+				// Add the vertex
+				mArrayDataTextured.push_back(vertex);
+
+				countValue++;
+				firstValue++;
+			}
+		}
+
+		mTextureIDs.push_back(texID);
+		mArrayCountTextured.push_back(countValue);
+	}
+
+	// Bind the untextured VAO as the current used object
+	glBindVertexArray(mVAOs[eTexturedVAO]);
+
+	// Bind the untextured VBO as being the active buffer and storing vertex attributes (coordinates)
+	glBindBuffer(GL_ARRAY_BUFFER, mVBOs[eTexturedVBO]);
+
+	// Copy the vertex data
+	glBufferData(GL_ARRAY_BUFFER, mArrayDataTextured.size() * sizeof(T3DSVBOInfoTextured), mArrayDataTextured.data(), GL_STATIC_DRAW);
+	glCheckForError();
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(0));						// VertexPosition
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(3 * sizeof(GLfloat)));	// VertexNormal
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(6 * sizeof(GLfloat)));	// MaterialAmbient
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(10 * sizeof(GLfloat)));	// MaterialDiffuse
+	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(14 * sizeof(GLfloat)));	// MaterialSpecular
+	glVertexAttribPointer(5, 1, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(18 * sizeof(GLfloat)));	// MaterialShininess
+	glVertexAttribPointer(6, 2, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(19 * sizeof(GLfloat)));	// Texture coordinates
+
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(2);
+	glEnableVertexAttribArray(3);
+	glEnableVertexAttribArray(4);
+	glEnableVertexAttribArray(5);
+	glEnableVertexAttribArray(6);
+
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+}
+
+void T3DSModel::setVertexData(T3DSVBOInfo& ioVertex, T3DSObject& inObject, T3DSFace* inFace, int inIndex)
+{
+	// Normal
+	Vec3f* theNormal;
+	uint32_t smoothingGroup = inFace->mSmoothingGroup;
+	if (inObject.mPerVertexNormals && smoothingGroup)
+		theNormal = &inObject.mVertices[inIndex].mNormalMap[smoothingGroup].mNormal;
+	else
+		theNormal = &inFace->mNormal;
+	ioVertex.mNormal[0] = theNormal->x;
+	ioVertex.mNormal[1] = theNormal->y;
+	ioVertex.mNormal[2] = theNormal->z;
+
+	// Vertex
+	ioVertex.mPosition[0] = inObject.mVertices[inIndex].mVertex.x;
+	ioVertex.mPosition[1] = inObject.mVertices[inIndex].mVertex.y;
+	ioVertex.mPosition[2] = inObject.mVertices[inIndex].mVertex.z;
+}
+
+bool T3DSModel::setVertexMaterial(T3DSVBOInfo& ioVertex, int inMaterialID)
+{
+	const GLfloat kDefaultMaterialShininess = 0.1f * 128.0f;
+	const GLfloat kZeroLight[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	const GLfloat kWhiteLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+	// Does this object have a material?
+	T3DSMaterialInfo* theMaterial = NULL;
+	if (inMaterialID >= 0)
+	{
+		theMaterial = &mMaterials[inMaterialID];
+
+		// If the alpha values for diffuse and specular color are zero, we don't render it.
+		// Why? Because the polygon will just appear black and will not respond to any lighting.
+		// Our model of Cassini happens to use this material definition and it looks nutty.
+		if ((theMaterial->mDiffuseColor[3] == 0.0f) && (theMaterial->mSpecularColor[3] == 0.0f))
+			return false;
+
+		// Set ambient material color
+		// We're overriding ambient material color so that we have a consistent ambient lighing effect for all models.
+		memcpy(ioVertex.mMaterial.mAmbient, kZeroLight, 4 * sizeof(GLfloat));
+
+		// Set diffuse material color
+		memcpy(ioVertex.mMaterial.mDiffuse, theMaterial->mDiffuseColor, 4 * sizeof(GLfloat));
+
+		// Set specular material color
+		if ((theMaterial->mSpecularColor[0] == 0.0f) && (theMaterial->mSpecularColor[1] == 0.0f) && (theMaterial->mSpecularColor[2] == 0.0f))
+		{
+			memcpy(ioVertex.mMaterial.mSpecular, kZeroLight, 4 * sizeof(GLfloat));
+			ioVertex.mMaterial.mShininess = 0;
+		}
+		else
+		{
+			// Make sure the specular color has full alpha
+			float matSpecular[4] = { theMaterial->mSpecularColor[0], theMaterial->mSpecularColor[1], theMaterial->mSpecularColor[2], 1.0f };
+			memcpy(ioVertex.mMaterial.mSpecular, theMaterial->mSpecularColor, 3 * sizeof(GLfloat));
+			ioVertex.mMaterial.mSpecular[3] = 1;
+			ioVertex.mMaterial.mShininess = theMaterial->mShininess;
+		}
+	}
+	else
+	{
+		// YIKES!! No material definition. Bummer. Default to white material with default shininess.
+
+		// Set default material properties
+		memcpy(ioVertex.mMaterial.mAmbient, kZeroLight, 4 * sizeof(GLfloat));
+		memcpy(ioVertex.mMaterial.mDiffuse, kZeroLight, 4 * sizeof(GLfloat));
+		memcpy(ioVertex.mMaterial.mSpecular, kZeroLight, 4 * sizeof(GLfloat));
+		ioVertex.mMaterial.mShininess = kDefaultMaterialShininess;
+	}
+
+	return true;
 }
 
 //----------------------------------------------------------------------
@@ -1558,6 +1843,98 @@ void T3DSModel::render()
 	if (mShaderHandle == 0)
 		return;
 
+	// Get bounding radius of model
+	GLfloat cameraZ = (GLfloat)mModelBoundingRadius * 1.1f;
+	static GLfloat cameraX = 0;
+	static GLfloat dCameraX = 0.5f;
+	static GLfloat rotationY = 0;
+	static GLfloat dRotationY = 1;
+
+	Mat4f rotation = Mat4f::rotationY(degToRad(rotationY));
+//	Mat4f rotation = Mat4f::identity();
+	Mat4f translation = Mat4f::translation(Vec3f(0, 0, cameraZ));
+	Mat4f viewMatrix = translation * rotation;
+
+	Vec2i sceneSize;
+	gOpenGLWindow->getSceneSize(sceneSize);
+	float h = 1, v = 1;
+	if (sceneSize.x > sceneSize.y)
+		h = (float)sceneSize.x / (float)sceneSize.y;
+	else
+		v = (float)sceneSize.y / (float)sceneSize.x;
+	float n = cameraZ - (GLfloat)mModelBoundingRadius;
+	float f = cameraZ + (GLfloat)mModelBoundingRadius;
+	Mat4f projectionMatrix = Mat4f::orthographic(-h, h, -v, v, n, f);
+
+	glUseProgram(mShaderHandle);
+	{
+		// Draw the untextured vertices
+		glUniform1i(glGetUniformLocation(mShaderHandle, "uIsTexturing"), (GLint)false);
+		glUniform1f(glGetUniformLocation(mShaderHandle, "uAperture"), (GLfloat)kPi);
+		glUniform3f(glGetUniformLocation(mShaderHandle, "uVD"), 0, 0, 1);
+		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "uView"), 1, 0, viewMatrix.data);
+		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "uProjection"), 1, 0, projectionMatrix.data);
+		glBindVertexArray(mVAOs[eUntexturedVAO]);
+		glMultiDrawArrays(GL_TRIANGLES, mArrayFirstUntextured.data(), mArrayCountUntextured.data(), (GLsizei)mArrayCountUntextured.size());
+		glBindVertexArray(0);
+
+		// Draw the textured vertices
+		glUniform1i(glGetUniformLocation(mShaderHandle, "uIsTexturing"), (GLint)true);
+		glBindVertexArray(mVAOs[eTexturedVAO]);
+		for (int i = 0; i < mArrayFirstTextured.size(); i++)
+		{
+			const GLenum kTextureUnit = 0;
+			glActiveTexture(GL_TEXTURE0 + kTextureUnit);
+			glBindTexture(GL_TEXTURE_2D, mTextureIDs[i]);
+			glUniform1i(glGetUniformLocation(mShaderHandle, "uTexture"), kTextureUnit);
+			glDrawArrays(GL_TRIANGLES, mArrayFirstTextured[i], mArrayCountTextured[i]);
+		}
+		glBindVertexArray(0);
+
+		// Unbind the VBO
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		// Done with the shader
+		glUseProgram(0);
+	}
+	glCheckForError();
+
+	cameraX += dCameraX;
+	if (((dCameraX > 0) && (cameraX > 1 * cameraZ)) || ((dCameraX < 0) && (cameraX < -1 * cameraZ)))
+		dCameraX = -dCameraX;
+
+	rotationY += dRotationY;
+	if (rotationY > 360)
+		rotationY -= 360;
+#if 0
+	// Debugging shader
+	GLfloat uAperture = (GLfloat)kPi;
+	Vec3f uVD(0, 0, 1);
+	Vec3f uVU(0, 1, 0);
+	Vec3f uVR(1, 0, 0);
+	Vec4f gl_Vertex(0, 0, 0, 1);
+	Vec4f eyePoint = viewMatrix * gl_Vertex;
+	Vec3f eyePointNorm = Vec3f(eyePoint.x, eyePoint.y, eyePoint.z);
+	GLfloat depthValue = dot(uVD, eyePointNorm);
+	eyePointNorm.normalize();
+	GLfloat dotProd = dot(uVD, eyePointNorm);
+	Vec2f point;
+	GLfloat eyePointViewDirectionAngle = acos(dotProd);
+	if (eyePointViewDirectionAngle > 0)
+	{
+		Vec2f xyComponents(eyePointNorm.x, eyePointNorm.y);
+		xyComponents.normalize();
+
+		GLfloat halfAperture = uAperture * 0.5f;
+		Vec2f point;
+		point.x = eyePointViewDirectionAngle * xyComponents.x / halfAperture;
+		point.y = -eyePointViewDirectionAngle * xyComponents.y / halfAperture;
+	}
+
+	Vec4f gl_Position = mProjectionMatrix * Vec4f(point.x, point.y, -depthValue, 1.0f);
+#endif
+
+/*
 	if (mDisplayList == 0)
 	{
 		mDisplayList = glGenLists(1);
@@ -1664,6 +2041,7 @@ void T3DSModel::render()
 		glVertex3d(0.0, 0.0, axisLength);
 		glEnd();
 	}
+*/
 }
 
 void T3DSModel::setAtmosphereParameters(GLint inExpansionIterations, GLint inConvolutionIterations)

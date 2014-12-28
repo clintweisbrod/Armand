@@ -1,6 +1,17 @@
 // See: http://paulbourke.net/dome/domegeom/
 
-#version 140
+#version 330
+
+layout (location = 0) in vec3 VertexPosition;
+layout (location = 1) in vec3 VertexNormal;
+layout (location = 2) in vec3 MaterialAmbient;
+layout (location = 3) in vec3 MaterialDiffuse;
+layout (location = 4) in vec3 MaterialSpecular;
+layout (location = 5) in float MaterialShininess;
+layout (location = 6) in vec2 TextureCoordinates;
+
+out vec3 LightIntensity;
+out vec2 TexCoords;
 
 uniform float	uAperture;
 uniform vec3	uVD;	// View direction
@@ -14,7 +25,7 @@ uniform mat4 	uProjection;
 void main()
 {
 	// Take vertex in world coordinates and transform to eye coordinates
-	vec4 eyePoint = uView * gl_Vertex;
+	vec4 eyePoint = uView * vec4(VertexPosition, 1.0);
 	
 	// Sensible depth value is uVD . eyePoint
 	float depthValue = dot(uVD, eyePoint.xyz);
@@ -41,4 +52,7 @@ void main()
 	// Why does depthValue need to be negated???
 	// I think this is because m22 in ortho matrix is negated
 	gl_Position = uProjection * vec4(point, -depthValue, 1.0);
+	
+	LightIntensity = MaterialDiffuse;
+	TexCoords = TextureCoordinates;
 }

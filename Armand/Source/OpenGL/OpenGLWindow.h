@@ -125,7 +125,6 @@ class OpenGLWindow
 
 		// Temporary stuff for testing
 		Texture*		theTexture;
-//		ShaderProgram*	shaderProg;
 		Mat4f			mProjectionMatrix;
 
 		// Fisheye projection boundary

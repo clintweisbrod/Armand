@@ -564,6 +564,7 @@
 #include "Math/vecmath.h"
 #include "Utilities/File.h"
 #include "Utilities/Singleton.h"
+#include "Utilities/Timer.h"
 #include "OpenGL/Textures/Texture.h"
 
 #define M3D_CHUNKTYPE_VERSION			0x0002			// This gives the version of the .3ds file
@@ -674,7 +675,7 @@ struct T3DSMaterialInfo
 	float			mVScale;		// v scale
 	float			mUOffset;		// u offset
 	float			mVOffset;		// v offset
-} ;
+};
 
 //----------------------------------------------------------------------
 //	Struct:		T3DSObject
@@ -698,6 +699,24 @@ struct T3DSObject
 	Vec3f			mLocalCenter;
 	bool			mHasSmoothingInfo;	// True if smoothing groups have been specified for this object
 	bool			mPerVertexNormals;	// True if per-vertex lighting normals have been calculated
+};
+
+struct T3DSVBOInfo
+{
+	GLfloat mPosition[3];
+	GLfloat mNormal[3];
+	struct MaterialInfo
+	{
+		GLfloat	mAmbient[4];		// Ambient reflectivity
+		GLfloat	mDiffuse[4];		// Diffuse reflectivity
+		GLfloat	mSpecular[4];		// Specular reflectivity
+		GLfloat	mShininess;			// Specular shininess exponent
+	} mMaterial;
+};
+
+struct T3DSVBOInfoTextured : public T3DSVBOInfo
+{
+	GLfloat	mTexCoords[2];
 };
 
 //----------------------------------------------------------------------
@@ -794,6 +813,10 @@ private:
 	void		adjustTextureCoordinates();
 	void		cleanUp();
 	bool		setupOpenGLMaterialState(int inMaterialID, bool& ioIsTexturing);
+
+	void		buildArrays();
+	void		setVertexData(T3DSVBOInfo& ioVertex, T3DSObject& inObject, T3DSFace* inFace, int inIndex);
+	bool		setVertexMaterial(T3DSVBOInfo& ioVertex, int inMaterialID);
 		
 	TMaterialVec_t		mMaterials;		// The list of material information (Textures and colors)
 	T3DSObjectVec_t		mObjects;		// The object list for our model
@@ -804,7 +827,6 @@ private:
 	string				mTextureFolderName;
 	uint32_t*			mBuffer;
 	size_t				mBufferSize;
-	GLuint				mDisplayList;
 	GLuint				mShaderHandle;
 
 	double_t			mModelBoundingRadius;
@@ -815,6 +837,22 @@ private:
 	
 	bool				mModelDataLoaded;
 	bool				mMetaDataLoaded;
+
+	// VBO rendering
+	enum VAOIDs	{ eUntexturedVAO, eTexturedVAO, eNumVAOs };
+	enum VBOIDs	{ eUntexturedVBO, eTexturedVBO, eNumVBOs };
+	GLuint						mVAOs[eNumVAOs];
+	GLuint						mVBOs[eNumVBOs];
+	vector<T3DSVBOInfo>			mArrayDataUntextured;
+	vector<GLint>				mArrayFirstUntextured;
+	vector<GLsizei>				mArrayCountUntextured;
+	vector<T3DSVBOInfoTextured>	mArrayDataTextured;
+	vector<GLint>				mArrayFirstTextured;
+	vector<GLsizei>				mArrayCountTextured;
+	vector<GLuint>				mTextureIDs;
+
+	// Misc
+	Timer				mTimer;
 };
 
 //----------------------------------------------------------------------

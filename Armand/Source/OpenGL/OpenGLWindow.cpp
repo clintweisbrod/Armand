@@ -957,123 +957,13 @@ void OpenGLWindow::render()
 	fontRenderer->render(text, 30, Vec2f(100, 100), Vec4f(1.0f, 1.0f, 1.0f, 1.0f), 30);
 */
 
-///*
 	// Testing 3DS model loading and fisheye projection shader
 	T3DSModel* model = T3DSModelFactory::inst()->get("Apollo_3rdStage.3ds");
 //	T3DSModel* model = T3DSModelFactory::inst()->get("ISS.3ds");
 	if (model)
-	{
-		// Get bounding radius of model
-		GLfloat modelBoundingRadius = (GLfloat)model->getModelBoundingRadius();
-		GLfloat cameraZ = modelBoundingRadius * 1.1f;
-		static GLfloat cameraX = 0;
-		static GLfloat dCameraX = 0.5f;
-		static GLfloat rotationY = 0;
-		static GLfloat dRotationY = 1;
-
-		Mat4f rotation = Mat4f::rotationY(degToRad(rotationY));
-//		Mat4f rotation = Mat4f::identity();
-		Mat4f translation = Mat4f::translation(Vec3f(0, 0, cameraZ));
-		Mat4f viewMatrix = translation * rotation;
-///*
-		float h = 1, v = 1;
-		if (mSceneSize.x > mSceneSize.y)
-			h = (float)mSceneSize.x / (float)mSceneSize.y;
-		else
-			v = (float)mSceneSize.y / (float)mSceneSize.x;
-		float n = cameraZ - modelBoundingRadius;
-		float f = cameraZ + modelBoundingRadius;
-		mProjectionMatrix = Mat4f::orthographic(-h, h, -v, v, n, f);
-//*/
-		// Debugging shader
-#if 0
-		GLfloat uAperture = (GLfloat)kPi;
-		Vec3f uVD(0, 0, 1);
-		Vec3f uVU(0, 1, 0);
-		Vec3f uVR(1, 0, 0);
-		Vec4f gl_Vertex(0, 0, 0, 1);
-		Vec4f eyePoint = viewMatrix * gl_Vertex;
-		Vec3f eyePointNorm = Vec3f(eyePoint.x, eyePoint.y, eyePoint.z);
-		GLfloat depthValue = dot(uVD, eyePointNorm);
-		eyePointNorm.normalize();
-		GLfloat dotProd = dot(uVD, eyePointNorm);
-		Vec2f point;
-		GLfloat eyePointViewDirectionAngle = acos(dotProd);
-		if (eyePointViewDirectionAngle > 0)
-		{
-			Vec2f xyComponents(eyePointNorm.x, eyePointNorm.y);
-			xyComponents.normalize();
-
-			GLfloat halfAperture = uAperture * 0.5f;
-			Vec2f point;
-			point.x = eyePointViewDirectionAngle * xyComponents.x / halfAperture;
-			point.y = -eyePointViewDirectionAngle * xyComponents.y / halfAperture;
-		}
-
-		Vec4f gl_Position = mProjectionMatrix * Vec4f(point.x, point.y, -depthValue, 1.0f);
-#endif
-
 		model->render();
-/*
-		GLuint shaderHandle = shaderProg->getHandle();
-		glUseProgram(shaderHandle);
-		{
-			glUniform1f(glGetUniformLocation(shaderHandle, "uAperture"), (GLfloat)kPi);
-			glUniform3f(glGetUniformLocation(shaderHandle, "uVD"), 0, 0, 1);
-			glUniformMatrix4fv(glGetUniformLocation(shaderHandle, "uView"), 1, 0, viewMatrix.data);
-			glUniformMatrix4fv(glGetUniformLocation(shaderHandle, "uProjection"), 1, 0, mProjectionMatrix.data);
-			
-			model->render();
-
-			glUseProgram(0);
-		}
-*/
-		cameraX += dCameraX;
-		if (((dCameraX > 0) && (cameraX > 1 * cameraZ)) || ((dCameraX < 0) && (cameraX < -1 * cameraZ)))
-			dCameraX = -dCameraX;
-
-		rotationY += dRotationY;
-		if (rotationY > 360)
-			rotationY -= 360;
-#if 0
-		glEnable(GL_LIGHTING);
-		glMatrixMode(GL_PROJECTION);						// Select the projection matrix
-		glLoadIdentity();									// Reset the projection matrix
-
-		// Calculate the aspect ratio of the window
-		GLfloat aspectRatio = (GLfloat)mSceneSize.x / (GLfloat)mSceneSize.y;
-
-		// Get bounding radius of model
-		double_t boundingRadius = model->getModelBoundingRadius();
-
-		// Set perspective projection
-		gluPerspective(90.0f, aspectRatio, boundingRadius * 0.1, 3 * boundingRadius);
-
-		glMatrixMode(GL_MODELVIEW);							// Select the modelview matrix
-		glLoadIdentity();									// Reset the modelview matrix
-	
-		static Vec3d rot;
-		static Vec3d dRot(0.05, 0.1, 0.15);
-	
-		GLdouble translate = -boundingRadius * 2;
-		glTranslated(0.0, 0.0, translate);
-
-//		glRotated(rot.x, 1, 0, 0);
-//		glRotated(rot.y, 0, 1, 0);
-//		glRotated(rot.z, 0, 0, 1);
-//		rot += dRot;
-//		if (rot.x > 360)
-//			rot.x -= 360;
-//		if (rot.y > 360)
-//			rot.y -= 360;
-//		if (rot.z > 360)
-//			rot.z -= 360;
-		model->render();
-#endif
-	}
 
 //	T3DSModelFactory::inst()->RemoveAll();
-//*/
 }
 
 void OpenGLWindow::postRender()
