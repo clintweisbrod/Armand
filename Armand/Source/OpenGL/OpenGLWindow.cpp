@@ -26,6 +26,7 @@
 #include "Models/3DSModelFactory.h"
 #include "Math/constants.h"
 #include "Math/mathlib.h"
+#include "Utilities/Timer.h"
 
 bool OpenGLWindow::sEnabledGLExtensions = false;
 
@@ -599,7 +600,7 @@ void OpenGLWindow::mouseEvent(WORD inXPos, WORD inYPos, bool inCtrlDown, bool in
 {
 	// We use two consecutive events to determine how much to adjust Euler angles
 	const double kMaxMouseEventInterval = 0.25;
-	double currentSeconds = getCurrentSeconds();
+	double currentSeconds = Timer::seconds();
 	double mouseEventInterval = currentSeconds - mLastMouseMoveSeconds;
 
 	mLastMouseMoveSeconds = currentSeconds;
@@ -843,7 +844,7 @@ void OpenGLWindow::drawScene()
 		return;
 
 	// Remember current time
-	mFrameStartTime = getCurrentSeconds();
+	mFrameStartTime = Timer::seconds();
 
 	// Handle any keyboard input
 	handleKeys();
@@ -857,7 +858,7 @@ void OpenGLWindow::drawScene()
 
 	// Average the frame render time over 50 frames
 	const double kNumberOfFramesToAverageOver = 50.0;
-	double frameRenderTime = getCurrentSeconds() - mFrameStartTime;
+	double frameRenderTime = Timer::seconds() - mFrameStartTime;
 	mAverageRenderedFrameRate -= 1.0 / kNumberOfFramesToAverageOver * mAverageRenderedFrameRate;
 	mAverageRenderedFrameRate += 1.0 / kNumberOfFramesToAverageOver * frameRenderTime;
 
@@ -975,14 +976,4 @@ void OpenGLWindow::setClearColor(const GLfloat inRed, const GLfloat inGreen, con
 {
 	mClearColor = Vec3f(inRed, inGreen, inBlue);
 	glClearColor(mClearColor.x, mClearColor.y, mClearColor.z, 1.0f);
-}
-
-double OpenGLWindow::getCurrentSeconds() const
-{
-	LARGE_INTEGER tick;
-	QueryPerformanceCounter(&tick);
-	double rawTime = (double)tick.QuadPart;
-	double seconds = rawTime/mTicksPerSecond.QuadPart;
-	
-	return seconds;
 }

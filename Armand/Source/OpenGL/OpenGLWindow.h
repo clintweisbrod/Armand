@@ -69,7 +69,6 @@ class OpenGLWindow
 									 TCHAR* inTitle, int inWidth, int inHeight, int inBitsPerPixel, bool inFullscreen);
 		bool			setupOpenGLForWindow(GLuint inPixelFormat, PIXELFORMATDESCRIPTOR* inPFD);
 		GLuint			selectBestPixelFormatUsingWGL(HDC hDC);
-		double			getCurrentSeconds() const;
 		void			handleKeys();
 
 		// OpenGL
