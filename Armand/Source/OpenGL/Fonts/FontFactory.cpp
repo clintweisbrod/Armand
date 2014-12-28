@@ -27,8 +27,6 @@
 #include "OpenGL/ShaderFactory.h"
 #include "Utilities/StringUtils.h"
 
-extern OpenGLWindow* gOpenGLWindow;
-
 const int kMinFontSize = 10;	// Font smaller than this are pretty difficult to read
 
 FontFactory::FontFactory()

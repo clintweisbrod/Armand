@@ -131,3 +131,5 @@ class OpenGLWindow
 		// Fisheye projection boundary
 		v2f				mFisheyeBoundaryVertices[360];
 };
+
+extern OpenGLWindow* gOpenGLWindow;
