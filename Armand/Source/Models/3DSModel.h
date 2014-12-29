@@ -716,7 +716,7 @@ struct T3DSVBOInfo
 
 struct T3DSVBOInfoTextured : public T3DSVBOInfo
 {
-	GLfloat mTexCoords[2];
+	GLushort mTexCoords[2];
 };
 
 //----------------------------------------------------------------------

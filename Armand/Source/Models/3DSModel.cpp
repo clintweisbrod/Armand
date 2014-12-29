@@ -471,8 +471,7 @@ void T3DSModel::buildArrays()
 				setVertexData(vertex, *object, theFace, index);
 
 				// Texcoords
-				vertex.mTexCoords[0] = object->mTexCoords[index].s;
-				vertex.mTexCoords[1] = object->mTexCoords[index].t;
+				glTexCoord2fToTexCoord2us(object->mTexCoords[index], vertex.mTexCoords);
 
 				// Add the vertex
 				mArrayDataTextured.push_back(vertex);
@@ -509,7 +508,7 @@ void T3DSModel::buildArrays()
 	offset += (4 * sizeof(GLubyte));
 	glVertexAttribPointer(5, 1, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(offset));	// vMaterialShininess
 	offset += (1 * sizeof(GLfloat));
-	glVertexAttribPointer(6, 2, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(offset));	// vTexture coordinates
+	glVertexAttribPointer(6, 2, GL_UNSIGNED_SHORT, GL_TRUE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(offset));	// vTexture coordinates
 
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);

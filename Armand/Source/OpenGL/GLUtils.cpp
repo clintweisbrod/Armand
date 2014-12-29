@@ -20,6 +20,7 @@
 #include "stdafx.h"
 
 #include "GLUtils.h"
+#include "Math/mathlib.h"
 
 bool glCheckForError()
 {
@@ -112,20 +113,20 @@ GLuint glNorma3fToGL_INT_2_10_10_10_REV(Vec3f& inNormal)
 
 void glColor4fToColor4ub(const GLfloat inFloatColor[4], GLubyte ioByteColor[4])
 {
-	ioByteColor[0] = (GLubyte)(inFloatColor[0] * 255);
-	ioByteColor[1] = (GLubyte)(inFloatColor[1] * 255);
-	ioByteColor[2] = (GLubyte)(inFloatColor[2] * 255);
-	ioByteColor[3] = (GLubyte)(inFloatColor[3] * 255);
+	ioByteColor[0] = (GLubyte)(clamp(inFloatColor[0]) * 255);
+	ioByteColor[1] = (GLubyte)(clamp(inFloatColor[1]) * 255);
+	ioByteColor[2] = (GLubyte)(clamp(inFloatColor[2]) * 255);
+	ioByteColor[3] = (GLubyte)(clamp(inFloatColor[3]) * 255);
 }
 
 void glTexCoord2fToTexCoord2us(const GLfloat inFloatTexCoords[2], GLushort ioUShortTexCoords[2])
 {
-	ioUShortTexCoords[0] = (GLushort)(inFloatTexCoords[0] * 65535);
-	ioUShortTexCoords[1] = (GLushort)(inFloatTexCoords[1] * 65535);
+	ioUShortTexCoords[0] = (GLushort)(clamp(inFloatTexCoords[0]) * 65535);
+	ioUShortTexCoords[1] = (GLushort)(clamp(inFloatTexCoords[1]) * 65535);
 }
 
 void glTexCoord2fToTexCoord2us(const Vec2f& inFloatTexCoords, GLushort ioUShortTexCoords[2])
 {
-	ioUShortTexCoords[0] = (GLushort)(inFloatTexCoords.s * 65535);
-	ioUShortTexCoords[1] = (GLushort)(inFloatTexCoords.t * 65535);
+	ioUShortTexCoords[0] = (GLushort)(clamp(inFloatTexCoords.s) * 65535);
+	ioUShortTexCoords[1] = (GLushort)(clamp(inFloatTexCoords.t) * 65535);
 }
