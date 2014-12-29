@@ -1075,6 +1075,12 @@ public:
     /// @brief Creates new out file stream for specified filename.
     /// @return Pointer to newly created fstream or nullptr
     static base::type::fstream_t* newFileStream(const std::string& filename) {
+		// CLW: Dec 29, 2014:
+		// I don't want a log file containing log events from past application instances,
+		// but there seems to be no built-in way to reset the log file when the app is started!!!
+		// So...
+		remove(filename.c_str());
+
         base::type::fstream_t *fs = new base::type::fstream_t(filename.c_str(), 
             base::type::fstream_t::out | base::type::fstream_t::app);
 #if defined(_ELPP_UNICODE)
