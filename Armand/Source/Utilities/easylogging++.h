@@ -1078,11 +1078,12 @@ public:
 		// CLW: Dec 29, 2014:
 		// I don't want a log file containing log events from past application instances,
 		// but there seems to be no built-in way to reset the log file when the app is started!!!
-		// So...
-		remove(filename.c_str());
-
-        base::type::fstream_t *fs = new base::type::fstream_t(filename.c_str(), 
-            base::type::fstream_t::out | base::type::fstream_t::app);
+		// So, I'm changing the open mode in the following fstream constructor call to include 
+		// fstream::trunc instead of fstream::app.
+		base::type::fstream_t *fs = new base::type::fstream_t(filename.c_str(),
+			base::type::fstream_t::out | base::type::fstream_t::trunc);
+//      base::type::fstream_t *fs = new base::type::fstream_t(filename.c_str(), 
+//          base::type::fstream_t::out | base::type::fstream_t::app);
 #if defined(_ELPP_UNICODE)
         std::locale elppUnicodeLocale("");
 #if _ELPP_OS_WINDOWS
