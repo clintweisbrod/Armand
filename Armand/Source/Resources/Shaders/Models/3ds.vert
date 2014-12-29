@@ -39,16 +39,16 @@ void main()
 	vec3 eyePointNorm = normalize(eyePoint.xyz);
 	
 	// Lighting calculations
-	vec3 tnorm = normalize(uNormalMatrix * vNormal);	
+	vec3 t = uNormalMatrix * vNormal;
 	vec3 s = normalize(vec3(uLight.position - eyePoint));
 	vec3 v = -eyePointNorm;
-	vec3 r = reflect(-s, tnorm);
+	vec3 r = reflect(-s, t);
 	vec3 ambient = uLight.ambient * vMaterialAmbient;
-	float sDotN = max(dot(s, tnorm), 0.0);
+	float sDotN = max(dot(s, t), 0.0);
 	vec3 diffuse = uLight.diffuse * vMaterialDiffuse * sDotN;
 	vec3 spec = vec3(0.0);
 	if (sDotN > 0.0)
-		spec = uLight.specular * vMaterialSpecular * pow(max(dot(r,v), 0.0), vMaterialShininess);
+		spec = uLight.specular * vMaterialSpecular * pow(max(dot(r, v), 0.0), vMaterialShininess);
 
 	lightIntensity = ambient + diffuse + spec + uLight.emission;
 
