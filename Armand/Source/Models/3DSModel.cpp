@@ -576,7 +576,6 @@ bool T3DSModel::setVertexMaterial(T3DSVBOInfo& ioVertex, int inMaterialID)
 			// Make sure the specular color has full alpha
 			float matSpecular[4] = { theMaterial->mSpecularColor[0], theMaterial->mSpecularColor[1], theMaterial->mSpecularColor[2], 1.0f };
 			glColor4fToColor4ub(matSpecular, ioVertex.mMaterial.mSpecular);
-			ioVertex.mMaterial.mSpecular[3] = 1;
 			ioVertex.mMaterial.mShininess = theMaterial->mShininess;
 		}
 	}
