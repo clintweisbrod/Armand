@@ -27,6 +27,8 @@ void glTexturingOn(GLuint inTextureMode, GLuint inTextureID);
 void glTexturingOff();
 GLuint glSignedTwosCompliment(GLfloat inValue, int inBits);
 GLuint glNorma3fToGL_INT_2_10_10_10_REV(Vec3f& inNormal);
+inline GLubyte glConvertGLFloatToGLubyte(const GLfloat in);
+inline GLushort glConvertGLFloatToGLushort(const GLfloat in);
 void glColor4fToColor4ub(const GLfloat inFloatColor[4], GLubyte ioByteColor[4]);
 void glTexCoord2fToTexCoord2us(const GLfloat inFloatTexCoords[2], GLushort ioUShortTexCoords[2]);
 void glTexCoord2fToTexCoord2us(const Vec2f& inFloatTexCoords, GLushort ioUShortTexCoords[2]);
