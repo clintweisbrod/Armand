@@ -704,19 +704,19 @@ struct T3DSObject
 struct T3DSVBOInfo
 {
 	GLfloat mPosition[3];
-	GLfloat mNormal[3];
+	GLuint mNormal;
 	struct MaterialInfo
 	{
-		GLfloat	mAmbient[4];		// Ambient reflectivity
-		GLfloat	mDiffuse[4];		// Diffuse reflectivity
-		GLfloat	mSpecular[4];		// Specular reflectivity
+		GLubyte	mAmbient[4];		// Ambient reflectivity
+		GLubyte	mDiffuse[4];		// Diffuse reflectivity
+		GLubyte	mSpecular[4];		// Specular reflectivity
 		GLfloat	mShininess;			// Specular shininess exponent
 	} mMaterial;
 };
 
 struct T3DSVBOInfoTextured : public T3DSVBOInfo
 {
-	GLfloat	mTexCoords[2];
+	GLfloat mTexCoords[2];
 };
 
 //----------------------------------------------------------------------
@@ -805,6 +805,7 @@ private:
 	void		readSmoothingGroups(FILE* inFileHandle, T3DSObject* ioObject, T3DSChunk* ioPreviousChunk);
 	void		readTranslationMatrix(FILE* inFileHandle, T3DSObject* ioObject, T3DSChunk* ioPreviousChunk);
 	void		readObjectMaterial(FILE* inFileHandle, T3DSObject* ioObject, T3DSChunk* ioPreviousChunk);
+	void		removeFacelessObjects();
 	void		computeNormals();
 	void		sortFaces();
 	void		computeBoundingRadius();

@@ -73,3 +73,59 @@ void glTexturingOff()
 
 	glDisable(GL_TEXTURE_2D);
 }
+
+GLuint glSignedTwosCompliment(GLfloat inValue, int inBits)
+{
+	if ((inValue < -1) || (inValue > 1))
+		return 0;
+
+	GLuint result = 0;
+
+	result = (GLuint)(fabs(inValue) * pow(2, inBits - 1));
+	if (inValue < 0)
+	{
+		result = ~result;
+		result++;
+	}
+
+	GLuint bitMask = (GLuint)pow(2, inBits) - 1;
+	result &= bitMask;
+
+	return result;
+}
+
+GLuint glNorma3fToGL_INT_2_10_10_10_REV(Vec3f& inNormal)
+{
+	GLuint result = 0;
+
+	GLuint x = glSignedTwosCompliment(inNormal.x, 10);
+	GLuint y = glSignedTwosCompliment(inNormal.y, 10);
+	GLuint z = glSignedTwosCompliment(inNormal.z, 10);
+
+	result = 0;
+	result |= (x << 20);
+	result |= (y << 10);
+	result |= (z << 0);
+
+	return result;
+}
+
+void glColor4fToColor4ub(const GLfloat inFloatColor[4], GLubyte ioByteColor[4])
+{
+	ioByteColor[0] = (GLubyte)(inFloatColor[0] * 255);
+	ioByteColor[1] = (GLubyte)(inFloatColor[1] * 255);
+	ioByteColor[2] = (GLubyte)(inFloatColor[2] * 255);
+	ioByteColor[3] = (GLubyte)(inFloatColor[3] * 255);
+}
+
+void glTexCoord2fToTexCoord2us(const GLfloat inFloatTexCoords[2], GLushort ioUShortTexCoords[2])
+{
+	ioUShortTexCoords[0] = (GLushort)(inFloatTexCoords[0] * 65535);
+	ioUShortTexCoords[1] = (GLushort)(inFloatTexCoords[1] * 65535);
+}
+
+void glTexCoord2fToTexCoord2us(const Vec2f& inFloatTexCoords, GLushort ioUShortTexCoords[2])
+{
+	ioUShortTexCoords[0] = (GLushort)(inFloatTexCoords.s * 65535);
+	ioUShortTexCoords[1] = (GLushort)(inFloatTexCoords.t * 65535);
+}
