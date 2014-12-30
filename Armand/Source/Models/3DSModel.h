@@ -815,8 +815,8 @@ private:
 	void		cleanUp();
 
 	void		buildArrays();
-	void		setVertexData(T3DSObject& inObject, T3DSFace* inFace, int inIndex, GLfloat* ioPosition, GLuint* ioNormal);
-	void		setVertexMaterial(int inMaterialID, GLubyte* ioAmbient, GLubyte* ioDiffuse, GLubyte* ioSpecular, GLfloat* ioShininess);
+	void		setVertexData(T3DSVBOInfo& ioVertex, T3DSObject& inObject, T3DSFace* inFace, int inIndex);
+	void		setVertexMaterial(T3DSVBOInfo& ioVertex, int inMaterialID);
 		
 	TMaterialVec_t		mMaterials;		// The list of material information (Textures and colors)
 	T3DSObjectVec_t		mObjects;		// The object list for our model
