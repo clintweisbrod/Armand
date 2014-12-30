@@ -207,6 +207,9 @@
     <ClInclude Include="..\..\Source\Models\3DSModelFactory.h">
       <Filter>Header Files\Models</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Source\OpenGL\VBOData.h">
+      <Filter>Header Files\OpenGL</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\Main\Armand.cpp">
@@ -253,6 +256,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\Models\3DSModelFactory.cpp">
       <Filter>Source Files\Models</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\OpenGL\VBOData.cpp">
+      <Filter>Source Files\OpenGL</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

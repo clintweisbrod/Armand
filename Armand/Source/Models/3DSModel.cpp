@@ -27,8 +27,8 @@
 #include "Utilities/ConfigReader.h"
 #include "OpenGL/GLUtils.h"
 #include "OpenGL/ShaderFactory.h"
-#include "OpenGL/VertexBufferStructs.h"
 #include "OpenGL/OpenGLWindow.h"
+#include "OpenGL/VBOData.h"
 #include "Math/mathlib.h"
 
 #define INITIAL_BUFFER_SIZE	2000000
@@ -304,21 +304,43 @@ void T3DSModel::removeFacelessObjects()
 	T3DSObjectVec_t::iterator object = mObjects.begin();
 	while (object != mObjects.end())
 	{
+		// Erase any objects that have no faces defined
 		if (object->mNumFaces == 0)
 			mObjects.erase(object);
 		else
+		{
+			// Also, erase any faces that have material specifications that make them invisible.
+			T3DSFaceVec_t::iterator face = object->mFaces.begin();
+			while (face != object->mFaces.end())
+			{
+				if (face->mMaterialID >= 0)
+				{
+					// If the alpha values for diffuse and specular color are zero, we don't render it.
+					// Why? Because the triangle will just appear black and will not respond to any lighting.
+					// Our model of Cassini happens to use this material definition and it looks nutty.
+					T3DSMaterialInfo* theMaterial = &mMaterials[face->mMaterialID];
+					if ((theMaterial->mDiffuseColor[3] == 0.0f) && (theMaterial->mSpecularColor[3] == 0.0f))
+						object->mFaces.erase(face);
+					else
+						face++;
+				}
+				else
+					face++;
+			}
 			object++;
+		}
 	}
 }
 
 void T3DSModel::buildArrays()
 {
 	// Locate all the objects that require and don't require textures
+	GLuint numUnTexturedVertices = 0, numTexturedVertices = 0;
 	vector<T3DSObject> texturedObjects, unTexturedObjects;
 	T3DSObjectVec_t::iterator object;
 	for (object = mObjects.begin(); object != mObjects.end(); object++)
 	{
-		// Go through all of the faces (polygons) of the object and draw them
+		// Go through all of the faces (triangles)
 		bool hasTexture = false;
 		for (int face = 0; face < object->mNumFaces; face++)
 		{
@@ -334,69 +356,16 @@ void T3DSModel::buildArrays()
 			}
 		}
 		if (hasTexture)
-			texturedObjects.push_back(*object);
-		else
-			unTexturedObjects.push_back(*object);
-	}
-/*
-	// Add the untextured objects first
-	GLuint numVertices = unTexturedObjects.size();
-	GLuint bufSize = sizeof(T3DSVBOInfo) * numVertices;
-	GLubyte* vertexBuffer = new GLubyte[bufSize];
-	if (vertexBuffer == NULL)
-		return;
-
-	// Compute byte offsets into buffer for each vertex attribute
-	GLuint iPosition = 0;
-	GLuint iNormal = iPosition + numVertices * sizeof(GLfloat) * 3;
-	GLuint iAmbient = iNormal + numVertices * sizeof(GLuint);
-	GLuint iDiffuse = iAmbient + numVertices * sizeof(GLfloat) * 3;
-	GLuint iSpecular = iDiffuse + numVertices * sizeof(GLfloat) * 3;
-	GLuint iShininess = iSpecular + numVertices * sizeof(GLfloat) * 3;
-
-	// Initialize pointers into buffer for each vertex attribute
-	GLfloat* vPosition = (GLfloat*)vertexBuffer + iPosition;
-	GLuint* vNormal = (GLuint*)vertexBuffer + iNormal;
-	GLfloat* vAmbient = (GLfloat*)vertexBuffer + iAmbient;
-	GLfloat* vDiffuse = (GLfloat*)vertexBuffer + iDiffuse;
-	GLfloat* vSpecular = (GLfloat*)vertexBuffer + iSpecular;
-	GLfloat* vShininess = (GLfloat*)vertexBuffer + iShininess;
-*/
-	GLint firstValue = 0;
-	GLsizei countValue = 0;
-	for (object = unTexturedObjects.begin(); object != unTexturedObjects.end(); object++)
-	{
-		mArrayFirstUntextured.push_back(firstValue);
-		countValue = 0;
-
-		// Go through all of the faces (triangles) of the object
-		T3DSVBOInfo vertex;
-		for (int face = 0; face < object->mNumFaces; face++)
 		{
-			T3DSFace* theFace = &(object->mFaces[face]);
-
-			// Skip any face where setVertexMaterial() returns false
-			if (!setVertexMaterial(vertex, theFace->mMaterialID))
-				continue;
-
-			// Go through each corner of the triangle
-			for (int whichVertex = 0; whichVertex < 3; whichVertex++)
-			{
-				int index = theFace->mVertIndex[whichVertex];
-				setVertexData(vertex, *object, theFace, index);
-
-				// Add the vertex
-				mArrayDataUntextured.push_back(vertex);
-
-				countValue++;
-				firstValue++;
-			}
+			texturedObjects.push_back(*object);
+			numTexturedVertices += (object->mNumFaces * 3);
 		}
-
-		mArrayCountUntextured.push_back(countValue);
+		else
+		{
+			unTexturedObjects.push_back(*object);
+			numUnTexturedVertices += (object->mNumFaces * 3);
+		}
 	}
-
-	// Now create the VBO and send the data up to it
 
 	// Allocate VAOs
 	glGenVertexArrays(eNumVAOs, mVAOs);
@@ -404,126 +373,174 @@ void T3DSModel::buildArrays()
 	// Allocate VBOs
 	glGenBuffers(eNumVBOs, mVBOs);
 
-	// Bind the untextured VAO as the current used object
-	glBindVertexArray(mVAOs[eUntexturedVAO]);
-
-	// Bind the untextured VBO as being the active buffer and storing vertex attributes (coordinates)
-	glBindBuffer(GL_ARRAY_BUFFER, mVBOs[eUntexturedVBO]);
-
-	// Copy the vertex data
-	glBufferData(GL_ARRAY_BUFFER, mArrayDataUntextured.size() * sizeof(T3DSVBOInfo), mArrayDataUntextured.data(), GL_STATIC_DRAW);
-	glCheckForError();
-
-	GLuint offset = 0;
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfo), BUFFER_OFFSET(offset));	// vPosition
-	offset += (3 * sizeof(GLfloat));
-	glVertexAttribPointer(1, GL_BGRA, GL_INT_2_10_10_10_REV, GL_TRUE, sizeof(T3DSVBOInfo), BUFFER_OFFSET(offset));	// vNormal
-	offset += sizeof(GLuint);
-	glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(T3DSVBOInfo), BUFFER_OFFSET(offset));	// vMaterialAmbient
-	offset += (4 * sizeof(GLubyte));
-	glVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(T3DSVBOInfo), BUFFER_OFFSET(offset));	// vMaterialDiffuse
-	offset += (4 * sizeof(GLubyte));
-	glVertexAttribPointer(4, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(T3DSVBOInfo), BUFFER_OFFSET(offset));	// vMaterialSpecular
-	offset += (4 * sizeof(GLubyte));
-	glVertexAttribPointer(5, 1, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfo), BUFFER_OFFSET(offset));	// vMaterialShininess
-
-	glEnableVertexAttribArray(0);
-	glEnableVertexAttribArray(1);
-	glEnableVertexAttribArray(2);
-	glEnableVertexAttribArray(3);
-	glEnableVertexAttribArray(4);
-	glEnableVertexAttribArray(5);
-
-	glBindVertexArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	// Add the textured objects
-	firstValue = 0;
-	countValue = 0;
-	for (object = texturedObjects.begin(); object != texturedObjects.end(); object++)
+	VBOData* untexturedData = new VBOData;
+	if (untexturedData)
 	{
-		mArrayFirstTextured.push_back(firstValue);
-		countValue = 0;
-
-		// Go through all of the faces (triangle) of the object
-		GLuint texID = 0;
-		T3DSVBOInfoTextured vertex;
-		for (int face = 0; face < object->mNumFaces; face++)
+		untexturedData->addArray(0, 3, GL_FLOAT, GL_FALSE);
+		untexturedData->addArray(1, GL_BGRA, GL_INT_2_10_10_10_REV, GL_TRUE);
+		untexturedData->addArray(2, 4, GL_UNSIGNED_BYTE, GL_TRUE);
+		untexturedData->addArray(3, 4, GL_UNSIGNED_BYTE, GL_TRUE);
+		untexturedData->addArray(4, 4, GL_UNSIGNED_BYTE, GL_TRUE);
+		untexturedData->addArray(5, 1, GL_FLOAT, GL_FALSE);
+		untexturedData->setNumVertices(numUnTexturedVertices);
+		if (untexturedData->getData())
 		{
-			T3DSFace* theFace = &(object->mFaces[face]);
+			GLfloat* vPosition = (GLfloat*)untexturedData->getArray(0);
+			GLuint* vNormal = (GLuint*)untexturedData->getArray(1);
+			GLubyte* vAmbient = (GLubyte*)untexturedData->getArray(2);
+			GLubyte* vDiffuse = (GLubyte*)untexturedData->getArray(3);
+			GLubyte* vSpecular = (GLubyte*)untexturedData->getArray(4);
+			GLfloat* vShininess = (GLfloat*)untexturedData->getArray(5);
 
-			// Skip any face where setVertexMaterial() returns false
-			if (!setVertexMaterial(vertex, theFace->mMaterialID))
-				continue;
-
-			T3DSMaterialInfo* theMaterial = NULL;
-			if ((theFace->mMaterialID >= 0) && (texID == 0))
+			GLint firstValue = 0;
+			GLsizei countValue = 0;
+			for (object = unTexturedObjects.begin(); object != unTexturedObjects.end(); object++)
 			{
-				theMaterial = &mMaterials[theFace->mMaterialID];
-				if (theMaterial->mTexture)
-					texID = theMaterial->mTexture->getTextureID();
+				mArrayFirstUntextured.push_back(firstValue);
+				countValue = 0;
+
+				// Go through all of the faces (triangles) of the object
+				for (int face = 0; face < object->mNumFaces; face++)
+				{
+					T3DSFace* theFace = &(object->mFaces[face]);
+
+					// Visit each corner of the triangle
+					for (int whichVertex = 0; whichVertex < 3; whichVertex++)
+					{
+						// Position and normal
+						int index = theFace->mVertIndex[whichVertex];
+						setVertexData(*object, theFace, index, vPosition, vNormal);
+						vPosition += 3;
+						vNormal++;
+
+						// Material info
+						setVertexMaterial(theFace->mMaterialID, vAmbient, vDiffuse, vSpecular, vShininess);
+						vAmbient += 4;
+						vDiffuse += 4;
+						vSpecular += 4;
+						vShininess++;
+
+						countValue++;
+						firstValue++;
+					}
+				}
+
+				mArrayCountUntextured.push_back(countValue);
 			}
 
-			// Go through each corner of the triangle and draw it.
-			for (int whichVertex = 0; whichVertex < 3; whichVertex++)
-			{
-				int index = theFace->mVertIndex[whichVertex];
-				setVertexData(vertex, *object, theFace, index);
+			// Now create the VBO and send the data up to it
 
-				// Texcoords
-				glTexCoord2fToTexCoord2us(object->mTexCoords[index], vertex.mTexCoords);
+			// Bind the untextured VAO as the current used object
+			glBindVertexArray(mVAOs[eUntexturedVAO]);
 
-				// Add the vertex
-				mArrayDataTextured.push_back(vertex);
+			// Bind the untextured VBO as being the active buffer and storing vertex attributes (coordinates)
+			glBindBuffer(GL_ARRAY_BUFFER, mVBOs[eUntexturedVBO]);
 
-				countValue++;
-				firstValue++;
-			}
+			// Send the data and VAO config up to the GPU
+			untexturedData->setupGPU();
+
+			glBindVertexArray(0);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
 		}
 
-		mTextureIDs.push_back(texID);
-		mArrayCountTextured.push_back(countValue);
+		// The data has been copied to the GPU. We can delete the CPU memory.
+		delete untexturedData;
+		untexturedData = NULL;
 	}
 
-	// Bind the untextured VAO as the current used object
-	glBindVertexArray(mVAOs[eTexturedVAO]);
+	VBOData* texturedData = new VBOData;
+	if (texturedData)
+	{
+		texturedData->addArray(0, 3, GL_FLOAT, GL_FALSE);
+		texturedData->addArray(1, GL_BGRA, GL_INT_2_10_10_10_REV, GL_TRUE);
+		texturedData->addArray(2, 4, GL_UNSIGNED_BYTE, GL_TRUE);
+		texturedData->addArray(3, 4, GL_UNSIGNED_BYTE, GL_TRUE);
+		texturedData->addArray(4, 4, GL_UNSIGNED_BYTE, GL_TRUE);
+		texturedData->addArray(5, 1, GL_FLOAT, GL_FALSE);
+		texturedData->addArray(6, 2, GL_UNSIGNED_SHORT, GL_TRUE);
+		texturedData->setNumVertices(numTexturedVertices);
+		if (texturedData->getData())
+		{
+			GLfloat* vPosition = (GLfloat*)texturedData->getArray(0);
+			GLuint* vNormal = (GLuint*)texturedData->getArray(1);
+			GLubyte* vAmbient = (GLubyte*)texturedData->getArray(2);
+			GLubyte* vDiffuse = (GLubyte*)texturedData->getArray(3);
+			GLubyte* vSpecular = (GLubyte*)texturedData->getArray(4);
+			GLfloat* vShininess = (GLfloat*)texturedData->getArray(5);
+			GLushort* vTexCoords = (GLushort*)texturedData->getArray(6);
 
-	// Bind the untextured VBO as being the active buffer and storing vertex attributes (coordinates)
-	glBindBuffer(GL_ARRAY_BUFFER, mVBOs[eTexturedVBO]);
+			// Add the textured objects
+			GLint firstValue = 0;
+			GLsizei countValue = 0;
+			for (object = texturedObjects.begin(); object != texturedObjects.end(); object++)
+			{
+				mArrayFirstTextured.push_back(firstValue);
+				countValue = 0;
 
-	// Copy the vertex data
-	glBufferData(GL_ARRAY_BUFFER, mArrayDataTextured.size() * sizeof(T3DSVBOInfoTextured), mArrayDataTextured.data(), GL_STATIC_DRAW);
-	glCheckForError();
+				// Go through all of the faces (triangle) of the object
+				GLuint texID = 0;
+				for (int face = 0; face < object->mNumFaces; face++)
+				{
+					T3DSFace* theFace = &(object->mFaces[face]);
 
-	offset = 0;
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(offset));	// vPosition
-	offset += (3 * sizeof(GLfloat));
-	glVertexAttribPointer(1, GL_BGRA, GL_INT_2_10_10_10_REV, GL_TRUE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(offset));	// vNormal
-	offset += sizeof(GLuint);
-	glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(offset));	// vMaterialAmbient
-	offset += (4 * sizeof(GLubyte));
-	glVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(offset));	// vMaterialDiffuse
-	offset += (4 * sizeof(GLubyte));
-	glVertexAttribPointer(4, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(offset));	// vMaterialSpecular
-	offset += (4 * sizeof(GLubyte));
-	glVertexAttribPointer(5, 1, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(offset));	// vMaterialShininess
-	offset += (1 * sizeof(GLfloat));
-	glVertexAttribPointer(6, 2, GL_UNSIGNED_SHORT, GL_TRUE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(offset));	// vTexture coordinates
+					T3DSMaterialInfo* theMaterial = NULL;
+					if ((theFace->mMaterialID >= 0) && (texID == 0))
+					{
+						theMaterial = &mMaterials[theFace->mMaterialID];
+						if (theMaterial->mTexture)
+							texID = theMaterial->mTexture->getTextureID();
+					}
 
-	glEnableVertexAttribArray(0);
-	glEnableVertexAttribArray(1);
-	glEnableVertexAttribArray(2);
-	glEnableVertexAttribArray(3);
-	glEnableVertexAttribArray(4);
-	glEnableVertexAttribArray(5);
-	glEnableVertexAttribArray(6);
+					// Visit each corner of the triangle and draw it.
+					for (int whichVertex = 0; whichVertex < 3; whichVertex++)
+					{
+						// Position and normal
+						int index = theFace->mVertIndex[whichVertex];
+						setVertexData(*object, theFace, index, vPosition, vNormal);
+						vPosition += 3;
+						vNormal++;
 
-	glBindVertexArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+						// Material info
+						setVertexMaterial(theFace->mMaterialID, vAmbient, vDiffuse, vSpecular, vShininess);
+						vAmbient += 4;
+						vDiffuse += 4;
+						vSpecular += 4;
+						vShininess++;
 
+						// Texcoords
+						glTexCoord2fToTexCoord2us(object->mTexCoords[index], vTexCoords);
+						vTexCoords += 2;
+
+						countValue++;
+						firstValue++;
+					}
+				}
+
+				mTextureIDs.push_back(texID);
+				mArrayCountTextured.push_back(countValue);
+			}
+
+			// Bind the untextured VAO as the current used object
+			glBindVertexArray(mVAOs[eTexturedVAO]);
+
+			// Bind the untextured VBO as being the active buffer and storing vertex attributes (coordinates)
+			glBindBuffer(GL_ARRAY_BUFFER, mVBOs[eTexturedVBO]);
+
+			// Send the data and VAO config up to the GPU
+			texturedData->setupGPU();
+
+			glBindVertexArray(0);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+		}
+
+		// The data has been copied to the GPU. We can delete the CPU memory.
+		delete texturedData;
+		texturedData = NULL;
+	}
 }
 
-void T3DSModel::setVertexData(T3DSVBOInfo& ioVertex, T3DSObject& inObject, T3DSFace* inFace, int inIndex)
+//void T3DSModel::setVertexData(T3DSVBOInfo& ioVertex, T3DSObject& inObject, T3DSFace* inFace, int inIndex)
+void T3DSModel::setVertexData(T3DSObject& inObject, T3DSFace* inFace, int inIndex, GLfloat* ioPosition, GLuint* ioNormal)
 {
 	// Normal
 	Vec3f* theNormal;
@@ -532,15 +549,16 @@ void T3DSModel::setVertexData(T3DSVBOInfo& ioVertex, T3DSObject& inObject, T3DSF
 		theNormal = &inObject.mVertices[inIndex].mNormalMap[smoothingGroup].mNormal;
 	else
 		theNormal = &inFace->mNormal;
-	ioVertex.mNormal = glNorma3fToGL_INT_2_10_10_10_REV(*theNormal);
+	*ioNormal = glNorma3fToGL_INT_2_10_10_10_REV(*theNormal);
 
 	// Vertex
-	ioVertex.mPosition[0] = inObject.mVertices[inIndex].mVertex.x;
-	ioVertex.mPosition[1] = inObject.mVertices[inIndex].mVertex.y;
-	ioVertex.mPosition[2] = inObject.mVertices[inIndex].mVertex.z;
+	ioPosition[0] = inObject.mVertices[inIndex].mVertex.x;
+	ioPosition[1] = inObject.mVertices[inIndex].mVertex.y;
+	ioPosition[2] = inObject.mVertices[inIndex].mVertex.z;
 }
 
-bool T3DSModel::setVertexMaterial(T3DSVBOInfo& ioVertex, int inMaterialID)
+//bool T3DSModel::setVertexMaterial(T3DSVBOInfo& ioVertex, int inMaterialID)
+void T3DSModel::setVertexMaterial(int inMaterialID, GLubyte* ioAmbient, GLubyte* ioDiffuse, GLubyte* ioSpecular, GLfloat* ioShininess)
 {
 	const GLfloat kDefaultMaterialShininess = 0.1f * 128.0f;
 	const GLfloat kZeroLight[] = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -552,31 +570,25 @@ bool T3DSModel::setVertexMaterial(T3DSVBOInfo& ioVertex, int inMaterialID)
 	{
 		theMaterial = &mMaterials[inMaterialID];
 
-		// If the alpha values for diffuse and specular color are zero, we don't render it.
-		// Why? Because the polygon will just appear black and will not respond to any lighting.
-		// Our model of Cassini happens to use this material definition and it looks nutty.
-		if ((theMaterial->mDiffuseColor[3] == 0.0f) && (theMaterial->mSpecularColor[3] == 0.0f))
-			return false;
-
 		// Set ambient material color
 		// We're overriding ambient material color so that we have a consistent ambient lighing effect for all models.
-		glColor4fToColor4ub(kZeroLight, ioVertex.mMaterial.mAmbient);
+		glColor4fToColor4ub(kZeroLight, ioAmbient);
 
 		// Set diffuse material color
-		glColor4fToColor4ub(theMaterial->mDiffuseColor, ioVertex.mMaterial.mDiffuse);
+		glColor4fToColor4ub(theMaterial->mDiffuseColor, ioDiffuse);
 
 		// Set specular material color
 		if ((theMaterial->mSpecularColor[0] == 0.0f) && (theMaterial->mSpecularColor[1] == 0.0f) && (theMaterial->mSpecularColor[2] == 0.0f))
 		{
-			glColor4fToColor4ub(kZeroLight, ioVertex.mMaterial.mSpecular);
-			ioVertex.mMaterial.mShininess = 0;
+			glColor4fToColor4ub(kZeroLight, ioSpecular);
+			*ioShininess = 0;
 		}
 		else
 		{
 			// Make sure the specular color has full alpha
 			float matSpecular[4] = { theMaterial->mSpecularColor[0], theMaterial->mSpecularColor[1], theMaterial->mSpecularColor[2], 1.0f };
-			glColor4fToColor4ub(matSpecular, ioVertex.mMaterial.mSpecular);
-			ioVertex.mMaterial.mShininess = theMaterial->mShininess;
+			glColor4fToColor4ub(matSpecular, ioSpecular);
+			*ioShininess = theMaterial->mShininess;
 		}
 	}
 	else
@@ -584,13 +596,11 @@ bool T3DSModel::setVertexMaterial(T3DSVBOInfo& ioVertex, int inMaterialID)
 		// YIKES!! No material definition. Bummer. Default to white material with default shininess.
 
 		// Set default material properties
-		glColor4fToColor4ub(kZeroLight, ioVertex.mMaterial.mAmbient);
-		glColor4fToColor4ub(kZeroLight, ioVertex.mMaterial.mDiffuse);
-		glColor4fToColor4ub(kZeroLight, ioVertex.mMaterial.mSpecular);
-		ioVertex.mMaterial.mShininess = kDefaultMaterialShininess;
+		glColor4fToColor4ub(kZeroLight, ioAmbient);
+		glColor4fToColor4ub(kZeroLight, ioDiffuse);
+		glColor4fToColor4ub(kZeroLight, ioSpecular);
+		*ioShininess = kDefaultMaterialShininess;
 	}
-
-	return true;
 }
 
 //----------------------------------------------------------------------
@@ -1747,95 +1757,6 @@ void T3DSModel::setFBOSize(GLuint inWidth, GLuint inHeight)
 {
 	mFBOSize.x = (GLint)inWidth;
 	mFBOSize.y = (GLint)inHeight;
-}
-
-//----------------------------------------------------------------------
-//	T3DSModel::setupOpenGLMaterialState
-//
-//	While rendering, this method is called anytime the a new material is
-//	yo be used.
-//----------------------------------------------------------------------
-bool T3DSModel::setupOpenGLMaterialState(int inMaterialID, bool& ioIsTexturing)
-{
-	const GLfloat kDefaultMaterialShininess = 0.1f * 128.0f;
-	const GLfloat kZeroLight[] = {0.0f, 0.0f, 0.0f, 1.0f};
-	const GLfloat kWhiteLight[] = {1.0f, 1.0f, 1.0f, 1.0f};
-
-	// Does this object have a material?
-	T3DSMaterialInfo* theMaterial = NULL;
-	if (inMaterialID >= 0)
-	{
-		theMaterial = &mMaterials[inMaterialID];
-					
-		// If the alpha values for diffuse and specular color are zero, we don't render it.
-		// Why? Because the polygon will just appear black and will not respond to any lighting.
-		// Our model of Cassini happens to use this material definition and it looks nutty.
-		if ((theMaterial->mDiffuseColor[3] == 0.0f) && (theMaterial->mSpecularColor[3] == 0.0f))
-			return false;
-					
-		// Check to see if this object has a texture map, if so bind the texture to it.
-		if (theMaterial->mTexture)
-		{
-			// Turn on texture mapping and bind the texture map to the object by it's mMaterialID
-			glTexturingOn(GL_TEXTURE_2D, theMaterial->mTexture->getTextureID());
-		}
-		else
-		{
-			// Turn off texture mapping
-			glTexturingOff();
-		}
-					
-		// Set ambient material color
-		// We're overriding ambient material color so that we have a consistent ambient lighing effect for all models.
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, kZeroLight);
-
-		// Set diffuse material color
-		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, theMaterial->mDiffuseColor);
-					
-		// Set specular material color
-		if ((theMaterial->mSpecularColor[0] == 0.0f) && (theMaterial->mSpecularColor[1] == 0.0f) && (theMaterial->mSpecularColor[2] == 0.0f))
-		{
-			float zeroVal = 0.0f;
-			glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, kZeroLight);
-			glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, &zeroVal);
-		}
-		else
-		{
-			float matSpecular[4] = { theMaterial->mSpecularColor[0], theMaterial->mSpecularColor[1], theMaterial->mSpecularColor[2], 1.0f };
-			glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, matSpecular);
-			glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, &theMaterial->mShininess);
-		}
-								
-		// If material has opacity less than 1.0, we must enable blending
-		if (theMaterial->mDiffuseColor[3] < 1.0f)
-		{
-			// Because objects are sorted by material opacity, we can safely leave blending on at this point.
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		}
-		else
-			glDisable(GL_BLEND);
-	}
-	else
-	{
-		// YIKES!! No material definition. Bummer. Default to white material with default shininess.
-					
-		// Turn off texture mapping
-		glTexturingOff();
-
-		// Turn off blending.
-		glDisable(GL_BLEND);
-						
-		// Set default material properties
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, kWhiteLight);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, kWhiteLight);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, kWhiteLight);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, &kDefaultMaterialShininess);
-	}
-
-	ioIsTexturing = (theMaterial != NULL) && (theMaterial->mTexture != NULL);
-
-	return true;
 }
 
 //----------------------------------------------------------------------
