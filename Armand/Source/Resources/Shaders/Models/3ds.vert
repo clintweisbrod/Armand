@@ -16,7 +16,7 @@ out float gl_ClipDistance[1];	// Need this to clip vertices behind viewer
 
 struct LightInfo
  {
-	vec4 position;	// Light position in eye coords.
+	vec3 position;	// Light position in eye coords.
 	vec3 ambient;	// Ambient light intensity
 	vec3 diffuse;	// Diffuse light intensity
 	vec3 specular;	// Specular light intensity
@@ -45,7 +45,7 @@ void main()
 	
 	// Perform lighting calculations
 	vec3 t = uNormalMatrix * vNormal;
-	vec3 s = normalize(vec3(uLight.position - eyePoint));
+	vec3 s = normalize(uLight.position - eyePoint.xyz);
 	vec3 v = -eyePointNorm;
 	vec3 r = reflect(-s, t);
 	vec3 ambient = uLight.ambient * vMaterialAmbient;

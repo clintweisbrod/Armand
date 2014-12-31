@@ -1780,7 +1780,7 @@ void T3DSModel::render()
 	glEnable(GL_CLIP_DISTANCE0);
 
 	// Get bounding radius of model
-	GLfloat cameraZ = (GLfloat)mModelBoundingRadius * 0.9f;
+	GLfloat cameraZ = (GLfloat)mModelBoundingRadius * 0.95f;
 	static GLfloat cameraX = 0;
 	static GLfloat dCameraX = 0.5f;
 	static GLfloat rotationY = 0;
@@ -1813,7 +1813,7 @@ void T3DSModel::render()
 		glUniform1f(glGetUniformLocation(mShaderHandle, "uAperture"), (GLfloat)degToRad(180.0f));
 		glUniform3f(glGetUniformLocation(mShaderHandle, "uViewDirection"), 0, 0, 1);
 
-		glUniform3f(glGetUniformLocation(mShaderHandle, "uLight.position"), 0, 0, 0);	// Located at eye
+		glUniform3f(glGetUniformLocation(mShaderHandle, "uLight.position"), 0, 0, 0);	// Located at eye for now
 		glUniform3f(glGetUniformLocation(mShaderHandle, "uLight.ambient"), 0.2f, 0.2f, 0.2f);
 		glUniform3f(glGetUniformLocation(mShaderHandle, "uLight.diffuse"), 1, 1, 1);
 		glUniform3f(glGetUniformLocation(mShaderHandle, "uLight.specular"), 1, 1, 1);
