@@ -12,6 +12,7 @@ layout (location = 6) in vec2 vTextureCoordinates;
 
 out vec3 lightIntensity;
 out vec2 texCoords;
+out float gl_ClipDistance[1];	// Need this to clip vertices behind viewer
 
 struct LightInfo
  {
@@ -19,7 +20,6 @@ struct LightInfo
 	vec3 ambient;	// Ambient light intensity
 	vec3 diffuse;	// Diffuse light intensity
 	vec3 specular;	// Specular light intensity
-	vec3 emission;	// Emissive light intensity
 };
 uniform LightInfo uLight;
 
@@ -32,13 +32,18 @@ uniform mat3	uNormalMatrix;
 
 void main()
 {
-	// Take vertex in world coordinates and transform to eye coordinates
+	// Transform vertex in world coordinates to eye coordinates
 	vec4 eyePoint = uViewMatrix * vec4(vPosition, 1.0);
 	
 	// Compute: ||p-vp||
 	vec3 eyePointNorm = normalize(eyePoint.xyz);
 	
-	// Lighting calculations
+	// Setup clipping for vertices that are behind the viewer
+	float halfAperture = uAperture * 0.5;
+	vec4 clipPlane = vec4(0.0, 0.0, 1.0, -cos(halfAperture));
+	gl_ClipDistance[0] = dot(vec4(eyePointNorm, 1.0), clipPlane); 
+	
+	// Perform lighting calculations
 	vec3 t = uNormalMatrix * vNormal;
 	vec3 s = normalize(vec3(uLight.position - eyePoint));
 	vec3 v = -eyePointNorm;
@@ -49,16 +54,15 @@ void main()
 	vec3 spec = vec3(0.0);
 	if (sDotN > 0.0)
 		spec = uLight.specular * vMaterialSpecular * pow(max(dot(r, v), 0.0), vMaterialShininess);
-
-	lightIntensity = ambient + diffuse + spec + uLight.emission;
+	lightIntensity = ambient + diffuse + spec;
 
 	// Sensible depth value is uViewDirection . eyePoint
 	float depthValue = dot(uViewDirection, eyePoint.xyz);
 	
-	vec2 point = vec2(0.0, 0.0);
-	
 	// Compute: acos(vd . ||p-vp||)
-	float eyePointViewDirectionAngle = acos(dot(uViewDirection, eyePointNorm));
+	float vDotE = dot(uViewDirection, eyePointNorm);
+	float eyePointViewDirectionAngle = acos(vDotE);
+	vec2 point = vec2(0.0, 0.0);
 	if (eyePointViewDirectionAngle > 0.0)
 	{
 		// Compute: x = acos(vd . ||p-vp||) (||p-vp|| . vr) / (pi/2)
@@ -66,7 +70,6 @@ void main()
 	
 		vec2 xyComponents = vec2(eyePointNorm.x, eyePointNorm.y);
 		xyComponents = normalize(xyComponents);
-		float halfAperture = uAperture * 0.5;
 		point.x = eyePointViewDirectionAngle * xyComponents.x / halfAperture;
 		point.y = -eyePointViewDirectionAngle * xyComponents.y / halfAperture;
 	}
@@ -75,5 +78,6 @@ void main()
 	// I think this is because m22 in ortho matrix is negated
 	gl_Position = uProjectionMatrix * vec4(point, -depthValue, 1.0);
 	
+	// Send the texture coordinates along to fragment shader
 	texCoords = vTextureCoordinates;
 }

@@ -1776,15 +1776,18 @@ void T3DSModel::render()
 	if (mShaderHandle == 0)
 		return;
 
+	// Need this to affect clipping vertices behind viewer
+	glEnable(GL_CLIP_DISTANCE0);
+
 	// Get bounding radius of model
-	GLfloat cameraZ = (GLfloat)mModelBoundingRadius * 1.1f;
+	GLfloat cameraZ = (GLfloat)mModelBoundingRadius * 0.9f;
 	static GLfloat cameraX = 0;
 	static GLfloat dCameraX = 0.5f;
 	static GLfloat rotationY = 0;
-	static GLfloat dRotationY = 0.5f;
+	static GLfloat dRotationY = 0.25f;
 
 	Mat4f rotationMatY = Mat4f::rotationY(degToRad(rotationY));
-	Mat4f rotationMatZ = Mat4f::rotationZ(degToRad(60.0f));
+	Mat4f rotationMatZ = Mat4f::rotationZ(degToRad(85.0f));
 //	Mat4f rotation = Mat4f::identity();
 	Mat4f translation = Mat4f::translation(Vec3f(0, 0, cameraZ));
 	Mat4f viewMatrix = translation * rotationMatY * rotationMatZ;
@@ -1807,14 +1810,13 @@ void T3DSModel::render()
 
 		// Draw the untextured vertices
 		glUniform1i(glGetUniformLocation(mShaderHandle, "uIsTexturing"), (GLint)false);
-		glUniform1f(glGetUniformLocation(mShaderHandle, "uAperture"), (GLfloat)kPi);
+		glUniform1f(glGetUniformLocation(mShaderHandle, "uAperture"), (GLfloat)degToRad(180.0f));
 		glUniform3f(glGetUniformLocation(mShaderHandle, "uViewDirection"), 0, 0, 1);
 
 		glUniform3f(glGetUniformLocation(mShaderHandle, "uLight.position"), 0, 0, 0);	// Located at eye
 		glUniform3f(glGetUniformLocation(mShaderHandle, "uLight.ambient"), 0.2f, 0.2f, 0.2f);
 		glUniform3f(glGetUniformLocation(mShaderHandle, "uLight.diffuse"), 1, 1, 1);
 		glUniform3f(glGetUniformLocation(mShaderHandle, "uLight.specular"), 1, 1, 1);
-		glUniform3f(glGetUniformLocation(mShaderHandle, "uLight.emission"), 0, 0, 0);
 
 		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "uViewMatrix"), 1, 0, viewMatrix.data);
 		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "uProjectionMatrix"), 1, 0, projectionMatrix.data);
@@ -1847,6 +1849,8 @@ void T3DSModel::render()
 //		LOG(INFO) << "3DS model render time: " << mTimer.elapsedMicroseconds() << " us.";
 	}
 	glCheckForError();
+//	glDisable(GL_CLIP_PLANE0);
+	glDisable(GL_CLIP_DISTANCE0);
 
 	cameraX += dCameraX;
 	if (((dCameraX > 0) && (cameraX > 1 * cameraZ)) || ((dCameraX < 0) && (cameraX < -1 * cameraZ)))
