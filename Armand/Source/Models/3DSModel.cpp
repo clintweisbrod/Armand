@@ -1780,18 +1780,17 @@ void T3DSModel::render()
 	glEnable(GL_CLIP_DISTANCE0);
 
 	// Get bounding radius of model
-	GLfloat cameraZ = (GLfloat)mModelBoundingRadius * 0.95f;
-	static GLfloat cameraX = 0;
-	static GLfloat dCameraX = 0.5f;
+	GLfloat modelZ = (GLfloat)mModelBoundingRadius * 0.3f;
 	static GLfloat rotationY = 0;
 	static GLfloat dRotationY = 0.25f;
 
+	// Compute model matrix to transform model coordinates to world coordinates
 	Mat4f rotationMatY = Mat4f::rotationY(degToRad(rotationY));
-	Mat4f rotationMatZ = Mat4f::rotationZ(degToRad(85.0f));
+//	Mat4f rotationMatZ = Mat4f::rotationZ(degToRad(85.0f));
 //	Mat4f rotation = Mat4f::identity();
-	Mat4f translation = Mat4f::translation(Vec3f(0, 0, cameraZ));
-	Mat4f viewMatrix = translation * rotationMatY * rotationMatZ;
-	Mat3f normalMatrix(viewMatrix);
+	Mat4f translation = Mat4f::translation(Vec3f(0, -35.0f, modelZ));
+	Mat4f modelMatrix = translation * rotationMatY;
+	Mat3f normalMatrix(modelMatrix);
 
 	Vec2i sceneSize;
 	gOpenGLWindow->getSceneSize(sceneSize);
@@ -1800,9 +1799,11 @@ void T3DSModel::render()
 		h = (float)sceneSize.x / (float)sceneSize.y;
 	else
 		v = (float)sceneSize.y / (float)sceneSize.x;
-	float n = cameraZ - (GLfloat)mModelBoundingRadius;
-	float f = cameraZ + (GLfloat)mModelBoundingRadius;
+	float n = modelZ - (GLfloat)mModelBoundingRadius;
+	float f = modelZ + (GLfloat)mModelBoundingRadius;
 	Mat4f projectionMatrix = Mat4f::orthographic(-h, h, -v, v, n, f);
+
+	GLfloat lightPositionEye[] = { 0, 0, 0 };
 
 	glUseProgram(mShaderHandle);
 	{
@@ -1813,12 +1814,13 @@ void T3DSModel::render()
 		glUniform1f(glGetUniformLocation(mShaderHandle, "uAperture"), (GLfloat)degToRad(180.0f));
 		glUniform3f(glGetUniformLocation(mShaderHandle, "uViewDirection"), 0, 0, 1);
 
-		glUniform3f(glGetUniformLocation(mShaderHandle, "uLight.position"), 0, 0, 0);	// Located at eye for now
+		glUniform3fv(glGetUniformLocation(mShaderHandle, "uLight.position"), 1, lightPositionEye);
 		glUniform3f(glGetUniformLocation(mShaderHandle, "uLight.ambient"), 0.2f, 0.2f, 0.2f);
 		glUniform3f(glGetUniformLocation(mShaderHandle, "uLight.diffuse"), 1, 1, 1);
 		glUniform3f(glGetUniformLocation(mShaderHandle, "uLight.specular"), 1, 1, 1);
 
-		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "uViewMatrix"), 1, 0, viewMatrix.data);
+		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "uModelMatrix"), 1, 0, modelMatrix.data);
+//		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "uViewMatrix"), 1, 0, viewMatrix.data);
 		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "uProjectionMatrix"), 1, 0, projectionMatrix.data);
 		glUniformMatrix3fv(glGetUniformLocation(mShaderHandle, "uNormalMatrix"), 1, 0, normalMatrix.data);
 		
@@ -1851,10 +1853,6 @@ void T3DSModel::render()
 	glCheckForError();
 //	glDisable(GL_CLIP_PLANE0);
 	glDisable(GL_CLIP_DISTANCE0);
-
-	cameraX += dCameraX;
-	if (((dCameraX > 0) && (cameraX > 1 * cameraZ)) || ((dCameraX < 0) && (cameraX < -1 * cameraZ)))
-		dCameraX = -dCameraX;
 
 	rotationY += dRotationY;
 	if (rotationY > 360)
