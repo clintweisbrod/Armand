@@ -25,6 +25,9 @@
 
 string File::sAppFolder;
 
+//
+// Initializes File::sAppFolder to the full path where the app is running.
+//
 void File::initAppFolder()	// Static
 {
 	// Initialize gAppFolder
