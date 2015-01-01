@@ -45,7 +45,6 @@ struct LightInfo
 uniform LightInfo uLight;
 
 uniform float	uAperture;		// In radians. Typically a value near PI.
-uniform vec3	uViewDirection;	// In eye coordinates
 
 uniform mat4	uModelMatrix;	// Transforms model coordinates to eye coordinates.
 uniform mat4 	uProjectionMatrix;	// Transforms computed fisheye coordinates and depth value to clipping space.
@@ -77,13 +76,13 @@ void main()
 		spec = uLight.specular * vMaterialSpecular * pow(max(dot(r, v), 0.0), vMaterialShininess);
 	lightIntensity = ambient + diffuse + spec;
 
-	// Sensible depth value is uViewDirection . vPositionEye.xyz
-	float depthValue = dot(uViewDirection, vPositionEye.xyz);
+	// Sensible depth value is vPositionEye.z
+	float depthValue = vPositionEye.z;
 	
 	// Do fisheye projection
 	
 	// Compute: acos(vd . ||p-vp||)
-	float eyePointViewDirectionAngle = acos(dot(uViewDirection, vPositionEyeNorm));
+	float eyePointViewDirectionAngle = acos(vPositionEyeNorm.z);
 	vec2 point = vec2(0.0, 0.0);
 	if (eyePointViewDirectionAngle > 0.0)
 	{

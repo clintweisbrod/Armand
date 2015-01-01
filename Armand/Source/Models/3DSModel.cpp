@@ -1812,7 +1812,6 @@ void T3DSModel::render()
 		// Draw the untextured vertices
 		glUniform1i(glGetUniformLocation(mShaderHandle, "uIsTexturing"), (GLint)false);
 		glUniform1f(glGetUniformLocation(mShaderHandle, "uAperture"), (GLfloat)degToRad(180.0f));
-		glUniform3f(glGetUniformLocation(mShaderHandle, "uViewDirection"), 0, 0, 1);
 
 		glUniform3fv(glGetUniformLocation(mShaderHandle, "uLight.position"), 1, lightPositionEye);
 		glUniform3f(glGetUniformLocation(mShaderHandle, "uLight.ambient"), 0.2f, 0.2f, 0.2f);
