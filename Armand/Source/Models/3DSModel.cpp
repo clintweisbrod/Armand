@@ -1807,7 +1807,7 @@ void T3DSModel::render()
 
 	glUseProgram(mShaderHandle);
 	{
-//		mTimer.reset();
+//		gOpenGLWindow->mTimer.reset();
 
 		// Draw the untextured vertices
 		glUniform1i(glGetUniformLocation(mShaderHandle, "uIsTexturing"), (GLint)false);
@@ -1848,7 +1848,7 @@ void T3DSModel::render()
 		glUseProgram(0);
 
 //		glFinish();
-//		LOG(INFO) << "3DS model render time: " << mTimer.elapsedMicroseconds() << " us.";
+//		LOG(INFO) << "3DS model render time: " << gOpenGLWindow->mTimer.elapsedMicroseconds() << " us.";
 	}
 	glCheckForError();
 //	glDisable(GL_CLIP_PLANE0);

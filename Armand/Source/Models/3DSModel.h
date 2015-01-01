@@ -564,7 +564,6 @@
 #include "Math/vecmath.h"
 #include "Utilities/File.h"
 #include "Utilities/Singleton.h"
-#include "Utilities/Timer.h"
 #include "OpenGL/Textures/Texture.h"
 
 #define M3D_CHUNKTYPE_VERSION			0x0002			// This gives the version of the .3ds file
@@ -850,9 +849,6 @@ private:
 	vector<GLint>				mArrayFirstTextured;
 	vector<GLsizei>				mArrayCountTextured;
 	vector<GLuint>				mTextureIDs;
-
-	// Misc
-	Timer				mTimer;
 };
 
 //----------------------------------------------------------------------

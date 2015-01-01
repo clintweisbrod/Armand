@@ -27,6 +27,7 @@
 #include "OpenGL/Textures/Texture.h"
 #include "OpenGL/ShaderFactory.h"
 #include "OpenGL/VertexBufferStructs.h"
+#include "Utilities/Timer.h"
 
 class OpenGLWindow
 {
@@ -61,6 +62,9 @@ class OpenGLWindow
 		
 		// Harness state
 		void			setClearColor(const GLfloat inRed, const GLfloat inGreen, const GLfloat inBlue);
+
+		// For performance monitoring
+		Timer			mTimer;
 
 	protected:
 		static bool		sEnabledGLExtensions;
