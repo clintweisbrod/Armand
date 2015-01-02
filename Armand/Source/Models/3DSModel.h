@@ -755,7 +755,7 @@ public:
 	bool		load(File& inFile, bool inLoadMetaOnly = false);
 	void		render();
 	double_t	getModelBoundingRadius() const { return mModelBoundingRadius; };
-	double_t	getPhysicalRadius() const {	return mPhysicalRadius;	};
+	double_t	getPhysicalRadius() const {	return mPhysicalRadiusInMetres;	};
 	Vec3f		getModelUpVector() const { return mModelUpVector; };
 	Vec3f		getModelRotationAxis() const { return mModelUpVector; };
 	double_t	getRotationRate() const { return mRotationRateInRadiansPerCentury; };
@@ -829,7 +829,7 @@ private:
 	GLuint				mShaderHandle;
 
 	double_t			mModelBoundingRadius;
-	double_t			mPhysicalRadius;
+	double_t			mPhysicalRadiusInMetres;
 	Vec3f				mModelUpVector;
 	double_t			mInclinationAngleInDegrees;
 	double_t			mRotationRateInRadiansPerCentury;

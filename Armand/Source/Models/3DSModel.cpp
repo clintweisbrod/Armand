@@ -133,7 +133,7 @@ T3DSModel::T3DSModel()
 	mVBOs[eUntexturedVBO] = mVBOs[eTexturedVBO] = 0;
 
     // 1 meter by default instead of 0 so that's it's a bit more reasonable.
-	mPhysicalRadius = 1*kAuPerMetre;	// Is only possibly set by associated .meta file.
+	mPhysicalRadiusInMetres = 1;	// Is only possibly set by associated .meta file.
 	mModelUpVector = Vec3f(0.0f, 1.0f, 0.0f);	// The default OpenGL up vector
 	mRotationRateInRadiansPerCentury = 0.0;
 	mInclinationAngleInDegrees = 0.0;
@@ -1711,9 +1711,7 @@ void T3DSModel::loadMetaData(File& inModelFile)
 		ConfigFileReader metaConfig(metaFilePath);
 		if (metaConfig.hasValues())
 		{
-			if (metaConfig.getConfigValue("PhysicalRadius", mPhysicalRadius))
-				mPhysicalRadius *= kAuPerMetre;	// We store radius in AU
-
+			metaConfig.getConfigValue("PhysicalRadiusInMetres", mPhysicalRadiusInMetres);
 			metaConfig.getConfigValue("ModelUpVector", mModelUpVector);
 			metaConfig.getConfigValue("InclinationAngleInDegrees", mInclinationAngleInDegrees);
 
@@ -1776,11 +1774,11 @@ void T3DSModel::render()
 	if (mShaderHandle == 0)
 		return;
 
-	// Need this to affect clipping vertices behind viewer
-	glEnable(GL_CLIP_DISTANCE0);
+	// Compute distance in model coordinates to view model based on physical viewer distance
+	const GLdouble kPhysicalToModelFactor = mModelBoundingRadius / mPhysicalRadiusInMetres;
+	Vec3f viewerModelVector(0, -12, 10);	// Starting with physical distances in metres
+	viewerModelVector *= (GLfloat)kPhysicalToModelFactor;
 
-	// Get bounding radius of model
-	GLfloat modelZ = (GLfloat)mModelBoundingRadius * 0.3f;
 	static GLfloat rotationY = 0;
 	static GLfloat dRotationY = 0.25f;
 
@@ -1788,9 +1786,11 @@ void T3DSModel::render()
 	Mat4f rotationMatY = Mat4f::rotationY(degToRad(rotationY));
 //	Mat4f rotationMatZ = Mat4f::rotationZ(degToRad(85.0f));
 //	Mat4f rotation = Mat4f::identity();
-	Mat4f translation = Mat4f::translation(Vec3f(0, -35.0f, modelZ));
+	Mat4f translation = Mat4f::translation(viewerModelVector);
 	Mat4f modelMatrix = translation * rotationMatY;
-	Mat3f normalMatrix(modelMatrix);
+	Mat4f viewMatrix = Mat4f::rotationY(degToRad(20.0f));
+	Mat4f modelViewMatrix = viewMatrix * modelMatrix;
+	Mat3f normalMatrix(modelViewMatrix);
 
 	Vec2i sceneSize;
 	gOpenGLWindow->getSceneSize(sceneSize);
@@ -1799,11 +1799,14 @@ void T3DSModel::render()
 		h = (float)sceneSize.x / (float)sceneSize.y;
 	else
 		v = (float)sceneSize.y / (float)sceneSize.x;
-	float n = modelZ - (GLfloat)mModelBoundingRadius;
-	float f = modelZ + (GLfloat)mModelBoundingRadius;
+	float n = viewerModelVector.z - (GLfloat)mModelBoundingRadius;
+	float f = viewerModelVector.z + (GLfloat)mModelBoundingRadius;
 	Mat4f projectionMatrix = Mat4f::orthographic(-h, h, -v, v, n, f);
 
 	GLfloat lightPositionEye[] = { 0, 0, 0 };
+
+	// Need this to affect clipping vertices behind viewer
+	glEnable(GL_CLIP_DISTANCE0);
 
 	glUseProgram(mShaderHandle);
 	{
@@ -1818,8 +1821,7 @@ void T3DSModel::render()
 		glUniform3f(glGetUniformLocation(mShaderHandle, "uLight.diffuse"), 1, 1, 1);
 		glUniform3f(glGetUniformLocation(mShaderHandle, "uLight.specular"), 1, 1, 1);
 
-		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "uModelMatrix"), 1, 0, modelMatrix.data);
-//		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "uViewMatrix"), 1, 0, viewMatrix.data);
+		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "uModelViewMatrix"), 1, 0, modelViewMatrix.data);
 		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "uProjectionMatrix"), 1, 0, projectionMatrix.data);
 		glUniformMatrix3fv(glGetUniformLocation(mShaderHandle, "uNormalMatrix"), 1, 0, normalMatrix.data);
 		
@@ -1850,7 +1852,6 @@ void T3DSModel::render()
 //		LOG(INFO) << "3DS model render time: " << gOpenGLWindow->mTimer.elapsedMicroseconds() << " us.";
 	}
 	glCheckForError();
-//	glDisable(GL_CLIP_PLANE0);
 	glDisable(GL_CLIP_DISTANCE0);
 
 	rotationY += dRotationY;
