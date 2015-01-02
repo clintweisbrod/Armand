@@ -30,6 +30,7 @@
 #include "OpenGL/OpenGLWindow.h"
 #include "OpenGL/VBOData.h"
 #include "Math/mathlib.h"
+#include "Math/quaternion.h"
 
 #define INITIAL_BUFFER_SIZE	2000000
 
@@ -1774,24 +1775,68 @@ void T3DSModel::render()
 	if (mShaderHandle == 0)
 		return;
 
+	// This is the rudiments of a viewer model coordinate system. We're positioning a viewer
+	// and a model in Cartesian space, computing a viewer-model vector, applying a rotation
+	// to the model, and a rotation to the viewer, and then letting the shader do the hard
+	// work of fisheye projecting the resulting image.
+	// We have to perform the viewer-model vector computation in software as in general,
+	// all objects (including the viewer) will maintain 128-bit integer Cartesian positions.
+	// We will perform the vector subtraction in 128-bit integer math, and then cast to
+	// Vec3f.
+
+	// Starting with physical distances in metres, viewer is initially looking down the
+	// positive (not negative) z-axis. With viewer at origin and model down negative
+	// axis, the model is behind the viewer and not visible
+//	Mat4f viewMatrix = Mat4f::rotationY(degToRad(180.0f));
+	Mat4f viewMatrix = Mat4f::rotationY(degToRad(180.f));	// viewMatrix will eventually come from a camera class
+	Mat3f viewMatrix3(viewMatrix);
+	Vec3f viewDirection = viewMatrix3 * Vec3f(0, 0, 1);
+
+	Vec3f viewerPosition(0, 0, 0);
+	Vec3f modelPosition(0, 0, -15);
+	Vec3f viewerModelVector = modelPosition - viewerPosition;
+
 	// Compute distance in model coordinates to view model based on physical viewer distance
 	const GLdouble kPhysicalToModelFactor = mModelBoundingRadius / mPhysicalRadiusInMetres;
-	Vec3f viewerModelVector(0, -12, 10);	// Starting with physical distances in metres
 	viewerModelVector *= (GLfloat)kPhysicalToModelFactor;
+
+	// Given the above info, we can compute if model is visible
+	const GLfloat kFisheyeAperture = degToRad(180.0f);
+	float_t viewerModelLength = viewerModelVector.length();
+	double_t modelAngularRadius = atan(mModelBoundingRadius / viewerModelLength);
+	Vec3f viewerModelVectorNorm = viewerModelVector / viewerModelLength;
+	double_t angleBetween = acos((double_t)(viewDirection * viewerModelVectorNorm));
+	if (angleBetween - modelAngularRadius > kFisheyeAperture / 2)
+	{
+		// Model is not visible. Bail.
+		return;
+	}
+
+	// Apply translation to model to position it in world coordinates
+	Mat4f modelTranslation = Mat4f::translation(viewerModelVector);
 
 	static GLfloat rotationY = 0;
 	static GLfloat dRotationY = 0.25f;
 
+	// Apply rotation to model
+	Mat4f modelRotation = Mat4f::rotationY(degToRad(rotationY));
+
 	// Compute model matrix to transform model coordinates to world coordinates
-	Mat4f rotationMatY = Mat4f::rotationY(degToRad(rotationY));
-//	Mat4f rotationMatZ = Mat4f::rotationZ(degToRad(85.0f));
-//	Mat4f rotation = Mat4f::identity();
-	Mat4f translation = Mat4f::translation(viewerModelVector);
-	Mat4f modelMatrix = translation * rotationMatY;
-	Mat4f viewMatrix = Mat4f::rotationY(degToRad(20.0f));
+	Mat4f modelMatrix = modelTranslation * modelRotation;
+
+	// Apply rotation to viewer
+//	Quatf quat = Quatf::yrotation(degToRad(20.0f));
+//	Mat4f viewMatrix = quat.toMatrix4();
+//	Mat4f viewMatrix = Mat4f::rotationY(degToRad(180.0f));
+
+	// Now combine model and view matrix
 	Mat4f modelViewMatrix = viewMatrix * modelMatrix;
+
+	// As long as we don't have any scaling, we can simply take the upper-left 3x3
+	// matrix for transforming normals.
 	Mat3f normalMatrix(modelViewMatrix);
 
+	// Setup orthographic projection
 	Vec2i sceneSize;
 	gOpenGLWindow->getSceneSize(sceneSize);
 	float h = 1, v = 1;
@@ -1799,10 +1844,15 @@ void T3DSModel::render()
 		h = (float)sceneSize.x / (float)sceneSize.y;
 	else
 		v = (float)sceneSize.y / (float)sceneSize.x;
-	float n = viewerModelVector.z - (GLfloat)mModelBoundingRadius;
-	float f = viewerModelVector.z + (GLfloat)mModelBoundingRadius;
+
+	// We need to know (in eye coordinates) where the center of the model is
+	// to correctly set the near and far plane of the ortho viewing volume.
+	Vec4f modelPositionEye = modelViewMatrix * Vec4f(0.0f, 0.0f, 0.0f, 1.0f);
+	float n = modelPositionEye.z - (GLfloat)mModelBoundingRadius;
+	float f = modelPositionEye.z + (GLfloat)mModelBoundingRadius;
 	Mat4f projectionMatrix = Mat4f::orthographic(-h, h, -v, v, n, f);
 
+	// Light position will be set at eye location for now
 	GLfloat lightPositionEye[] = { 0, 0, 0 };
 
 	// Need this to affect clipping vertices behind viewer
@@ -1813,7 +1863,7 @@ void T3DSModel::render()
 //		gOpenGLWindow->mTimer.reset();
 
 		// Draw the untextured vertices
-		glUniform1i(glGetUniformLocation(mShaderHandle, "uIsTexturing"), (GLint)false);
+		glUniform1i(glGetUniformLocation(mShaderHandle, "uIsTexturing"), GL_FALSE);
 		glUniform1f(glGetUniformLocation(mShaderHandle, "uAperture"), (GLfloat)degToRad(180.0f));
 
 		glUniform3fv(glGetUniformLocation(mShaderHandle, "uLight.position"), 1, lightPositionEye);
@@ -1830,7 +1880,7 @@ void T3DSModel::render()
 		glBindVertexArray(0);
 
 		// Draw the textured vertices
-		glUniform1i(glGetUniformLocation(mShaderHandle, "uIsTexturing"), (GLint)true);
+		glUniform1i(glGetUniformLocation(mShaderHandle, "uIsTexturing"), GL_TRUE);
 		glBindVertexArray(mVAOs[eTexturedVAO]);
 		for (int i = 0; i < mArrayFirstTextured.size(); i++)
 		{
