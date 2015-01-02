@@ -994,9 +994,9 @@ template<class T> Matrix3<T>::Matrix3(const Vector3<T>& c0,
 	m20 = c0.z; m21 = c1.z; m22 = c2.z;
 }
 
-template<class T> const Vector3<T>& Matrix3<T>::operator[](int n) const	// n refers to column
+template<class T> const Vector3<T>& Matrix3<T>::operator[](int n) const
 {
-	return column(n);
+	return row(n);
 }
 
 template<class T> Vector3<T> Matrix3<T>::row(int n) const
@@ -1219,9 +1219,9 @@ template<class T> Matrix4<T>::Matrix4(const Vector4<T>& c0, const Vector4<T>& c1
 	m30 = c0.w; m31 = c1.w; m32 = c2.w; m33 = c3.w;
 }
 
-template<class T> const Vector4<T>& Matrix4<T>::operator[](int n) const	// n refers to column
+template<class T> const Vector4<T>& Matrix4<T>::operator[](int n) const
 {
-	return column(n);
+	return row(n);
 }
 
 template<class T> Vector4<T> Matrix4<T>::row(int n) const
