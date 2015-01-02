@@ -504,9 +504,9 @@ template<class T> Matrix4<T> Quaternion<T>::toMatrix4() const
     T yz = y * z * 2;
     T zz = z * z * 2;
 
-    return Matrix4<T>(Vector4<T>(1 - yy - zz, xy - wz, xz + wy, 0),
-                      Vector4<T>(xy + wz, 1 - xx - zz, yz - wx, 0),
-                      Vector4<T>(xz - wy, yz + wx, 1 - xx - yy, 0),
+    return Matrix4<T>(Vector4<T>(1 - yy - zz, xy + wz, xz - wy, 0),
+                      Vector4<T>(xy - wz, 1 - xx - zz, yz + wx, 0),
+                      Vector4<T>(xz + wy, yz - wx, 1 - xx - yy, 0),
                       Vector4<T>(0, 0, 0, 1));
 }
 
@@ -524,9 +524,9 @@ template<class T> Matrix3<T> Quaternion<T>::toMatrix3() const
     T yz = y * z * 2;
     T zz = z * z * 2;
 
-    return Matrix3<T>(Vector3<T>(1 - yy - zz, xy - wz, xz + wy),
-                      Vector3<T>(xy + wz, 1 - xx - zz, yz - wx),
-                      Vector3<T>(xz - wy, yz + wx, 1 - xx - yy));
+    return Matrix3<T>(Vector3<T>(1 - yy - zz, xy + wz, xz - wy),
+                      Vector3<T>(xy - wz, 1 - xx - zz, yz + wx),
+                      Vector3<T>(xz + wy, yz - wx, 1 - xx - yy));
 }
 
 
@@ -640,7 +640,7 @@ template<class T> Quaternion<T> Quaternion<T>::vecToVecRotation(const Vector3<T>
 template<class T> Quaternion<T> Quaternion<T>::matrixToQuaternion(const Matrix3<T>& m)
 {
     Quaternion<T> q;
-    T trace = m[0][0] + m[1][1] + m[2][2];
+    T trace = m.m00 + m.m11 + m.m22;
     T root;
     T epsilon = std::numeric_limits<T>::epsilon() * (T) 1e3;
 
@@ -649,17 +649,17 @@ template<class T> Quaternion<T> Quaternion<T>::matrixToQuaternion(const Matrix3<
         root = (T) sqrt(trace + 1);
         q.w = (T) 0.5 * root;
         root = (T) 0.5 / root;
-        q.x = (m[2][1] - m[1][2]) * root;
-        q.y = (m[0][2] - m[2][0]) * root;
-        q.z = (m[1][0] - m[0][1]) * root;
+		q.x = (m.m21 - m.m12) * root;
+		q.y = (m.m02 - m.m20) * root;
+		q.z = (m.m10 - m.m01) * root;
     }
     else
     {
         // Set i to the largest element of the diagonal
         int i = 0;
-        if (m[1][1] > m[i][i])
+        if (m.m11 > m[i][i])
             i = 1;
-        if (m[2][2] > m[i][i])
+        if (m.m22 > m[i][i])
             i = 2;
         int j = (i == 2) ? 0 : i + 1;
         int k = (j == 2) ? 0 : j + 1;
