@@ -639,10 +639,20 @@ template<class T> Vector3<T> operator*(const Vector3<T>& v, T s)
     return Vector3<T>(s * v.x, s * v.y, s * v.z);
 }
 
-// dot product
+// dot products
 template<class T> T operator*(const Vector3<T>& a, const Vector3<T>& b)
 {
     return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+template<class T> T operator*(const Vector4<T>& a, const Vector3<T>& b)
+{
+	return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+template<class T> T operator*(const Vector3<T>& a, const Vector4<T>& b)
+{
+	return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
 // cross product

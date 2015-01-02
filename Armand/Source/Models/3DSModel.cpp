@@ -186,6 +186,8 @@ void T3DSModel::cleanUp()
 		mBufferSize = 0;
 	}
 
+	// This causes a memory leak, but in debug mode, this code is incredibly slow.
+#if NDEBUG
 	// Go through all the objects in the model.
 	T3DSObjectVec_t::iterator object;
 	for (object = mObjects.begin(); object != mObjects.end(); object++)
@@ -198,6 +200,7 @@ void T3DSModel::cleanUp()
 			delete[] object->mTexCoords;
 	}
 	mObjects.clear();
+#endif
 }
 
 //----------------------------------------------------------------------
@@ -1786,14 +1789,16 @@ void T3DSModel::render()
 
 	// Starting with physical distances in metres, viewer is initially looking down the
 	// positive (not negative) z-axis. With viewer at origin and model down negative
-	// axis, the model is behind the viewer and not visible
-//	Mat4f viewMatrix = Mat4f::rotationY(degToRad(180.0f));
-	Mat4f viewMatrix = Mat4f::rotationY(degToRad(180.f));	// viewMatrix will eventually come from a camera class
-	Mat3f viewMatrix3(viewMatrix);
-	Vec3f viewDirection = viewMatrix3 * Vec3f(0, 0, 1);
+	// axis, the model is behind the viewer and not visible.
+
+	// viewMatrix will eventually come from a camera class using quaternion.
+	Mat4f viewMatrix = Mat4f::rotationY(degToRad(40.0f));
+	const Vec3f viewDirection = viewMatrix * Vec3f(0, 0, 1);
+	const Vec3f upDirection = viewMatrix * Vec3f(0, 1, 0);
+	const Vec3f leftDirection = viewMatrix * Vec3f(1, 0, 0);
 
 	Vec3f viewerPosition(0, 0, 0);
-	Vec3f modelPosition(0, 0, -15);
+	Vec3f modelPosition(0, 0, 20);
 	Vec3f viewerModelVector = modelPosition - viewerPosition;
 
 	// Compute distance in model coordinates to view model based on physical viewer distance
@@ -1829,12 +1834,9 @@ void T3DSModel::render()
 //	Mat4f viewMatrix = quat.toMatrix4();
 //	Mat4f viewMatrix = Mat4f::rotationY(degToRad(180.0f));
 
-	// Now combine model and view matrix
-	Mat4f modelViewMatrix = viewMatrix * modelMatrix;
-
 	// As long as we don't have any scaling, we can simply take the upper-left 3x3
 	// matrix for transforming normals.
-	Mat3f normalMatrix(modelViewMatrix);
+	Mat3f normalMatrix(modelMatrix);
 
 	// Setup orthographic projection
 	Vec2i sceneSize;
@@ -1847,9 +1849,10 @@ void T3DSModel::render()
 
 	// We need to know (in eye coordinates) where the center of the model is
 	// to correctly set the near and far plane of the ortho viewing volume.
-	Vec4f modelPositionEye = modelViewMatrix * Vec4f(0.0f, 0.0f, 0.0f, 1.0f);
-	float n = modelPositionEye.z - (GLfloat)mModelBoundingRadius;
-	float f = modelPositionEye.z + (GLfloat)mModelBoundingRadius;
+	Vec4f modelPositionEye = modelMatrix * Vec4f(0.0f, 0.0f, 0.0f, 1.0f);
+	float_t modelDotView = modelPositionEye * viewDirection;
+	float_t n = modelDotView - (GLfloat)mModelBoundingRadius;
+	float_t f = modelDotView + (GLfloat)mModelBoundingRadius;
 	Mat4f projectionMatrix = Mat4f::orthographic(-h, h, -v, v, n, f);
 
 	// Light position will be set at eye location for now
@@ -1864,14 +1867,17 @@ void T3DSModel::render()
 
 		// Draw the untextured vertices
 		glUniform1i(glGetUniformLocation(mShaderHandle, "uIsTexturing"), GL_FALSE);
-		glUniform1f(glGetUniformLocation(mShaderHandle, "uAperture"), (GLfloat)degToRad(180.0f));
+		glUniform1f(glGetUniformLocation(mShaderHandle, "uAperture"), kFisheyeAperture);
+		glUniform3f(glGetUniformLocation(mShaderHandle, "uViewDirection"), viewDirection.x, viewDirection.y, viewDirection.z);
+		glUniform3f(glGetUniformLocation(mShaderHandle, "uUpDirection"), upDirection.x, upDirection.y, upDirection.z);
+		glUniform3f(glGetUniformLocation(mShaderHandle, "uLeftDirection"), leftDirection.x, leftDirection.y, leftDirection.z);
 
 		glUniform3fv(glGetUniformLocation(mShaderHandle, "uLight.position"), 1, lightPositionEye);
 		glUniform3f(glGetUniformLocation(mShaderHandle, "uLight.ambient"), 0.2f, 0.2f, 0.2f);
 		glUniform3f(glGetUniformLocation(mShaderHandle, "uLight.diffuse"), 1, 1, 1);
 		glUniform3f(glGetUniformLocation(mShaderHandle, "uLight.specular"), 1, 1, 1);
 
-		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "uModelViewMatrix"), 1, 0, modelViewMatrix.data);
+		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "uModelMatrix"), 1, 0, modelMatrix.data);
 		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "uProjectionMatrix"), 1, 0, projectionMatrix.data);
 		glUniformMatrix3fv(glGetUniformLocation(mShaderHandle, "uNormalMatrix"), 1, 0, normalMatrix.data);
 		
@@ -1910,30 +1916,24 @@ void T3DSModel::render()
 
 #if 0
 	// Debugging shader
-	GLfloat uAperture = (GLfloat)kPi;
-	Vec3f uVD(0, 0, 1);
-	Vec3f uVU(0, 1, 0);
-	Vec3f uVR(1, 0, 0);
-	Vec4f gl_Vertex(0, 0, 0, 1);
-	Vec4f eyePoint = viewMatrix * gl_Vertex;
-	Vec3f eyePointNorm = Vec3f(eyePoint.x, eyePoint.y, eyePoint.z);
-	GLfloat depthValue = dot(uVD, eyePointNorm);
-	eyePointNorm.normalize();
-	GLfloat dotProd = dot(uVD, eyePointNorm);
+	Vec4f vPosition(5, 0, 0, 1);
+	Vec4f vPositionEye = modelMatrix * vPosition;
+	Vec3f vPositionEyeNorm(vPositionEye.x, vPositionEye.y, vPositionEye.z);
+	float depthValue = vPositionEyeNorm.length();
+	vPositionEyeNorm.normalize();
+
 	Vec2f point;
-	GLfloat eyePointViewDirectionAngle = acos(dotProd);
+	GLfloat eyePointViewDirectionAngle = acos(viewDirection * vPositionEyeNorm);
 	if (eyePointViewDirectionAngle > 0)
 	{
-		Vec2f xyComponents(eyePointNorm.x, eyePointNorm.y);
+		Vec2f xyComponents(vPositionEyeNorm * leftDirection, vPositionEyeNorm * upDirection);
 		xyComponents.normalize();
-
-		GLfloat halfAperture = uAperture * 0.5f;
-		Vec2f point;
+		GLfloat halfAperture = kFisheyeAperture * 0.5f;
 		point.x = eyePointViewDirectionAngle * xyComponents.x / halfAperture;
 		point.y = -eyePointViewDirectionAngle * xyComponents.y / halfAperture;
 	}
 
-	Vec4f gl_Position = mProjectionMatrix * Vec4f(point.x, point.y, -depthValue, 1.0f);
+	Vec4f gl_Position = projectionMatrix * Vec4f(point.x, point.y, -depthValue, 1.0f);
 #endif
 
 #if 0
