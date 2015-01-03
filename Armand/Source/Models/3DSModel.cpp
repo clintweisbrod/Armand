@@ -1792,7 +1792,7 @@ void T3DSModel::render()
 	// axis, the model is behind the viewer and not visible.
 
 	// viewMatrix will eventually come from a camera class using quaternion.
-	Mat4f viewMatrix = Mat4f::rotationY(degToRad(40.0f));
+	Mat4f viewMatrix = Mat4f::rotationY(degToRad(80.0f));
 	const Vec3f viewDirection = viewMatrix * Vec3f(0, 0, 1);
 	const Vec3f upDirection = viewMatrix * Vec3f(0, 1, 0);
 	const Vec3f leftDirection = viewMatrix * Vec3f(1, 0, 0);
@@ -1856,7 +1856,10 @@ void T3DSModel::render()
 	Mat4f projectionMatrix = Mat4f::orthographic(-h, h, -v, v, n, f);
 
 	// Light position will be set at eye location for now
-	GLfloat lightPositionEye[] = { 0, 0, 0 };
+	const GLfloat lightPositionEye[] = { 0, 0, 0 };
+	const GLfloat lightAmbient[] = { 0.2f, 0.2f, 0.2f };
+	const GLfloat lightDiffuse[] = { 1, 1, 1 };
+	const GLfloat lightSpecular[] = { 1, 1, 1 };
 
 	// Need this to affect clipping vertices behind viewer
 	glEnable(GL_CLIP_DISTANCE0);
@@ -1868,14 +1871,14 @@ void T3DSModel::render()
 		// Draw the untextured vertices
 		glUniform1i(glGetUniformLocation(mShaderHandle, "uIsTexturing"), GL_FALSE);
 		glUniform1f(glGetUniformLocation(mShaderHandle, "uAperture"), kFisheyeAperture);
-		glUniform3f(glGetUniformLocation(mShaderHandle, "uViewDirection"), viewDirection.x, viewDirection.y, viewDirection.z);
-		glUniform3f(glGetUniformLocation(mShaderHandle, "uUpDirection"), upDirection.x, upDirection.y, upDirection.z);
-		glUniform3f(glGetUniformLocation(mShaderHandle, "uLeftDirection"), leftDirection.x, leftDirection.y, leftDirection.z);
+		glUniform3fv(glGetUniformLocation(mShaderHandle, "uViewDirection"), 1, viewDirection.data);
+		glUniform3fv(glGetUniformLocation(mShaderHandle, "uUpDirection"), 1, upDirection.data);
+		glUniform3fv(glGetUniformLocation(mShaderHandle, "uLeftDirection"), 1, leftDirection.data);
 
 		glUniform3fv(glGetUniformLocation(mShaderHandle, "uLight.position"), 1, lightPositionEye);
-		glUniform3f(glGetUniformLocation(mShaderHandle, "uLight.ambient"), 0.2f, 0.2f, 0.2f);
-		glUniform3f(glGetUniformLocation(mShaderHandle, "uLight.diffuse"), 1, 1, 1);
-		glUniform3f(glGetUniformLocation(mShaderHandle, "uLight.specular"), 1, 1, 1);
+		glUniform3fv(glGetUniformLocation(mShaderHandle, "uLight.ambient"), 1, lightAmbient);
+		glUniform3fv(glGetUniformLocation(mShaderHandle, "uLight.diffuse"), 1, lightDiffuse);
+		glUniform3fv(glGetUniformLocation(mShaderHandle, "uLight.specular"), 1, lightSpecular);
 
 		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "uModelMatrix"), 1, 0, modelMatrix.data);
 		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "uProjectionMatrix"), 1, 0, projectionMatrix.data);
