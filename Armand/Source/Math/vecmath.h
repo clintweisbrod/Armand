@@ -60,6 +60,7 @@ public:
 	inline Vector2(const Vector2<T>&);
 	inline Vector2(T, T);
 
+	inline T& operator[](int) const;
 	inline Vector2& operator+=(const Vector2<T>&);
 	inline Vector2& operator-=(const Vector2<T>&);
 	inline Vector2& operator*=(T);
@@ -100,8 +101,7 @@ public:
 	inline Vector3(const string&);
 	inline Vector3(T* v);
 
-	static inline T dot(const Vector3<T>&, const Vector3<T>&);
-
+	inline T& operator[](int) const;
 	inline Vector3& operator+=(const Vector3<T>&);
 	inline Vector3& operator-=(const Vector3<T>&);
 	inline Vector3& operator*=(T);
@@ -458,6 +458,11 @@ template<class T> Vector2<T>::Vector2(T _x, T _y) : x(_x), y(_y)
 {
 }
 
+template<class T> T& Vector2<T>::operator[](int n) const
+{
+	return data[n];
+}
+
 template<class T> Vector2<T>& Vector2<T>::operator+=(const Vector2<T>& a)
 {
 	x += a.x; y += a.y;
@@ -583,6 +588,11 @@ template<class T> Vector3<T>::Vector3(const std::string& a)
 
 		delete[] dataStr;
 	}
+}
+
+template<class T> T& Vector3<T>::operator[](int n) const
+{
+	return data[n];
 }
 
 template<class T> Vector3<T>& Vector3<T>::operator+=(const Vector3<T>& a)
@@ -856,9 +866,7 @@ template<class T> Vector4<T>::Vector4(T _x, T _y, T _z, T _w) :
 
 template<class T> T& Vector4<T>::operator[](int n) const
 {
-    // Not portable--I'll write a new version when I try to compile on a
-    // platform where it bombs.
-    return ((T*) this)[n];
+    return data[n];
 }
 
 template<class T> bool operator==(const Vector4<T>& a, const Vector4<T>& b)
