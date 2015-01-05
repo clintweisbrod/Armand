@@ -72,8 +72,8 @@ public:
 };
 
 
-typedef Quaternion<float> Quatf;
-typedef Quaternion<double> Quatd;
+typedef Quaternion<float_t> Quatf;
+typedef Quaternion<double_t> Quatd;
 
 
 template<class T> Quaternion<T>::Quaternion() : w(0), x(0), y(0), z(0)

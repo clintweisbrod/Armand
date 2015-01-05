@@ -565,6 +565,7 @@
 #include "Utilities/File.h"
 #include "Utilities/Singleton.h"
 #include "OpenGL/Textures/Texture.h"
+#include "OpenGL/Object.h"
 
 #define M3D_CHUNKTYPE_VERSION			0x0002			// This gives the version of the .3ds file
 #define M3D_CHUNKTYPE_COLOR_FLOAT		0x0010
@@ -849,6 +850,9 @@ private:
 	vector<GLint>				mArrayFirstTextured;
 	vector<GLsizei>				mArrayCountTextured;
 	vector<GLuint>				mTextureIDs;
+
+	// Temporary stuff for testing
+	Object						mObject;
 };
 
 //----------------------------------------------------------------------

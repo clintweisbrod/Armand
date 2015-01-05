@@ -138,6 +138,9 @@ T3DSModel::T3DSModel()
 	mModelUpVector = Vec3f(0.0f, 1.0f, 0.0f);	// The default OpenGL up vector
 	mRotationRateInRadiansPerCentury = 0.0;
 	mInclinationAngleInDegrees = 0.0;
+
+	// Temporary for testing
+	mObject.setUniveralPosition(Vec3Big(0.0, 0.0, 20.0));
 }
 
 T3DSModel::~T3DSModel()
@@ -1791,15 +1794,10 @@ void T3DSModel::render()
 	// positive (not negative) z-axis. With viewer at origin and model down negative
 	// axis, the model is behind the viewer and not visible.
 
-	// viewMatrix will eventually come from a camera class using quaternion.
-	Mat4f viewMatrix = Mat4f::rotationY(degToRad(80.0f));
-	const Vec3f viewDirection = viewMatrix * Vec3f(0, 0, 1);
-	const Vec3f upDirection = viewMatrix * Vec3f(0, 1, 0);
-	const Vec3f leftDirection = viewMatrix * Vec3f(1, 0, 0);
-
-	Vec3f viewerPosition(0, 0, 0);
-	Vec3f modelPosition(0, 0, 20);
-	Vec3f viewerModelVector = modelPosition - viewerPosition;
+	Camera* theCamera = gOpenGLWindow->getCamera();
+	Vec3f viewDirection, upDirection, leftDirection;
+	theCamera->getViewerOrthoNormalBasis(viewDirection, upDirection, leftDirection);
+	Vec3f viewerModelVector = theCamera->getCameraRelativePosition(mObject);
 
 	// Compute distance in model coordinates to view model based on physical viewer distance
 	const GLdouble kPhysicalToModelFactor = mModelBoundingRadius / mPhysicalRadiusInMetres;

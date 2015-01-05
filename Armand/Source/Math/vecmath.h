@@ -19,7 +19,8 @@
 
 #include <cmath>
 
-#include "ttmath/ttmath.h"
+//#include "ttmath/ttmath.h"
+#include "Math/bigfix.h"
 
 template<class T> class Point2
 {
@@ -132,21 +133,22 @@ public:
 	};
 };
 
-// I'm basically redefining a stripped down version of Vector3 here which will be used with ttmath 128-bit integers.
-template<class T> class Vector3_ttmath
+template<class T> class Vector3_Basic
 {
 public:
-	inline Vector3_ttmath();
-	inline Vector3_ttmath(const Vector3_ttmath<T>&);
-	inline Vector3_ttmath(const T, const T, const T);
-	inline Vector3_ttmath(T* v);
+	inline Vector3_Basic();
+	inline Vector3_Basic(const Vector3_Basic<T>&);
+	inline Vector3_Basic(const T, const T, const T);
+	inline Vector3_Basic(T* v);
 
-	inline Vector3_ttmath& operator+=(const Vector3_ttmath<T>&);
-	inline Vector3_ttmath& operator-=(const Vector3_ttmath<T>&);
-	inline Vector3_ttmath& operator*=(T);
-	inline Vector3_ttmath& operator/=(T);
-	inline Vector3_ttmath operator-() const;
-	inline Vector3_ttmath operator+() const;
+	operator Vector3<float_t>() const;
+
+	inline Vector3_Basic& operator+=(const Vector3_Basic<T>&);
+	inline Vector3_Basic& operator-=(const Vector3_Basic<T>&);
+	inline Vector3_Basic& operator*=(T);
+	inline Vector3_Basic& operator/=(T);
+	inline Vector3_Basic operator-() const;
+	inline Vector3_Basic operator+() const;
 
 	inline T length() const;
 	inline T lengthSquared() const;
@@ -319,9 +321,12 @@ typedef Matrix4<double_t>	Mat4d;
 typedef Matrix3<float_t>	Mat3f;
 typedef Matrix3<double_t>	Mat3d;
 
-typedef ttmath::Int<2>	Int128;					// 128-bit signed integer. // On x64 we need 2 values to represent 128 bits.
-typedef Vector3_ttmath<Int128> Vec3i128;		// Vector using 128-bit signed integers components. See comments in vecmath.cpp.
-void Vec3i128toVec3d(Vec3i128& in, Vec3d& out);	// Function converts a 128-bit integer vec to floating point equivalent.
+typedef Vector3_Basic<BigFix>		Vec3Big;
+
+//typedef ttmath::Int<2>	Int128;				// 128-bit signed integer. // On x64 we need 2 values to represent 128 bits.
+//typedef Vector3_ttmath<Int128> Vec3i128;	// Vector using 128-bit signed integers components. See comments in vecmath.cpp.
+//Vec3d Vec3i128toVec3d(Vec3i128& in);		// Function converts a 128-bit integer vec to double_t equivalent.
+//Vec3f Vec3i128toVec3f(Vec3i128& in);		// Function converts a 128-bit integer vec to double_t equivalent.
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -724,131 +729,136 @@ template<class T> Vector3<T> operator-(const Point3<T>& a, const Point3<T>& b)
 }
 
 ///////////////////////////////////////////////////////////////////////
-// Vector3_ttmath
+// Vector3_Basic
 ///////////////////////////////////////////////////////////////////////
 
-template<class T> Vector3_ttmath<T>::Vector3_ttmath() : x(0), y(0), z(0)
+template<class T> Vector3_Basic<T>::Vector3_Basic()// : x(0), y(0), z(0)
 {
 }
 
-template<class T> Vector3_ttmath<T>::Vector3_ttmath(const Vector3_ttmath<T>& v) : x(v.x), y(v.y), z(v.z)
+template<class T> Vector3_Basic<T>::Vector3_Basic(const Vector3_Basic<T>& v) : x(v.x), y(v.y), z(v.z)
 {
 }
 
-template<class T> Vector3_ttmath<T>::Vector3_ttmath(T _x, T _y, T _z) : x(_x), y(_y), z(_z)
+template<class T> Vector3_Basic<T>::Vector3_Basic(T _x, T _y, T _z) : x(_x), y(_y), z(_z)
 {
 }
 
-template<class T> Vector3_ttmath<T>::Vector3_ttmath(T* v) : x(v[0]), y(v[1]), z(v[2])
+template<class T> Vector3_Basic<T>::Vector3_Basic(T* v) : x(v[0]), y(v[1]), z(v[2])
 {
 }
 
-template<class T> Vector3_ttmath<T>& Vector3_ttmath<T>::operator+=(const Vector3_ttmath<T>& a)
+template<class T> Vector3_Basic<T>::operator Vector3<float_t>() const
+{
+	return Vec3f((float_t)x, (float_t)y, (float_t)z);
+}
+
+template<class T> Vector3_Basic<T>& Vector3_Basic<T>::operator+=(const Vector3_Basic<T>& a)
 {
 	x += a.x; y += a.y; z += a.z;
 	return *this;
 }
 
-template<class T> Vector3_ttmath<T>& Vector3_ttmath<T>::operator-=(const Vector3_ttmath<T>& a)
+template<class T> Vector3_Basic<T>& Vector3_Basic<T>::operator-=(const Vector3_Basic<T>& a)
 {
 	x -= a.x; y -= a.y; z -= a.z;
 	return *this;
 }
 
-template<class T> Vector3_ttmath<T>& Vector3_ttmath<T>::operator*=(T s)
+template<class T> Vector3_Basic<T>& Vector3_Basic<T>::operator*=(T s)
 {
 	x *= s; y *= s; z *= s;
 	return *this;
 }
 
-template<class T> Vector3_ttmath<T>& Vector3_ttmath<T>::operator/=(T s)
+template<class T> Vector3_Basic<T>& Vector3_Basic<T>::operator/=(T s)
 {
 	x /= s; y /= s; z /= s;
 	return *this;
 }
 
-template<class T> Vector3_ttmath<T> Vector3_ttmath<T>::operator-() const
+template<class T> Vector3_Basic<T> Vector3_Basic<T>::operator-() const
 {
-	return Vector3_ttmath<T>(-x, -y, -z);
+	return Vector3_Basic<T>(-x, -y, -z);
 }
 
-template<class T> Vector3_ttmath<T> Vector3_ttmath<T>::operator+() const
+template<class T> Vector3_Basic<T> Vector3_Basic<T>::operator+() const
 {
 	return *this;
 }
 
-template<class T> Vector3_ttmath<T> operator+(const Vector3_ttmath<T>& a, const Vector3_ttmath<T>& b)
+template<class T> Vector3_Basic<T> operator+(const Vector3_Basic<T>& a, const Vector3_Basic<T>& b)
 {
-	return Vector3_ttmath<T>(a.x + b.x, a.y + b.y, a.z + b.z);
+	return Vector3_Basic<T>(a.x + b.x, a.y + b.y, a.z + b.z);
 }
 
-template<class T> Vector3_ttmath<T> operator-(const Vector3_ttmath<T>& a, const Vector3_ttmath<T>& b)
+template<class T> Vector3_Basic<T> operator-(const Vector3_Basic<T>& a, const Vector3_Basic<T>& b)
 {
-	return Vector3_ttmath<T>(a.x - b.x, a.y - b.y, a.z - b.z);
+	return Vector3_Basic<T>(a.x - b.x, a.y - b.y, a.z - b.z);
 }
 
-template<class T> Vector3_ttmath<T> operator*(T s, const Vector3_ttmath<T>& v)
+template<class T> Vector3_Basic<T> operator*(T s, const Vector3_Basic<T>& v)
 {
-	return Vector3_ttmath<T>(s * v.x, s * v.y, s * v.z);
+	return Vector3_Basic<T>(s * v.x, s * v.y, s * v.z);
 }
 
-template<class T> Vector3_ttmath<T> operator*(const Vector3_ttmath<T>& v, T s)
+template<class T> Vector3_Basic<T> operator*(const Vector3_Basic<T>& v, T s)
 {
-	return Vector3_ttmath<T>(s * v.x, s * v.y, s * v.z);
+	return Vector3_Basic<T>(s * v.x, s * v.y, s * v.z);
 }
 
 // dot product
-template<class T> T operator*(const Vector3_ttmath<T>& a, const Vector3_ttmath<T>& b)
+template<class T> T operator*(const Vector3_Basic<T>& a, const Vector3_Basic<T>& b)
 {
 	return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
 // cross product
-template<class T> Vector3_ttmath<T> operator^(const Vector3_ttmath<T>& a, const Vector3_ttmath<T>& b)
+template<class T> Vector3_Basic<T> operator^(const Vector3_Basic<T>& a, const Vector3_Basic<T>& b)
 {
-	return Vector3_ttmath<T>(a.y * b.z - a.z * b.y,
+	return Vector3_Basic<T>(a.y * b.z - a.z * b.y,
 		a.z * b.x - a.x * b.z,
 		a.x * b.y - a.y * b.x);
 }
 
-template<class T> bool operator==(const Vector3_ttmath<T>& a, const Vector3_ttmath<T>& b)
+template<class T> bool operator==(const Vector3_Basic<T>& a, const Vector3_Basic<T>& b)
 {
 	return a.x == b.x && a.y == b.y && a.z == b.z;
 }
 
-template<class T> bool operator!=(const Vector3_ttmath<T>& a, const Vector3_ttmath<T>& b)
+template<class T> bool operator!=(const Vector3_Basic<T>& a, const Vector3_Basic<T>& b)
 {
 	return a.x != b.x || a.y != b.y || a.z != b.z;
 }
 
-template<class T> Vector3_ttmath<T> operator/(const Vector3_ttmath<T>& v, T s)
+template<class T> Vector3_Basic<T> operator/(const Vector3_Basic<T>& v, T s)
 {
 	return Vector3<T>(v.x / s, v.y / s, v.z / s);
 }
 
-template<class T> T dot(const Vector3_ttmath<T>& a, const Vector3_ttmath<T>& b)
+template<class T> T dot(const Vector3_Basic<T>& a, const Vector3_Basic<T>& b)
 {
 	return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
-template<class T> Vector3_ttmath<T> cross(const Vector3_ttmath<T>& a, const Vector3_ttmath<T>& b)
+template<class T> Vector3_Basic<T> cross(const Vector3_Basic<T>& a, const Vector3_Basic<T>& b)
 {
 	return Vector3<T>(a.y * b.z - a.z * b.y,
 		a.z * b.x - a.x * b.z,
 		a.x * b.y - a.y * b.x);
 }
 
-template<class T> T Vector3_ttmath<T>::length() const
+template<class T> T Vector3_Basic<T>::length() const
 {
 	return (T)sqrt(x * x + y * y + z * z);
 }
 
-template<class T> T Vector3_ttmath<T>::lengthSquared() const
+template<class T> T Vector3_Basic<T>::lengthSquared() const
 {
 	return x * x + y * y + z * z;
 }
 
-template<class T> Vector3_ttmath<T> operator-(const Point3<T>& a, const Point3<T>& b)
+template<class T> Vector3_Basic<T> operator-(const Point3<T>& a, const Point3<T>& b)
 {
 	return Vector3_ttmath<T>(a.x - b.x, a.y - b.y, a.z - b.z);
 }

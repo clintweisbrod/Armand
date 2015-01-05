@@ -28,6 +28,7 @@
 #include "OpenGL/ShaderFactory.h"
 #include "OpenGL/VertexBufferStructs.h"
 #include "Utilities/Timer.h"
+#include "Camera.h"
 
 class OpenGLWindow
 {
@@ -62,6 +63,9 @@ class OpenGLWindow
 		
 		// Harness state
 		void			setClearColor(const GLfloat inRed, const GLfloat inGreen, const GLfloat inBlue);
+
+		// Viewer state
+		Camera*			getCamera() { return &mCamera; };
 
 		// For performance monitoring
 		Timer			mTimer;
@@ -132,6 +136,9 @@ class OpenGLWindow
 
 		// Fisheye projection boundary
 		v2f				mFisheyeBoundaryVertices[360];
+
+		// Viewer state
+		Camera			mCamera;
 };
 
 extern OpenGLWindow* gOpenGLWindow;
