@@ -28,9 +28,6 @@
     <Filter Include="Header Files\Math">
       <UniqueIdentifier>{51988aad-b208-4e00-92ce-a19f686d49e2}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\Math\ttmath">
-      <UniqueIdentifier>{0fb1c4ce-dc79-473c-b2b2-c450aac24442}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\OpenGL\Fonts">
       <UniqueIdentifier>{343f7aae-e6c5-44fb-9fb4-d8121a980216}</UniqueIdentifier>
     </Filter>
@@ -77,45 +74,6 @@
     </ClInclude>
     <ClInclude Include="..\..\Source\OpenGL\OpenGLWindow.h">
       <Filter>Header Files\OpenGL</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\Math\ttmath\ttmath.h">
-      <Filter>Header Files\Math\ttmath</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\Math\ttmath\ttmathbig.h">
-      <Filter>Header Files\Math\ttmath</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\Math\ttmath\ttmathdec.h">
-      <Filter>Header Files\Math\ttmath</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\Math\ttmath\ttmathint.h">
-      <Filter>Header Files\Math\ttmath</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\Math\ttmath\ttmathmisc.h">
-      <Filter>Header Files\Math\ttmath</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\Math\ttmath\ttmathobjects.h">
-      <Filter>Header Files\Math\ttmath</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\Math\ttmath\ttmathparser.h">
-      <Filter>Header Files\Math\ttmath</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\Math\ttmath\ttmaththreads.h">
-      <Filter>Header Files\Math\ttmath</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\Math\ttmath\ttmathtypes.h">
-      <Filter>Header Files\Math\ttmath</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\Math\ttmath\ttmathuint.h">
-      <Filter>Header Files\Math\ttmath</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\Math\ttmath\ttmathuint_noasm.h">
-      <Filter>Header Files\Math\ttmath</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\Math\ttmath\ttmathuint_x86.h">
-      <Filter>Header Files\Math\ttmath</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Source\Math\ttmath\ttmathuint_x86_64.h">
-      <Filter>Header Files\Math\ttmath</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Utilities\Singleton.h">
       <Filter>Header Files\Utilities</Filter>
@@ -210,6 +168,15 @@
     <ClInclude Include="..\..\Source\OpenGL\VBOData.h">
       <Filter>Header Files\OpenGL</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Source\OpenGL\Camera.h">
+      <Filter>Header Files\OpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\OpenGL\Object.h">
+      <Filter>Header Files\OpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Math\bigfix.h">
+      <Filter>Header Files\Math</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\Main\Armand.cpp">
@@ -223,9 +190,6 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\OpenGL\Fonts\FontFactory.cpp">
       <Filter>Source Files\OpenGL\Fonts</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Source\Math\vecmath.cpp">
-      <Filter>Source Files\Math</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\OpenGL\ShaderFactory.cpp">
       <Filter>Source Files\OpenGL</Filter>
@@ -260,6 +224,15 @@
     <ClCompile Include="..\..\Source\OpenGL\VBOData.cpp">
       <Filter>Source Files\OpenGL</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Source\OpenGL\Camera.cpp">
+      <Filter>Source Files\OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\OpenGL\Object.cpp">
+      <Filter>Source Files\OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Math\bigfix.cpp">
+      <Filter>Source Files\Math</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\Source\Main\Armand.ico">
@@ -273,15 +246,5 @@
     <ResourceCompile Include="..\..\Source\Main\Armand.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\Source\Math\ttmath\ttmathuint_x86_64_msvc.asm">
-      <Filter>Header Files\Math\ttmath</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Object Include="..\..\Source\Math\ttmath\ttmathuint_x86_64_msvc.obj">
-      <Filter>Header Files\Math\ttmath</Filter>
-    </Object>
   </ItemGroup>
 </Project>

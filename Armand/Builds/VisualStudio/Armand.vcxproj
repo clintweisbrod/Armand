@@ -178,6 +178,7 @@ exit 0
     <ClInclude Include="..\..\Source\Main\stdafx.h" />
     <ClInclude Include="..\..\Source\Main\targetver.h" />
     <ClInclude Include="..\..\Source\Math\aabox.h" />
+    <ClInclude Include="..\..\Source\Math\bigfix.h" />
     <ClInclude Include="..\..\Source\Math\capsule.h" />
     <ClInclude Include="..\..\Source\Math\constants.h" />
     <ClInclude Include="..\..\Source\Math\distance.h" />
@@ -191,24 +192,13 @@ exit 0
     <ClInclude Include="..\..\Source\Math\ray.h" />
     <ClInclude Include="..\..\Source\Math\solve.h" />
     <ClInclude Include="..\..\Source\Math\sphere.h" />
-    <ClInclude Include="..\..\Source\Math\ttmath\ttmath.h" />
-    <ClInclude Include="..\..\Source\Math\ttmath\ttmathbig.h" />
-    <ClInclude Include="..\..\Source\Math\ttmath\ttmathdec.h" />
-    <ClInclude Include="..\..\Source\Math\ttmath\ttmathint.h" />
-    <ClInclude Include="..\..\Source\Math\ttmath\ttmathmisc.h" />
-    <ClInclude Include="..\..\Source\Math\ttmath\ttmathobjects.h" />
-    <ClInclude Include="..\..\Source\Math\ttmath\ttmathparser.h" />
-    <ClInclude Include="..\..\Source\Math\ttmath\ttmaththreads.h" />
-    <ClInclude Include="..\..\Source\Math\ttmath\ttmathtypes.h" />
-    <ClInclude Include="..\..\Source\Math\ttmath\ttmathuint.h" />
-    <ClInclude Include="..\..\Source\Math\ttmath\ttmathuint_noasm.h" />
-    <ClInclude Include="..\..\Source\Math\ttmath\ttmathuint_x86.h" />
-    <ClInclude Include="..\..\Source\Math\ttmath\ttmathuint_x86_64.h" />
     <ClInclude Include="..\..\Source\Math\vecmath.h" />
     <ClInclude Include="..\..\Source\Models\3DSModel.h" />
     <ClInclude Include="..\..\Source\Models\3DSModelFactory.h" />
+    <ClInclude Include="..\..\Source\OpenGL\Camera.h" />
     <ClInclude Include="..\..\Source\OpenGL\Fonts\FontFactory.h" />
     <ClInclude Include="..\..\Source\OpenGL\GLUtils.h" />
+    <ClInclude Include="..\..\Source\OpenGL\Object.h" />
     <ClInclude Include="..\..\Source\OpenGL\OpenGLWindow.h" />
     <ClInclude Include="..\..\Source\OpenGL\ShaderFactory.h" />
     <ClInclude Include="..\..\Source\OpenGL\Textures\Texture.h" />
@@ -230,11 +220,13 @@ exit 0
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="..\..\Source\Math\vecmath.cpp" />
+    <ClCompile Include="..\..\Source\Math\bigfix.cpp" />
     <ClCompile Include="..\..\Source\Models\3DSModel.cpp" />
     <ClCompile Include="..\..\Source\Models\3DSModelFactory.cpp" />
+    <ClCompile Include="..\..\Source\OpenGL\Camera.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\Fonts\FontFactory.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\GLUtils.cpp" />
+    <ClCompile Include="..\..\Source\OpenGL\Object.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\OpenGLWindow.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\ShaderFactory.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\Textures\Texture.cpp" />
@@ -251,12 +243,6 @@ exit 0
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\Source\Main\Armand.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\Source\Math\ttmath\ttmathuint_x86_64_msvc.asm" />
-  </ItemGroup>
-  <ItemGroup>
-    <Object Include="..\..\Source\Math\ttmath\ttmathuint_x86_64_msvc.obj" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
