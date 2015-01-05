@@ -321,12 +321,7 @@ typedef Matrix4<double_t>	Mat4d;
 typedef Matrix3<float_t>	Mat3f;
 typedef Matrix3<double_t>	Mat3d;
 
-typedef Vector3_Basic<BigFix>		Vec3Big;
-
-//typedef ttmath::Int<2>	Int128;				// 128-bit signed integer. // On x64 we need 2 values to represent 128 bits.
-//typedef Vector3_ttmath<Int128> Vec3i128;	// Vector using 128-bit signed integers components. See comments in vecmath.cpp.
-//Vec3d Vec3i128toVec3d(Vec3i128& in);		// Function converts a 128-bit integer vec to double_t equivalent.
-//Vec3f Vec3i128toVec3f(Vec3i128& in);		// Function converts a 128-bit integer vec to double_t equivalent.
+typedef Vector3_Basic<BigFix>	Vec3Big;	// Fixed-point 64.64 for storing Universal positions.
 
 ///////////////////////////////////////////////////////////////////////
 

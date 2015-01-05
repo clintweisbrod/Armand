@@ -25,7 +25,4 @@ void Camera::getViewerOrthoNormalBasis(Vec3f& ioViewDirection, Vec3f& ioUpDirect
 Vec3f Camera::getCameraRelativePosition(Object& inObject) const
 {
 	return (Vec3f)(inObject.getUniveralPosition() - mUniversalPosition);
-
-//	Vec3i128 vec128 = inObject.getUniveralPosition() - mUniversalPosition;
-//	return Vec3i128toVec3f(vec128);
 }

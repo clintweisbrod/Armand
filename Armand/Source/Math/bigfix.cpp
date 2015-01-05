@@ -55,6 +55,13 @@
 // divide 1 LY up into 2^64 pieces, each piece would be about 5.3e-4 metres or 0.53 mm.
 // Half a millimetre precision. Not bad at all.
 //
+// Performance analysis has been based on casting to floats. Why? Because, ultimately we
+// will be subtracting two 3D vectors having 64.64 components and casting the result to a
+// Vec3f. In other words, subtracting the camera's position from some object's position to
+// obtain eye coordinates. If we choose the LY as our base unit, I'm worried there will
+// not be adequate precision when both vectors are nearly the same. May have to dynamically
+// change what the base unit is depending on where camera is.
+//
 // In terms of performance, my 64.64 fixed-point implementation was able to cast a million
 // floats in 80 milliseconds. Hoping to reduce this number but reasonably quick.
 //
