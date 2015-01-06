@@ -15,7 +15,7 @@
 //
 // So, floating point is not an option. What about using integers? Our target platform
 // for the forseeable future is 64-bit so we could use 64-bit native integers. If we use
-// signed integers, the largest value we can represent 2^63-1 or roughly 9.2e18.
+// signed integers, the largest value we can represent is 2^63-1 or roughly 9.2e18.
 // What kind of spatial precision does this buy us?
 //
 // Given that the observable Universe is a sphere with radius on the order of 50 billion
@@ -29,8 +29,8 @@
 //
 // bits = log(4.7e29) / log(2) = 98.6, rounded up to 99 bits, +1 for signed, = 100 bits.
 //
-// We will therefore use two unsigned 64-bit integers to represent positions. Since we
-// want calculations to be as fast as possible, there is no point in introducing extra
+// So we could therefore use two unsigned 64-bit integers to represent positions. Since
+// we want calculations to be as fast as possible, there is no point in introducing extra
 // overhead to manage exactly 100 bits, so we use 128-bit integers.
 //
 // 128 bits is more than adequate to represent the position of an object in the Universe
@@ -60,10 +60,11 @@
 // Vec3f. In other words, subtracting the camera's position from some object's position to
 // obtain eye coordinates. If we choose the LY as our base unit, I'm worried there will
 // not be adequate precision when both vectors are nearly the same. May have to dynamically
-// change what the base unit is depending on where camera is.
+// change what the base unit is depending on where camera is. Or maybe using AUs as the
+// base unit is sufficient.
 //
-// In terms of performance, my 64.64 fixed-point implementation was able to cast a million
-// floats in 80 milliseconds. Hoping to reduce this number but reasonably quick.
+// In terms of performance, the 64.64 fixed-point implementation was able to cast a million
+// floats in 80 milliseconds. Hoping to reduce this number further, but reasonably quick.
 //
 // THIS SOFTWARE IS PROVIDED BY CLINT WEISBROD "AS IS" AND ANY EXPRESS OR
 // IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
