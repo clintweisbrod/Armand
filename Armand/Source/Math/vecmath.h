@@ -41,7 +41,7 @@ public:
 	inline Point3(T, T, T);
 	inline Point3(T*);
 
-	inline T& operator[](int) const;
+	inline T operator[](size_t) const;
 	inline Point3& operator+=(const Vector3<T>&);
 	inline Point3& operator-=(const Vector3<T>&);
 	inline Point3& operator*=(T);
@@ -61,7 +61,7 @@ public:
 	inline Vector2(const Vector2<T>&);
 	inline Vector2(T, T);
 
-	inline T& operator[](int) const;
+	inline T operator[](size_t) const;
 	inline Vector2& operator+=(const Vector2<T>&);
 	inline Vector2& operator-=(const Vector2<T>&);
 	inline Vector2& operator*=(T);
@@ -102,7 +102,7 @@ public:
 	inline Vector3(const string&);
 	inline Vector3(T* v);
 
-	inline T& operator[](int) const;
+	inline T operator[](size_t) const;
 	inline Vector3& operator+=(const Vector3<T>&);
 	inline Vector3& operator-=(const Vector3<T>&);
 	inline Vector3& operator*=(T);
@@ -162,7 +162,7 @@ public:
 	inline Vector4();
 	inline Vector4(T, T, T, T);
 
-	inline T& operator[](int) const;
+	inline T operator[](size_t) const;
 	inline Vector4& operator+=(const Vector4&);
 	inline Vector4& operator-=(const Vector4&);
 	inline Vector4& operator*=(T);
@@ -241,9 +241,9 @@ public:
 	static void setTranslation(Matrix4<T>&, const Vector3<T>&);
 	static void setTranslation(Matrix4<T>&, const Point3<T>&);
 
-	inline const Vector4<T>& operator[](int) const;
-	inline Vector4<T> row(int) const;
-	inline Vector4<T> column(int) const;
+	inline Vector4<T> operator[](size_t) const;
+	inline Vector4<T> row(size_t) const;
+	inline Vector4<T> column(size_t) const;
 
 	void translate(const Point3<T>&);
 
@@ -283,9 +283,9 @@ public:
 
 	static void setIdentity(Matrix3<T>&);
 
-	inline const Vector3<T>& operator[](int) const;
-	inline Vector3<T> row(int) const;
-	inline Vector3<T> column(int) const;
+	inline Vector3<T> operator[](size_t) const;
+	inline Vector3<T> row(size_t) const;
+	inline Vector3<T> column(size_t) const;
 
 	inline Matrix3& operator*=(T);
 
@@ -362,7 +362,7 @@ template<class T> Point3<T>::Point3(T* p) : x(p[0]), y(p[1]), z(p[2])
 {
 }
 
-template<class T> T& Point3<T>::operator[](int n) const
+template<class T> T Point3<T>::operator[](size_t n) const
 {
 	// Not portable--I'll write a new version when I try to compile on a
 	// platform where it bombs.
@@ -458,7 +458,7 @@ template<class T> Vector2<T>::Vector2(T _x, T _y) : x(_x), y(_y)
 {
 }
 
-template<class T> T& Vector2<T>::operator[](int n) const
+template<class T> T Vector2<T>::operator[](size_t n) const
 {
 	return data[n];
 }
@@ -590,7 +590,7 @@ template<class T> Vector3<T>::Vector3(const std::string& a)
 	}
 }
 
-template<class T> T& Vector3<T>::operator[](int n) const
+template<class T> T Vector3<T>::operator[](size_t n) const
 {
 	return data[n];
 }
@@ -869,7 +869,7 @@ template<class T> Vector4<T>::Vector4(T _x, T _y, T _z, T _w) :
 {
 }
 
-template<class T> T& Vector4<T>::operator[](int n) const
+template<class T> T Vector4<T>::operator[](size_t n) const
 {
     return data[n];
 }
@@ -1017,17 +1017,17 @@ template<class T> Matrix3<T>::Matrix3(const Vector3<T>& c0,
 	m20 = c0.z; m21 = c1.z; m22 = c2.z;
 }
 
-template<class T> const Vector3<T>& Matrix3<T>::operator[](int n) const
+template<class T> Vector3<T> Matrix3<T>::operator[](size_t n) const
 {
 	return row(n);
 }
 
-template<class T> Vector3<T> Matrix3<T>::row(int n) const
+template<class T> Vector3<T> Matrix3<T>::row(size_t n) const
 {
 	return Vector3<T>(data[n], data[n + 3], data[n + 6]);
 }
 
-template<class T> Vector3<T> Matrix3<T>::column(int n) const
+template<class T> Vector3<T> Matrix3<T>::column(size_t n) const
 {
 	int b = 3 * n;
 	return Vector3<T>(data[b], data[b + 1], data[b + 2]);
@@ -1242,17 +1242,17 @@ template<class T> Matrix4<T>::Matrix4(const Vector4<T>& c0, const Vector4<T>& c1
 	m30 = c0.w; m31 = c1.w; m32 = c2.w; m33 = c3.w;
 }
 
-template<class T> const Vector4<T>& Matrix4<T>::operator[](int n) const
+template<class T> Vector4<T> Matrix4<T>::operator[](size_t n) const
 {
 	return row(n);
 }
 
-template<class T> Vector4<T> Matrix4<T>::row(int n) const
+template<class T> Vector4<T> Matrix4<T>::row(size_t n) const
 {
 	return Vector4<T>(data[n], data[n + 4], data[n + 8], data[n + 12]);
 }
 
-template<class T> Vector4<T> Matrix4<T>::column(int n) const
+template<class T> Vector4<T> Matrix4<T>::column(size_t n) const
 {
 	int b = 4 * n;
 	return Vector4<T>(data[b], data[b + 1], data[b + 2], data[b + 3]);
