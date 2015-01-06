@@ -138,9 +138,6 @@ T3DSModel::T3DSModel()
 	mModelUpVector = Vec3f(0.0f, 1.0f, 0.0f);	// The default OpenGL up vector
 	mRotationRateInRadiansPerCentury = 0.0;
 	mInclinationAngleInDegrees = 0.0;
-
-	// Temporary for testing
-	mObject.setUniveralPosition(Vec3Big(0.0, 0.0, 20.0));
 }
 
 T3DSModel::~T3DSModel()
@@ -1719,7 +1716,8 @@ void T3DSModel::loadMetaData(File& inModelFile)
 		if (metaConfig.hasValues())
 		{
 			metaConfig.getConfigValue("PhysicalRadiusInMetres", mPhysicalRadiusInMetres);
-			metaConfig.getConfigValue("ModelUpVector", mModelUpVector);
+			if (metaConfig.getConfigValue("ModelUpVector", mModelUpVector))
+				mModelUpVector.normalize();
 			metaConfig.getConfigValue("InclinationAngleInDegrees", mInclinationAngleInDegrees);
 
 			if (metaConfig.getConfigValue("RotationPeriodInDays", mRotationRateInRadiansPerCentury))
@@ -1768,7 +1766,7 @@ void T3DSModel::setFBOSize(GLuint inWidth, GLuint inHeight)
 //	You don't save duplicate UV coordinates, you just save the unique ones, then an array
 //	that index's into them.  This might be confusing, but most 3D files use this format.
 //----------------------------------------------------------------------
-void T3DSModel::render()
+bool T3DSModel::render(Object& inObject)
 {
 	if (mShaderHandle == 0)
 	{
@@ -1779,7 +1777,7 @@ void T3DSModel::render()
 			mShaderHandle = shaderProgram->getHandle();
 	}
 	if (mShaderHandle == 0)
-		return;
+		return false;
 
 	// This is the rudiments of a viewer model coordinate system. We're positioning a viewer
 	// and a model in Cartesian space, computing a viewer-model vector, applying a rotation
@@ -1797,7 +1795,7 @@ void T3DSModel::render()
 	Camera* theCamera = gOpenGLWindow->getCamera();
 	Vec3f viewDirection, upDirection, leftDirection;
 	theCamera->getViewerOrthoNormalBasis(viewDirection, upDirection, leftDirection);
-	Vec3f viewerModelVector = theCamera->getCameraRelativePosition(mObject);
+	Vec3f viewerModelVector = theCamera->getCameraRelativePosition(inObject);
 
 	// Compute distance in model coordinates to view model based on physical viewer distance
 	const GLdouble kPhysicalToModelFactor = mModelBoundingRadius / mPhysicalRadiusInMetres;
@@ -1812,25 +1810,24 @@ void T3DSModel::render()
 	if (angleBetween - modelAngularRadius > kFisheyeAperture / 2)
 	{
 		// Model is not visible. Bail.
-		return;
+		return false;
 	}
 
 	// Apply translation to model to position it in world coordinates
 	Mat4f modelTranslation = Mat4f::translation(viewerModelVector);
 
-	static GLfloat rotationY = 0;
-	static GLfloat dRotationY = 0.25f;
+	// Orient model using mModelUpVector. For now, mModelUpVector is relative to universal coordinate system,
+	// where (0,1,0) is considered "up".
+	Quatf upRotation = Quatf::vecToVecRotation(mModelUpVector, Vec3f(0, 1, 0));
 
 	// Apply rotation to model
-	Mat4f modelRotation = Mat4f::rotationY(degToRad(rotationY));
+	static GLfloat rotationY = 0;
+	static GLfloat dRotationY = 0.25f;
+	Quatf modelAxisRotation = Quatf::yrotation(degToRad(rotationY));
+	Quatf modelRotation = upRotation * modelAxisRotation;
 
 	// Compute model matrix to transform model coordinates to world coordinates
-	Mat4f modelMatrix = modelTranslation * modelRotation;
-
-	// Apply rotation to viewer
-//	Quatf quat = Quatf::yrotation(degToRad(20.0f));
-//	Mat4f viewMatrix = quat.toMatrix4();
-//	Mat4f viewMatrix = Mat4f::rotationY(degToRad(180.0f));
+	Mat4f modelMatrix = modelTranslation * modelRotation.toMatrix4();
 
 	// As long as we don't have any scaling, we can simply take the upper-left 3x3
 	// matrix for transforming normals.
@@ -1960,6 +1957,8 @@ void T3DSModel::render()
 		glEnd();
 	}
 #endif
+
+	return true;
 }
 
 void T3DSModel::setAtmosphereParameters(GLint inExpansionIterations, GLint inConvolutionIterations)

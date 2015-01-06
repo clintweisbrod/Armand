@@ -754,7 +754,7 @@ public:
 
 	// This is the function that you call to load the 3DS
 	bool		load(File& inFile, bool inLoadMetaOnly = false);
-	void		render();
+	bool		render(Object& inObject);
 	double_t	getModelBoundingRadius() const { return mModelBoundingRadius; };
 	double_t	getPhysicalRadius() const {	return mPhysicalRadiusInMetres;	};
 	Vec3f		getModelUpVector() const { return mModelUpVector; };
@@ -850,9 +850,6 @@ private:
 	vector<GLint>				mArrayFirstTextured;
 	vector<GLsizei>				mArrayCountTextured;
 	vector<GLuint>				mTextureIDs;
-
-	// Temporary stuff for testing
-	Object						mObject;
 };
 
 //----------------------------------------------------------------------

@@ -960,10 +960,14 @@ void OpenGLWindow::render()
 */
 
 	// Testing 3DS model loading and fisheye projection shader
+	mCamera.setUniveralPosition(Vec3Big(0.0, 0.0, 0.0));
+	mCamera.lookAt(Vec3f(0,0,-1), Vec3f(0,1,0));
+	Object theObject;
+	theObject.setUniveralPosition(Vec3Big(0.0, 0.0, -20.0));
 	T3DSModel* model = T3DSModelFactory::inst()->get("Apollo_3rdStage.3ds");
 //	T3DSModel* model = T3DSModelFactory::inst()->get("ISS.3ds");
 	if (model)
-		model->render();
+		model->render(theObject);
 
 //	T3DSModelFactory::inst()->RemoveAll();
 }
