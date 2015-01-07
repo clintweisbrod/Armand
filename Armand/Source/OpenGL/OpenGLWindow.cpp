@@ -657,7 +657,7 @@ void OpenGLWindow::initGL()
 		return;
 
 
-///*
+/*
 	// For testing 3DS models
 	glDrawBuffer(GL_BACK); // draw into the back buffer
 	// anti aliasing -- see page 236, example 6-3 OpenGL programming guide, 3rd ed.
@@ -770,13 +770,13 @@ void OpenGLWindow::initGL()
 
 	// No blending to start with
 	glDisable(GL_BLEND);	// 3DS model objects are sorted by material opacity so blending is off to start with
-//*/
+*/
 
 
 
-/*
+///*
 	glShadeModel(GL_SMOOTH);
-	glClearColor(mClearColor.x, mClearColor.y, mClearColor.z, 1.0f);
+	glClearColor(0, 0, 0, 1);
 	glClearDepth(1.0f);
 //	glEnable(GL_DEPTH_TEST);
 //	glDepthFunc(GL_LEQUAL);
@@ -787,7 +787,7 @@ void OpenGLWindow::initGL()
 		glEnable(GL_MULTISAMPLE_ARB);
 		glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST);
 	}
-*/
+//*/
 //	theTexture = new Texture("Data/TestImage.dds");
 //	if (theTexture->getImageBufferOK())
 //		theTexture->sendToGPU();
@@ -925,7 +925,7 @@ void OpenGLWindow::render()
 	glEnd();
 */
 
-/*
+///*
 	// FontFactory testing
 	string fontName("Verdana");
 	wstring text(L"\260 A quick brown fox jumped over the lazy dog. !@#$%^&*()-=+{}[];:'<>,.?/`~\"");
@@ -957,29 +957,26 @@ void OpenGLWindow::render()
 #endif
 
 	glEnable(GL_BLEND);
-	fontRenderer->render(text, 30, Vec2f(100, 100), Vec4f(1.0f, 1.0f, 1.0f, 1.0f), 30);
-*/
+//	fontRenderer->render(text, 15, Vec2f(100, 100), Vec4f(1.0f, 1.0f, 1.0f, 1.0f), 30);
+	fontRenderer->renderSpherical(text, 25, Vec2f(degToRad(0.0f), degToRad(5.0f)), Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
+//*/
 
+/*
 	// Testing 3DS model loading and fisheye projection shader
 	mCamera.setUniveralPositionMetres(Vec3d(0.0, 0.0, 0.0));
 	mCamera.lookAt(Vec3f(0,0,-1), Vec3f(0,1,0));
 	Object theObject;
-	theObject.setUniveralPositionMetres(Vec3d(0.0, 0.0, -1000.0));
+	theObject.setUniveralPositionMetres(Vec3d(0.0, 0.0, -20.0));
 	T3DSModel* model = T3DSModelFactory::inst()->get("Apollo_3rdStage.3ds");
 //	T3DSModel* model = T3DSModelFactory::inst()->get("ISS.3ds");
 	if (model)
 		model->render(theObject);
 
 //	T3DSModelFactory::inst()->RemoveAll();
+*/
 }
 
 void OpenGLWindow::postRender()
 {
 	SwapBuffers(mhDC);	// Swap buffers (double buffering)
-}
-
-void OpenGLWindow::setClearColor(const GLfloat inRed, const GLfloat inGreen, const GLfloat inBlue)
-{
-	mClearColor = Vec3f(inRed, inGreen, inBlue);
-	glClearColor(mClearColor.x, mClearColor.y, mClearColor.z, 1.0f);
 }

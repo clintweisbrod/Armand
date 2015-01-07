@@ -62,9 +62,6 @@ class OpenGLWindow
 		// Fullscreen
 		void			setFullScreen(bool inFullScreen);
 		
-		// Harness state
-		void			setClearColor(const GLfloat inRed, const GLfloat inGreen, const GLfloat inBlue);
-
 		// Viewer state
 		Camera*			getCamera() { return &mCamera; };
 
@@ -129,8 +126,6 @@ class OpenGLWindow
 		// Mouse input
 		double			mLastMouseMoveSeconds;
 		Vec2i			mLastMousePosition;
-
-		Vec3f			mClearColor;
 
 		// Temporary stuff for testing
 		Texture*		theTexture;

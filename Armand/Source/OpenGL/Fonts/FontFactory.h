@@ -37,10 +37,12 @@ class FontRenderer
 		virtual ~FontRenderer();
 
 		bool render(wstring& inString, int inFontSize, Vec2f& inPen, Vec4f& inColor, float inRotationInDegrees = 0);
+		bool renderSpherical(wstring& inString, int inFontSize, Vec2f& inPen, Vec4f& inColor);
 
 	private:
 		string getSystemFontFile(const string &inFontName) const;
 		void setSceneSize(Vec2i& inSceneSize);
+		texture_font_t* getFontTexture(int inFontSize);
 
 		string					mFontName;
 		texture_atlas_t*		mAtlas;

@@ -172,14 +172,10 @@ FontRenderer::~FontRenderer()
 	}
 }
 
-bool FontRenderer::render(wstring& inString, int inFontSize, Vec2f& inPen, Vec4f& inColor, float inRotationInDegrees)
+texture_font_t* FontRenderer::getFontTexture(int inFontSize)
 {
-	if (!mShaderHandle)
-		return false;
-
-	int fontSize = inFontSize;
-
 	// We only maintain fonts with size kMinFontSize, kMinFontSize+2, kMinFontSize+4, etc.
+	int fontSize = inFontSize;
 	Mathi::constrain(fontSize, kMinFontSize, mLargestFontSize);
 
 	FontMap_t::iterator it = mFonts.find(fontSize);
@@ -195,8 +191,20 @@ bool FontRenderer::render(wstring& inString, int inFontSize, Vec2f& inPen, Vec4f
 	if (it == mFonts.end())
 	{
 		LOG(ERROR) << "Font: " << mFontName << " " << inFontSize << " is not available.";
-		return false;
+		return NULL;
 	}
+
+	return it->second;
+}
+
+bool FontRenderer::render(wstring& inString, int inFontSize, Vec2f& inPen, Vec4f& inColor, float inRotationInDegrees)
+{
+	if (!mShaderHandle)
+		return false;
+
+	texture_font_t* font = getFontTexture(inFontSize);
+	if (!font)
+		return false;
 
 	// Clear the vertex buffer
 	vertex_buffer_clear(mVertexBuffer);
@@ -204,7 +212,6 @@ bool FontRenderer::render(wstring& inString, int inFontSize, Vec2f& inPen, Vec4f
 	// Generate new vertex buffer
 	float xPos = 0;
 	size_t numGlyphsRendered = 0;
-	texture_font_t* font = it->second;
 	float r = inColor.r, g = inColor.g, b = inColor.b, a = inColor.a;
 	for (size_t i = 0; i < inString.length(); ++i)
 	{
@@ -271,10 +278,135 @@ bool FontRenderer::render(wstring& inString, int inFontSize, Vec2f& inPen, Vec4f
 	return (numGlyphsRendered == inString.length());
 }
 
+// inPen.x is interpreted as azimuth
+// inPen.y is interpreted as altitude
+// Azimuth is [0, 2pi). 0 is at bottom of screen (front of dome) and moves counterclockwise
+// Altitude is [0, pi/2]. 0 is at dome edge. 
+bool FontRenderer::renderSpherical(wstring& inString, int inFontSize, Vec2f& inPen, Vec4f& inColor)
+{
+	if (!mShaderHandle)
+		return false;
+
+	texture_font_t* font = getFontTexture(inFontSize);
+	if (!font)
+		return false;
+
+	// Clear the vertex buffer
+	vertex_buffer_clear(mVertexBuffer);
+
+	// So, we have a projection matrix setup such that OpenGL screen coordinates prevail.
+	// Origin located at bottom-left. We are provided with altitude and azimuth values.
+	// Text will ALWAYS be rendered in increasing azimuth and constant altitude, starting
+	// at the given azimuth and altitude. The trick to getting this right is computing the
+	// amount of rotation that must be applied to each glyph so that they appear upright in
+	// the dome. This is often referred to as "gravity" mode.
+	float_t azimuth = inPen.x;
+	float_t altitude = inPen.y;
+	Vec2i sceneSize;
+	gOpenGLWindow->getSceneSize(sceneSize);
+	Point2f halfSceneSize((float_t)sceneSize.x / 2, (float_t)sceneSize.y / 2);
+	float_t geometryRadius = (float_t)gOpenGLWindow->getGeometryRadius();
+	float_t radial = geometryRadius * (float_t)((kHalfPi - altitude) / kHalfPi);
+
+	size_t numGlyphsRendered = 0;
+	float_t r = inColor.r, g = inColor.g, b = inColor.b, a = inColor.a;
+	for (size_t i = 0; i < inString.length(); ++i)
+	{
+		texture_glyph_t* glyph = texture_font_get_glyph(font, inString[i]);
+		if (glyph != NULL)
+		{
+			float_t kerning = 0.0f;
+			if (i > 0)
+				kerning = texture_glyph_get_kerning(glyph, inString[i - 1]);
+
+			// Compute location of glyph
+			float_t x0 = kerning + glyph->offset_x;
+			float_t y0 = (float_t)glyph->offset_y;
+			float_t x1 = x0 + glyph->width;
+			float_t y1 = y0 - glyph->height;
+
+			// Rotate points by azimuth.
+			Point2f p1(x0, y0);
+			Point2f p2(x0, y1);
+			Point2f p3(x1, y1);
+			Point2f p4(x1, y0);
+			Mat2f rotation = Mat2f::rotation(azimuth);
+			p1 = rotation * p1;
+			p2 = rotation * p2;
+			p3 = rotation * p3;
+			p4 = rotation * p4;
+
+			// Translate glyph to center of screen
+			p1 += halfSceneSize;
+			p2 += halfSceneSize;
+			p3 += halfSceneSize;
+			p4 += halfSceneSize;
+
+			// Now translate to correct location represented by azimuth and altitude
+			Point2f t(radial * rotation.m10, -radial * rotation.m00);	// To avoid making two more trig calls
+			p1 += t;
+			p2 += t;
+			p3 += t;
+			p4 += t;
+
+			// Texture coords
+			float_t s0 = glyph->s0;
+			float_t t0 = glyph->t0;
+			float_t s1 = glyph->s1;
+			float_t t1 = glyph->t1;
+			GLuint indices[6] = { 0, 1, 2, 0, 2, 3 };
+			v3f_t2f_c4f vertices[4] = { { p1.x, p1.y, 0, s0, t0, r, g, b, a },
+										{ p2.x, p2.y, 0, s0, t1, r, g, b, a },
+										{ p3.x, p3.y, 0, s1, t1, r, g, b, a },
+										{ p4.x, p4.y, 0, s1, t0, r, g, b, a } };
+			vertex_buffer_push_back(mVertexBuffer, vertices, 4, indices, 6);
+
+			// Use glyph->advance_x to compute new value of azimuth
+			azimuth += (glyph->advance_x / geometryRadius);
+			azimuth = pfmod(azimuth, (float_t)kTwicePi);
+			numGlyphsRendered++;
+		}
+	}
+
+	// Rotation and translation matrices are simply identity since we've done all
+	// the math above.
+	Mat4f::setIdentity(mModelMatrix);
+	Mat4f::setIdentity(mViewMatrix);
+
+	// Enable blending and blend function
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	// Enable texturing and bind to atlas texture
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, mAtlas->id);
+
+	glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT);
+
+	// Activate the font shader
+	glUseProgram(mShaderHandle);
+	{
+		glUniform1i(glGetUniformLocation(mShaderHandle, "texture"), 0);
+		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "model"), 1, 0, mModelMatrix.data);
+		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "view"), 1, 0, mViewMatrix.data);
+		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "projection"), 1, 0, mProjectionMatrix.data);
+		vertex_buffer_render(mVertexBuffer, GL_TRIANGLES);
+
+		// Deactivate the shader
+		glUseProgram(0);
+	}
+
+	glPopClientAttrib();
+
+	glDisable(GL_TEXTURE_2D);
+	glDisable(GL_BLEND);
+
+	return (numGlyphsRendered == inString.length());
+}
+
 void FontRenderer::setSceneSize(Vec2i& inSceneSize)
 {
 	mProjectionMatrix = Mat4f::orthographic(0, (float)inSceneSize.x, 0, (float)inSceneSize.y, -1, 1);
-//	mat4_set_orthographic(&mProjectionMatrix, 0, (float)inSceneSize.x, 0, (float)inSceneSize.y, -1, 1);
 }
 
 string FontRenderer::getSystemFontFile(const string &inFontName) const
