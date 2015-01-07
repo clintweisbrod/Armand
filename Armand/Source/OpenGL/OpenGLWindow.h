@@ -44,8 +44,9 @@ class OpenGLWindow
 		HWND			getHWND() { return mhWnd; };
 
 		// Informational
-		bool			getIsCreated() { return mCreated; };
-		void			getSceneSize(Vec2i& ioSceneSize) { ioSceneSize = mSceneSize; };
+		bool			getIsCreated() const { return mCreated; };
+		void			getSceneSize(Vec2i& ioSceneSize) const { ioSceneSize = mSceneSize; };
+		int				getGeometryRadius() const { return mGeometryRadius; };
 
 		// OpenGL
 		void			drawScene();
@@ -99,6 +100,7 @@ class OpenGLWindow
 
 		Vec2i			mSceneSize;				// Current size of windows's client area
 		Vec2i			mWindowSize;			// Current size of window including frame
+		int				mGeometryRadius;
 
 		Vec2i			mLastWindowedSceneSize;	// Used when switching to and from fullscreen
 		Vec2i			mLastWindowSize;		// Size of window including frame

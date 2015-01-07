@@ -820,6 +820,7 @@ void OpenGLWindow::resizeScene(Vec2i inNewSize)
 		h = (float)mSceneSize.x / (float)mSceneSize.y;
 	else
 		v = (float)mSceneSize.y / (float)mSceneSize.x;
+	mGeometryRadius = min(mSceneSize.x, mSceneSize.y) / 2;
 //	mProjectionMatrix = Mat4f::orthographic(-h, h, -v, v, 0, 1);
 
 	// Set the fixed pipeline projection to the same as described above
@@ -960,10 +961,10 @@ void OpenGLWindow::render()
 */
 
 	// Testing 3DS model loading and fisheye projection shader
-	mCamera.setUniveralPosition(Vec3Big(0.0, 0.0, 0.0));
+	mCamera.setUniveralPositionMetres(Vec3d(0.0, 0.0, 0.0));
 	mCamera.lookAt(Vec3f(0,0,-1), Vec3f(0,1,0));
 	Object theObject;
-	theObject.setUniveralPosition(Vec3Big(0.0, 0.0, -20.0));
+	theObject.setUniveralPositionMetres(Vec3d(0.0, 0.0, -1000.0));
 	T3DSModel* model = T3DSModelFactory::inst()->get("Apollo_3rdStage.3ds");
 //	T3DSModel* model = T3DSModelFactory::inst()->get("ISS.3ds");
 	if (model)
