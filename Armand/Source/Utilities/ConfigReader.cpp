@@ -135,13 +135,13 @@ bool ConfigFileReader::getConfigValue(const char* inValueName, int& ioValue)
 	return result;
 }
 
-bool ConfigFileReader::getConfigValue(const char* inValueName, double_t& ioValue)
+bool ConfigFileReader::getConfigValue(const char* inValueName, float_t& ioValue)
 {
 	bool result = false;
 
 	ConfigValueMap_t::iterator it = mConfigValues.find(inValueName);
 	if (it != mConfigValues.end())
-		result = doubleFromString(it->second, ioValue);
+		result = floatFromString(it->second, ioValue);
 
 	return result;
 }

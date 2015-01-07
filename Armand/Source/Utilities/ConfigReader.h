@@ -38,7 +38,7 @@ public:
 
 	bool getConfigValue(const char* inValueName, string& ioValue);
 	bool getConfigValue(const char* inValueName, int& ioValue);
-	bool getConfigValue(const char* inValueName, double_t& ioValue);
+	bool getConfigValue(const char* inValueName, float_t& ioValue);
 	bool getConfigValue(const char* inValueName, Vec3f& ioValue);
 
 private:
