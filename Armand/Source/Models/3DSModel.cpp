@@ -134,10 +134,10 @@ T3DSModel::T3DSModel()
 	mVBOs[eUntexturedVBO] = mVBOs[eTexturedVBO] = 0;
 
     // 1 meter by default instead of 0 so that's it's a bit more reasonable.
-	mPhysicalRadiusInMetres = 1;	// Is only possibly set by associated .meta file.
+	mPhysicalRadiusInAU = 1 * (float_t)kAuPerMetre;	// Is only possibly set by associated .meta file.
 	mModelUpVector = Vec3f(0.0f, 1.0f, 0.0f);	// The default OpenGL up vector
-	mRotationRateInRadiansPerCentury = 0.0;
-	mInclinationAngleInDegrees = 0.0;
+	mRotationRateInRadiansPerCentury = 0.0f;
+	mInclinationAngleInDegrees = 0.0f;
 }
 
 T3DSModel::~T3DSModel()
@@ -1715,7 +1715,9 @@ void T3DSModel::loadMetaData(File& inModelFile)
 		ConfigFileReader metaConfig(metaFilePath);
 		if (metaConfig.hasValues())
 		{
-			metaConfig.getConfigValue("PhysicalRadiusInMetres", mPhysicalRadiusInMetres);
+			float_t physicalRadiusInMetres;
+			if (metaConfig.getConfigValue("PhysicalRadiusInMetres", physicalRadiusInMetres))
+				mPhysicalRadiusInAU = physicalRadiusInMetres * (float_t)kAuPerMetre;
 			if (metaConfig.getConfigValue("ModelUpVector", mModelUpVector))
 				mModelUpVector.normalize();
 			metaConfig.getConfigValue("InclinationAngleInDegrees", mInclinationAngleInDegrees);
@@ -1724,7 +1726,7 @@ void T3DSModel::loadMetaData(File& inModelFile)
 			{
 				// For convenience to user, we store period, but we need rate.
 				if (mRotationRateInRadiansPerCentury)
-					mRotationRateInRadiansPerCentury = kTwicePi * kDaysPerCentury / mRotationRateInRadiansPerCentury;
+					mRotationRateInRadiansPerCentury = (float_t)(kTwicePi * kDaysPerCentury / mRotationRateInRadiansPerCentury);
 			}
 
 			mMetaDataLoaded = true;
@@ -1788,26 +1790,30 @@ bool T3DSModel::render(Object& inObject)
 	// We will perform the vector subtraction in 128-bit integer math, and then cast to
 	// Vec3f.
 
-	// Starting with physical distances in metres, viewer is initially looking down the
-	// positive (not negative) z-axis. With viewer at origin and model down negative
-	// axis, the model is behind the viewer and not visible.
-
 	Camera* theCamera = gOpenGLWindow->getCamera();
-	Vec3f viewDirection, upDirection, leftDirection;
-	theCamera->getViewerOrthoNormalBasis(viewDirection, upDirection, leftDirection);
 	Vec3f viewerModelVector = theCamera->getCameraRelativePosition(inObject);
 
-	// Compute distance in model coordinates to view model based on physical viewer distance
-	const GLdouble kPhysicalToModelFactor = mModelBoundingRadius / mPhysicalRadiusInMetres;
-	viewerModelVector *= (GLfloat)kPhysicalToModelFactor;
+	// Decide if model is big enough (in pixels) to warrant rendering.
+	const float_t kMinPixelDiameter = 5;
+	float_t objectDistance = viewerModelVector.length();
+	float_t pixelDiameter = theCamera->getObjectPixelDiameter(objectDistance, mPhysicalRadiusInAU);
+	if (pixelDiameter < kMinPixelDiameter)
+		return false;
+
+	// viewerModelVector is in AU. We need to use mModelBoundingRadius and mPhysicalRadiusInAU
+	// to correctly scale viewerModelVector so that things look correct. Compute modelUnitsPerAU.
+	float_t modelUnitsPerAU = mModelBoundingRadius / mPhysicalRadiusInAU;
+	viewerModelVector *= (GLfloat)modelUnitsPerAU;
 
 	// Given the above info, we can compute if model is visible
-	const GLfloat kFisheyeAperture = degToRad(180.0f);
-	float_t viewerModelLength = viewerModelVector.length();
+	Vec3f viewDirection, upDirection, leftDirection;
+	theCamera->getViewerOrthoNormalBasis(viewDirection, upDirection, leftDirection);
+	GLfloat fisheyeAperture = theCamera->getAperture();
+	float_t viewerModelLength = objectDistance * modelUnitsPerAU;
 	double_t modelAngularRadius = atan(mModelBoundingRadius / viewerModelLength);
 	Vec3f viewerModelVectorNorm = viewerModelVector / viewerModelLength;
 	double_t angleBetween = acos((double_t)(viewDirection * viewerModelVectorNorm));
-	if (angleBetween - modelAngularRadius > kFisheyeAperture / 2)
+	if (angleBetween - modelAngularRadius > fisheyeAperture / 2)
 	{
 		// Model is not visible. Bail.
 		return false;
@@ -1865,7 +1871,7 @@ bool T3DSModel::render(Object& inObject)
 
 		// Draw the untextured vertices
 		glUniform1i(glGetUniformLocation(mShaderHandle, "uIsTexturing"), GL_FALSE);
-		glUniform1f(glGetUniformLocation(mShaderHandle, "uAperture"), kFisheyeAperture);
+		glUniform1f(glGetUniformLocation(mShaderHandle, "uAperture"), fisheyeAperture);
 		glUniform3fv(glGetUniformLocation(mShaderHandle, "uViewDirection"), 1, viewDirection.data);
 		glUniform3fv(glGetUniformLocation(mShaderHandle, "uUpDirection"), 1, upDirection.data);
 		glUniform3fv(glGetUniformLocation(mShaderHandle, "uLeftDirection"), 1, leftDirection.data);
