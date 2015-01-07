@@ -28,6 +28,9 @@ public:
 	inline Point2();
 	inline Point2(T, T);
 
+	inline Point2& operator+=(const Point2<T>&);
+	inline Point2& operator-=(const Point2<T>&);
+
 	T x, y;
 };
 
@@ -213,6 +216,24 @@ public:
 	T	fRadius;
 };
 
+template<class T> class Matrix2
+{
+public:
+	Matrix2();
+
+	static Matrix2<T> rotation(const T);
+
+	union
+	{
+		T data[4];
+		struct
+		{
+			T m00, m10;	// Column 0
+			T m01, m11;	// Column 1
+		};
+	};
+};
+
 template<class T> class Matrix4
 {
 public:
@@ -317,10 +338,13 @@ typedef Vector2<float_t>	Vec2f;
 typedef Point2<float_t>		Point2f;
 typedef Vector4<float_t>	Vec4f;
 typedef Vector4<double_t>	Vec4d;
-typedef Matrix4<float_t>	Mat4f;
-typedef Matrix4<double_t>	Mat4d;
+typedef Matrix2<float_t>	Mat2f;
+typedef Matrix2<double_t>	Mat2d;
 typedef Matrix3<float_t>	Mat3f;
 typedef Matrix3<double_t>	Mat3d;
+typedef Matrix4<float_t>	Mat4f;
+typedef Matrix4<double_t>	Mat4d;
+//typedef Polar3<float_t>		Polar3f;
 
 typedef Vector3Big<BigFix>	Vec3Big;	// Fixed-point 64.64 for storing Universal positions.
 
@@ -334,6 +358,18 @@ template<class T> Point2<T>::Point2(T _x, T _y) : x(_x), y(_y)
 {
 }
 
+template<class T> Point2<T>& Point2<T>::operator+=(const Point2<T>& a)
+{
+	x += a.x; y += a.y;
+	return *this;
+}
+
+template<class T> Point2<T>& Point2<T>::operator-=(const Point2<T>& a)
+{
+	x -= a.x; y -= a.y;
+	return *this;
+}
+
 template<class T> bool operator==(const Point2<T>& a, const Point2<T>& b)
 {
 	return a.x == b.x && a.y == b.y;
@@ -342,6 +378,16 @@ template<class T> bool operator==(const Point2<T>& a, const Point2<T>& b)
 template<class T> bool operator!=(const Point2<T>& a, const Point2<T>& b)
 {
 	return a.x != b.x || a.y != b.y;
+}
+
+template<class T> Point2<T> operator+(const Point2<T>& a, const Point2<T>& b)
+{
+	return Point2<T>(a.x + b.x, a.y + b.y);
+}
+
+template<class T> Point2<T> operator-(const Point2<T>& a, const Point2<T>& b)
+{
+	return Point2<T>(a.x - b.x, a.y - b.y);
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -987,6 +1033,34 @@ template<class T> Polar3<T>::Polar3(const Vector3<T>& a)
 
 ///////////////////////////////////////////////////////////////////////
 
+template<class T> Matrix2<T>::Matrix2()
+{
+	m00 = m01 = 0;
+	m10 = m11 = 0;
+}
+
+template<class T> Matrix2<T> Matrix2<T>::rotation(const T angle)
+{
+	T c = (T)cos(angle);
+	T s = (T)sin(angle);
+
+	Matrix2<T> r;
+
+	r.m00 = c;	r.m01 = -s;
+	r.m10 = s;	r.m11 = c;
+
+	return r;
+}
+
+// pre-multiply column point by a 3x3 matrix
+template<class T> Point2<T> operator*(const Matrix2<T>& m, const Point2<T>& p)
+{
+	return Point2<T>(m.m00 * p.x + m.m01 * p.y,
+					 m.m10 * p.x + m.m11 * p.y);
+}
+
+///////////////////////////////////////////////////////////////////////
+
 template<class T> Matrix3<T>::Matrix3()
 {
 	m00 = m01 = m02 = 0;
@@ -1065,7 +1139,7 @@ template<class T> Vector3<T> operator*(const Vector3<T>& v, const Matrix3<T>& m)
 // pre-multiply column point by a 3x3 matrix
 template<class T> Point3<T> operator*(const Matrix3<T>& m, const Point3<T>& p)
 {
-	return Vector3<T>(	m.m00 * p.x + m.m01 * p.y + m.m02 * p.z,
+	return Point3<T>(	m.m00 * p.x + m.m01 * p.y + m.m02 * p.z,
 						m.m10 * p.x + m.m11 * p.y + m.m12 * p.z,
 						m.m20 * p.x + m.m21 * p.y + m.m22 * p.z);
 }
@@ -1073,7 +1147,7 @@ template<class T> Point3<T> operator*(const Matrix3<T>& m, const Point3<T>& p)
 // post-multiply row point by a 3x3 matrix
 template<class T> Point3<T> operator*(const Point3<T>& p, const Matrix3<T>& m)
 {
-	return Vector3<T>(	m.m00 * p.x + m.m10 * p.y + m.m20 * p.z,
+	return Point3<T>(	m.m00 * p.x + m.m10 * p.y + m.m20 * p.z,
 						m.m01 * p.x + m.m11 * p.y + m.m21 * p.z,
 						m.m02 * p.x + m.m12 * p.y + m.m22 * p.z);
 }
