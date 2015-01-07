@@ -11,7 +11,12 @@ public:
 	virtual ~Object();
 
 	Vec3Big		getUniveralPosition() const { return mUniversalPosition; };
-	void		setUniveralPosition(Vec3Big inPosition) { mUniversalPosition = inPosition; };
+	void		setUniveralPosition(const Vec3Big& inPosition);
+
+	void		setUniveralPositionLY(const Vec3d& inPosition);
+	void		setUniveralPositionAU(const Vec3d& inPosition);
+	void		setUniveralPositionKm(const Vec3d& inPosition);
+	void		setUniveralPositionMetres(const Vec3d& inPosition);
 
 	Quatf		getOrientation() { return mOrientation; };
 	Mat4f		getOrientationMatrix() { return mOrientation.toMatrix4(); };
