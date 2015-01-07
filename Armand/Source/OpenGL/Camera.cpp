@@ -1,6 +1,7 @@
 #include "stdafx.h"
 
 #include "Camera.h"
+#include "OpenGLWindow.h"
 
 // Establish correct orthonormal basis for camera view. We use the default right-handed OpenGL view with
 // viewer looking down the -z axis and "up" in the +y direction.
@@ -10,6 +11,7 @@ Vec3f Camera::sDefaultLeftDirection = sDefaultUpDirection ^ sDefaultViewDirectio
 
 Camera::Camera()
 {
+	mAperture = (float_t)kPi;
 }
 
 Camera::~Camera()
@@ -32,4 +34,12 @@ void Camera::getViewerOrthoNormalBasis(Vec3f& ioViewDirection, Vec3f& ioUpDirect
 Vec3f Camera::getCameraRelativePosition(Object& inObject) const
 {
 	return (Vec3f)(inObject.getUniveralPosition() - mUniversalPosition);
+}
+
+float_t Camera::getObjectPixelDiameter(float_t inObjectDistanceAU, float_t inObjectRadiusAU) const
+{
+	double_t angularDiameter = 2 * inObjectRadiusAU / inObjectDistanceAU;
+	double_t fractionOfScene = angularDiameter / mAperture;
+	int geometryRadius = gOpenGLWindow->getGeometryRadius();
+	return (float_t)(fractionOfScene * geometryRadius);
 }

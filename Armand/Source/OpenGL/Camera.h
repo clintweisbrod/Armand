@@ -13,6 +13,12 @@ public:
 	~Camera();
 
 	void lookAt(Vec3f& inViewerDirection, Vec3f& inUpDirection);
+
 	Vec3f getCameraRelativePosition(Object& inObject) const;
 	void getViewerOrthoNormalBasis(Vec3f& ioViewDirection, Vec3f& ioUpDirection, Vec3f& ioLeftDirection) const;
+	float_t getAperture() const { return mAperture; };
+	float_t getObjectPixelDiameter(float_t inObjectDistanceAU, float_t inObjectRadiusAU) const;
+
+protected:
+	float_t mAperture;
 };
