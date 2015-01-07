@@ -133,22 +133,23 @@ public:
 	};
 };
 
-template<class T> class Vector3_Basic
+template<class T> class Vector3Big
 {
 public:
-	inline Vector3_Basic();
-	inline Vector3_Basic(const Vector3_Basic<T>&);
-	inline Vector3_Basic(const T, const T, const T);
-	inline Vector3_Basic(T* v);
+	inline Vector3Big();
+	inline Vector3Big(const Vector3Big<T>&);
+	inline Vector3Big(const Vector3<double_t>&);
+	inline Vector3Big(const T, const T, const T);
+	inline Vector3Big(T* v);
 
 	operator Vector3<float_t>() const;
 
-	inline Vector3_Basic& operator+=(const Vector3_Basic<T>&);
-	inline Vector3_Basic& operator-=(const Vector3_Basic<T>&);
-	inline Vector3_Basic& operator*=(T);
-	inline Vector3_Basic& operator/=(T);
-	inline Vector3_Basic operator-() const;
-	inline Vector3_Basic operator+() const;
+	inline Vector3Big& operator+=(const Vector3Big<T>&);
+	inline Vector3Big& operator-=(const Vector3Big<T>&);
+	inline Vector3Big& operator*=(T);
+	inline Vector3Big& operator/=(T);
+	inline Vector3Big operator-() const;
+	inline Vector3Big operator+() const;
 
 	inline T length() const;
 	inline T lengthSquared() const;
@@ -321,7 +322,7 @@ typedef Matrix4<double_t>	Mat4d;
 typedef Matrix3<float_t>	Mat3f;
 typedef Matrix3<double_t>	Mat3d;
 
-typedef Vector3_Basic<BigFix>	Vec3Big;	// Fixed-point 64.64 for storing Universal positions.
+typedef Vector3Big<BigFix>	Vec3Big;	// Fixed-point 64.64 for storing Universal positions.
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -724,136 +725,140 @@ template<class T> Vector3<T> operator-(const Point3<T>& a, const Point3<T>& b)
 }
 
 ///////////////////////////////////////////////////////////////////////
-// Vector3_Basic
+// Vector3Big
 ///////////////////////////////////////////////////////////////////////
 
-template<class T> Vector3_Basic<T>::Vector3_Basic()// : x(0), y(0), z(0)
+template<class T> Vector3Big<T>::Vector3Big()// : x(0), y(0), z(0)
 {
 }
 
-template<class T> Vector3_Basic<T>::Vector3_Basic(const Vector3_Basic<T>& v) : x(v.x), y(v.y), z(v.z)
+template<class T> Vector3Big<T>::Vector3Big(const Vector3Big<T>& v) : x(v.x), y(v.y), z(v.z)
 {
 }
 
-template<class T> Vector3_Basic<T>::Vector3_Basic(T _x, T _y, T _z) : x(_x), y(_y), z(_z)
+template<class T> Vector3Big<T>::Vector3Big(const Vector3<double_t>& v) : x(v.x), y(v.y), z(v.z)
 {
 }
 
-template<class T> Vector3_Basic<T>::Vector3_Basic(T* v) : x(v[0]), y(v[1]), z(v[2])
+template<class T> Vector3Big<T>::Vector3Big(T _x, T _y, T _z) : x(_x), y(_y), z(_z)
 {
 }
 
-template<class T> Vector3_Basic<T>::operator Vector3<float_t>() const
+template<class T> Vector3Big<T>::Vector3Big(T* v) : x(v[0]), y(v[1]), z(v[2])
+{
+}
+
+template<class T> Vector3Big<T>::operator Vector3<float_t>() const
 {
 	return Vec3f((float_t)x, (float_t)y, (float_t)z);
 }
 
-template<class T> Vector3_Basic<T>& Vector3_Basic<T>::operator+=(const Vector3_Basic<T>& a)
+template<class T> Vector3Big<T>& Vector3Big<T>::operator+=(const Vector3Big<T>& a)
 {
 	x += a.x; y += a.y; z += a.z;
 	return *this;
 }
 
-template<class T> Vector3_Basic<T>& Vector3_Basic<T>::operator-=(const Vector3_Basic<T>& a)
+template<class T> Vector3Big<T>& Vector3Big<T>::operator-=(const Vector3Big<T>& a)
 {
 	x -= a.x; y -= a.y; z -= a.z;
 	return *this;
 }
 
-template<class T> Vector3_Basic<T>& Vector3_Basic<T>::operator*=(T s)
+template<class T> Vector3Big<T>& Vector3Big<T>::operator*=(T s)
 {
 	x *= s; y *= s; z *= s;
 	return *this;
 }
 
-template<class T> Vector3_Basic<T>& Vector3_Basic<T>::operator/=(T s)
+template<class T> Vector3Big<T>& Vector3Big<T>::operator/=(T s)
 {
 	x /= s; y /= s; z /= s;
 	return *this;
 }
 
-template<class T> Vector3_Basic<T> Vector3_Basic<T>::operator-() const
+template<class T> Vector3Big<T> Vector3Big<T>::operator-() const
 {
-	return Vector3_Basic<T>(-x, -y, -z);
+	return Vector3Big<T>(-x, -y, -z);
 }
 
-template<class T> Vector3_Basic<T> Vector3_Basic<T>::operator+() const
+template<class T> Vector3Big<T> Vector3Big<T>::operator+() const
 {
 	return *this;
 }
 
-template<class T> Vector3_Basic<T> operator+(const Vector3_Basic<T>& a, const Vector3_Basic<T>& b)
+template<class T> Vector3Big<T> operator+(const Vector3Big<T>& a, const Vector3Big<T>& b)
 {
-	return Vector3_Basic<T>(a.x + b.x, a.y + b.y, a.z + b.z);
+	return Vector3Big<T>(a.x + b.x, a.y + b.y, a.z + b.z);
 }
 
-template<class T> Vector3_Basic<T> operator-(const Vector3_Basic<T>& a, const Vector3_Basic<T>& b)
+template<class T> Vector3Big<T> operator-(const Vector3Big<T>& a, const Vector3Big<T>& b)
 {
-	return Vector3_Basic<T>(a.x - b.x, a.y - b.y, a.z - b.z);
+	return Vector3Big<T>(a.x - b.x, a.y - b.y, a.z - b.z);
 }
 
-template<class T> Vector3_Basic<T> operator*(T s, const Vector3_Basic<T>& v)
+template<class T> Vector3Big<T> operator*(T s, const Vector3Big<T>& v)
 {
-	return Vector3_Basic<T>(s * v.x, s * v.y, s * v.z);
+	return Vector3Big<T>(s * v.x, s * v.y, s * v.z);
 }
 
-template<class T> Vector3_Basic<T> operator*(const Vector3_Basic<T>& v, T s)
+template<class T> Vector3Big<T> operator*(const Vector3Big<T>& v, T s)
 {
-	return Vector3_Basic<T>(s * v.x, s * v.y, s * v.z);
+	return Vector3Big<T>(s * v.x, s * v.y, s * v.z);
 }
 
 // dot product
-template<class T> T operator*(const Vector3_Basic<T>& a, const Vector3_Basic<T>& b)
+template<class T> T operator*(const Vector3Big<T>& a, const Vector3Big<T>& b)
 {
 	return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
 // cross product
-template<class T> Vector3_Basic<T> operator^(const Vector3_Basic<T>& a, const Vector3_Basic<T>& b)
+template<class T> Vector3Big<T> operator^(const Vector3Big<T>& a, const Vector3Big<T>& b)
 {
-	return Vector3_Basic<T>(a.y * b.z - a.z * b.y,
+	return Vector3Big<T>(a.y * b.z - a.z * b.y,
 		a.z * b.x - a.x * b.z,
 		a.x * b.y - a.y * b.x);
 }
 
-template<class T> bool operator==(const Vector3_Basic<T>& a, const Vector3_Basic<T>& b)
+template<class T> bool operator==(const Vector3Big<T>& a, const Vector3Big<T>& b)
 {
 	return a.x == b.x && a.y == b.y && a.z == b.z;
 }
 
-template<class T> bool operator!=(const Vector3_Basic<T>& a, const Vector3_Basic<T>& b)
+template<class T> bool operator!=(const Vector3Big<T>& a, const Vector3Big<T>& b)
 {
 	return a.x != b.x || a.y != b.y || a.z != b.z;
 }
 
-template<class T> Vector3_Basic<T> operator/(const Vector3_Basic<T>& v, T s)
+template<class T> Vector3Big<T> operator/(const Vector3Big<T>& v, T s)
 {
 	return Vector3<T>(v.x / s, v.y / s, v.z / s);
 }
 
-template<class T> T dot(const Vector3_Basic<T>& a, const Vector3_Basic<T>& b)
+template<class T> T dot(const Vector3Big<T>& a, const Vector3Big<T>& b)
 {
 	return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
-template<class T> Vector3_Basic<T> cross(const Vector3_Basic<T>& a, const Vector3_Basic<T>& b)
+template<class T> Vector3Big<T> cross(const Vector3Big<T>& a, const Vector3Big<T>& b)
 {
 	return Vector3<T>(a.y * b.z - a.z * b.y,
 		a.z * b.x - a.x * b.z,
 		a.x * b.y - a.y * b.x);
 }
 
-template<class T> T Vector3_Basic<T>::length() const
+template<class T> T Vector3Big<T>::length() const
 {
 	return (T)sqrt(x * x + y * y + z * z);
 }
 
-template<class T> T Vector3_Basic<T>::lengthSquared() const
+template<class T> T Vector3Big<T>::lengthSquared() const
 {
 	return x * x + y * y + z * z;
 }
 
-template<class T> Vector3_Basic<T> operator-(const Point3<T>& a, const Point3<T>& b)
+template<class T> Vector3Big<T> operator-(const Point3<T>& a, const Point3<T>& b)
 {
 	return Vector3_ttmath<T>(a.x - b.x, a.y - b.y, a.z - b.z);
 }
