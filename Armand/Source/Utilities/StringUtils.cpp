@@ -62,3 +62,16 @@ bool doubleFromString(string& inString, double_t& outDouble)
 		return false;
 	}
 }
+
+bool floatFromString(string& inString, float_t& outFloat)
+{
+	if (inString.empty())
+		return false;
+
+	double_t value;
+	bool result = doubleFromString(inString, value);
+	if (result)
+		outFloat = (float_t)value;
+
+	return result;
+}
