@@ -1746,6 +1746,20 @@ void T3DSModel::setFBOSize(GLuint inWidth, GLuint inHeight)
 	mFBOSize.y = (GLint)inHeight;
 }
 
+GLuint T3DSModel::getShaderHandle()
+{
+	if (mShaderHandle == 0)
+	{
+		// This is a good time load the shader program
+		ShaderProgram* shaderProgram = ShaderFactory::inst()->getShaderProgram("Models/3ds.vert",
+			"Models/3ds.frag");
+		if (shaderProgram)
+			mShaderHandle = shaderProgram->getHandle();
+	}
+
+	return mShaderHandle;
+}
+
 //----------------------------------------------------------------------
 //	T3DSModel::render
 //
@@ -1768,72 +1782,17 @@ void T3DSModel::setFBOSize(GLuint inWidth, GLuint inHeight)
 //	You don't save duplicate UV coordinates, you just save the unique ones, then an array
 //	that index's into them.  This might be confusing, but most 3D files use this format.
 //----------------------------------------------------------------------
-bool T3DSModel::render(Object& inObject)
+bool T3DSModel::render(Camera& inCamera, Mat4f& inTranslation, Quatf& inOrientation)
 {
-	if (mShaderHandle == 0)
-	{
-		// This is a good time load the shader program
-		ShaderProgram* shaderProgram = ShaderFactory::inst()->getShaderProgram("Models/3ds.vert",
-																			   "Models/3ds.frag");
-		if (shaderProgram)
-			mShaderHandle = shaderProgram->getHandle();
-	}
-	if (mShaderHandle == 0)
-		return false;
-
-	// This is the rudiments of a viewer model coordinate system. We're positioning a viewer
-	// and a model in Cartesian space, computing a viewer-model vector, applying a rotation
-	// to the model, and a rotation to the viewer, and then letting the shader do the hard
-	// work of fisheye projecting the resulting image.
-	// We have to perform the viewer-model vector computation in software as in general,
-	// all objects (including the viewer) will maintain 128-bit integer Cartesian positions.
-	// We will perform the vector subtraction in 128-bit integer math, and then cast to
-	// Vec3f.
-
-	Camera* theCamera = gOpenGLWindow->getCamera();
-	Vec3f viewerModelVector = theCamera->getCameraRelativePosition(inObject);
-
-	// Decide if model is big enough (in pixels) to warrant rendering.
-	const float_t kMinPixelDiameter = 5;
-	float_t objectDistance = viewerModelVector.length();
-	float_t pixelDiameter = theCamera->getObjectPixelDiameter(objectDistance, mPhysicalRadiusInAU);
-	if (pixelDiameter < kMinPixelDiameter)
-		return false;
-
-	// viewerModelVector is in AU. We need to use mModelBoundingRadius and mPhysicalRadiusInAU
-	// to correctly scale viewerModelVector so that things look correct. Compute modelUnitsPerAU.
-	float_t modelUnitsPerAU = mModelBoundingRadius / mPhysicalRadiusInAU;
-	viewerModelVector *= (GLfloat)modelUnitsPerAU;
-
-	// Given the above info, we can compute if model is visible
-	Vec3f viewDirection, upDirection, leftDirection;
-	theCamera->getViewerOrthoNormalBasis(viewDirection, upDirection, leftDirection);
-	GLfloat fisheyeAperture = theCamera->getAperture();
-	float_t viewerModelLength = objectDistance * modelUnitsPerAU;
-	double_t modelAngularRadius = atan(mModelBoundingRadius / viewerModelLength);
-	Vec3f viewerModelVectorNorm = viewerModelVector / viewerModelLength;
-	double_t angleBetween = acos((double_t)(viewDirection * viewerModelVectorNorm));
-	if (angleBetween - modelAngularRadius > fisheyeAperture / 2)
-	{
-		// Model is not visible. Bail.
-		return false;
-	}
-
-	// Apply translation to model to position it in world coordinates
-	Mat4f modelTranslation = Mat4f::translation(viewerModelVector);
-
-	// Orient model using mModelUpVector. For now, mModelUpVector is relative to universal coordinate system,
-	// where (0,1,0) is considered "up".
+	// Orient model using mModelUpVector. For now, mModelUpVector is relative to universal
+	// coordinate system, where (0,1,0) is considered "up".
 	Quatf upRotation = Quatf::vecToVecRotation(mModelUpVector, Vec3f(0, 1, 0));
 
 	// Apply rotation to model
-	static GLfloat rotationY = 0;
-	static GLfloat dRotationY = 0.25f;
-	Quatf modelAxisRotation = Quatf::yrotation(degToRad(rotationY));
-	Quatf modelRotation = upRotation * modelAxisRotation;
+	Quatf modelRotation = upRotation * inOrientation;
 
 	// Compute model matrix to transform model coordinates to world coordinates
-	Mat4f modelMatrix = modelTranslation * modelRotation.toMatrix4();
+	Mat4f modelMatrix = inTranslation * modelRotation.toMatrix4();
 
 	// As long as we don't have any scaling, we can simply take the upper-left 3x3
 	// matrix for transforming normals.
@@ -1847,6 +1806,10 @@ bool T3DSModel::render(Object& inObject)
 		h = (float)sceneSize.x / (float)sceneSize.y;
 	else
 		v = (float)sceneSize.y / (float)sceneSize.x;
+
+	// Get camera orthonormal basis
+	Vec3f viewDirection, upDirection, leftDirection;
+	inCamera.getViewerOrthoNormalBasis(viewDirection, upDirection, leftDirection);
 
 	// We need to know (in eye coordinates) where the center of the model is
 	// to correctly set the near and far plane of the ortho viewing volume.
@@ -1871,7 +1834,7 @@ bool T3DSModel::render(Object& inObject)
 
 		// Draw the untextured vertices
 		glUniform1i(glGetUniformLocation(mShaderHandle, "uIsTexturing"), GL_FALSE);
-		glUniform1f(glGetUniformLocation(mShaderHandle, "uAperture"), fisheyeAperture);
+		glUniform1f(glGetUniformLocation(mShaderHandle, "uAperture"), inCamera.getAperture());
 		glUniform3fv(glGetUniformLocation(mShaderHandle, "uViewDirection"), 1, viewDirection.data);
 		glUniform3fv(glGetUniformLocation(mShaderHandle, "uUpDirection"), 1, upDirection.data);
 		glUniform3fv(glGetUniformLocation(mShaderHandle, "uLeftDirection"), 1, leftDirection.data);
@@ -1913,10 +1876,6 @@ bool T3DSModel::render(Object& inObject)
 	}
 	glCheckForError();
 	glDisable(GL_CLIP_DISTANCE0);
-
-	rotationY += dRotationY;
-	if (rotationY > 360)
-		rotationY -= 360;
 
 #if 0
 	// Debugging shader

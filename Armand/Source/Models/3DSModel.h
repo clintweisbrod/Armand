@@ -557,15 +557,18 @@
 
 */
 
+#pragma once
+
 #include <GL/glew.h>
 #include <GL/wglew.h>
 #include <list>
 #include <algorithm>
 #include "Math/vecmath.h"
+#include "Math/quaternion.h"
 #include "Utilities/File.h"
 #include "Utilities/Singleton.h"
 #include "OpenGL/Textures/Texture.h"
-#include "OpenGL/Object.h"
+#include "Objects/Camera.h"
 
 #define M3D_CHUNKTYPE_VERSION			0x0002			// This gives the version of the .3ds file
 #define M3D_CHUNKTYPE_COLOR_FLOAT		0x0010
@@ -754,16 +757,17 @@ public:
 
 	// This is the function that you call to load the 3DS
 	bool		load(File& inFile, bool inLoadMetaOnly = false);
-	bool		render(Object& inObject);
-	double_t	getModelBoundingRadius() const { return mModelBoundingRadius; };
-	double_t	getPhysicalRadius() const {	return mPhysicalRadiusInAU;	};
+	bool		render(Camera& inCamera, Mat4f& inTranslation, Quatf& inOrientation);
+	float_t		getModelBoundingRadius() const { return mModelBoundingRadius; };
+	float_t		getPhysicalRadius() const { return mPhysicalRadiusInAU; };
 	Vec3f		getModelUpVector() const { return mModelUpVector; };
 	Vec3f		getModelRotationAxis() const { return mModelUpVector; };
-	double_t	getRotationRate() const { return mRotationRateInRadiansPerCentury; };
-	double_t	getInclinationAngle() const { return mInclinationAngleInDegrees; };
+	float_t		getRotationRate() const { return mRotationRateInRadiansPerCentury; };
+	float_t		getInclinationAngle() const { return mInclinationAngleInDegrees; };
 	string		getName() const { return mFilename; };
 	bool		isLoaded() const { return mModelDataLoaded; };
 	string		getTextureFolderName() const { return mTextureFolderName; };
+	GLuint		getShaderHandle();
 
 	//
 	// Support for rendering atmospheres around 3DS models
