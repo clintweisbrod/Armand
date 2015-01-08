@@ -2,6 +2,7 @@
 
 #include "ModelObject.h"
 #include "Models/3DSModelFactory.h"
+#include "OpenGL/OpenGLWindow.h"
 
 ModelObject::ModelObject(const char* inModelFileName)
 {
@@ -33,8 +34,7 @@ bool ModelObject::isInView(Camera& inCamera)
 	// viewerModelVector is in AU. We need to use mModelBoundingRadius and mPhysicalRadiusInAU
 	// to correctly scale viewerModelVector so that things look correct. Compute modelUnitsPerAU.
 	float_t modelBoundingRadius = mModel->getModelBoundingRadius();
-	float_t physicalRadiusInAU = mModel->getPhysicalRadius();
-	float_t modelUnitsPerAU = modelBoundingRadius / physicalRadiusInAU;
+	float_t modelUnitsPerAU = mModel->getModelUnitsPerAU();
 	mLastScaledViewerModelVector = mLastViewerModelVector * modelUnitsPerAU;
 
 	// Get camera direction
@@ -71,6 +71,15 @@ bool ModelObject::shouldRenderAsPoint(Camera& inCamera) const
 
 void ModelObject::setGLStateForFullRender() const
 {
+	// Enable multisampling if we can
+	if (gOpenGLWindow->hasMultisampleBuffer() && GLEW_ARB_multisample)
+	{
+		glEnable(GL_MULTISAMPLE);
+		glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST);
+	}
+	else
+		glDisable(GL_MULTISAMPLE_ARB);
+
 	// Disable alpha test
 	glDisable(GL_ALPHA_TEST);
 
@@ -127,7 +136,16 @@ void ModelObject::renderFull(Camera& inCamera)
 	static GLfloat dRotationY = 0.25f;
 	Quatf modelOrientation = Quatf::yrotation(degToRad(rotationY));
 
-	mModel->render(inCamera, modelTranslation, modelOrientation);
+	// Place light at eye for now.
+	// Eventually, we'll pass a "light source" object instance to inCamera.getCameraRelativePosition() 
+	Vec3f lightPositionEyeCoords = inCamera.getCameraRelativePosition(&inCamera);
+	lightPositionEyeCoords *= mModel->getModelUnitsPerAU();
+
+	// Eventually light color will come from "light source" object instance
+	Vec3f lightColor(1, 0, 0);
+
+	// Render the model
+	mModel->render(inCamera, modelTranslation, modelOrientation, lightPositionEyeCoords, lightColor);
 
 	rotationY += dRotationY;
 	if (rotationY > 360)

@@ -300,6 +300,8 @@ bool T3DSModel::load(File& inModelFile, bool inLoadMetaOnly)
 	if (!mMetaDataLoaded)
 		loadMetaData(inModelFile);
 
+	mModelUnitsPerAU = mModelBoundingRadius / mPhysicalRadiusInAU;
+
 	return bResult;
 }
 
@@ -1782,7 +1784,8 @@ GLuint T3DSModel::getShaderHandle()
 //	You don't save duplicate UV coordinates, you just save the unique ones, then an array
 //	that index's into them.  This might be confusing, but most 3D files use this format.
 //----------------------------------------------------------------------
-bool T3DSModel::render(Camera& inCamera, Mat4f& inTranslation, Quatf& inOrientation)
+bool T3DSModel::render(Camera& inCamera, Mat4f& inTranslation, Quatf& inOrientation,
+					   Vec3f& inLightPositionEyeCoords, Vec3f& inLightColor)
 {
 	// Orient model using mModelUpVector. For now, mModelUpVector is relative to universal
 	// coordinate system, where (0,1,0) is considered "up".
@@ -1819,11 +1822,9 @@ bool T3DSModel::render(Camera& inCamera, Mat4f& inTranslation, Quatf& inOrientat
 	float_t f = modelDotView + (GLfloat)mModelBoundingRadius;
 	Mat4f projectionMatrix = Mat4f::orthographic(-h, h, -v, v, n, f);
 
-	// Light position will be set at eye location for now
-	const GLfloat lightPositionEye[] = { 0, 0, 0 };
-	const GLfloat lightAmbient[] = { 0.2f, 0.2f, 0.2f };
-	const GLfloat lightDiffuse[] = { 1, 1, 1 };
-	const GLfloat lightSpecular[] = { 1, 1, 1 };
+	// Default ambient light to 20% of passed-in light color
+	const GLfloat kAmbientFactor = 0.2f;
+	Vec3f ambientLightColor = inLightColor * kAmbientFactor;
 
 	// Need this to affect clipping vertices behind viewer
 	glEnable(GL_CLIP_DISTANCE0);
@@ -1839,10 +1840,10 @@ bool T3DSModel::render(Camera& inCamera, Mat4f& inTranslation, Quatf& inOrientat
 		glUniform3fv(glGetUniformLocation(mShaderHandle, "uUpDirection"), 1, upDirection.data);
 		glUniform3fv(glGetUniformLocation(mShaderHandle, "uLeftDirection"), 1, leftDirection.data);
 
-		glUniform3fv(glGetUniformLocation(mShaderHandle, "uLight.position"), 1, lightPositionEye);
-		glUniform3fv(glGetUniformLocation(mShaderHandle, "uLight.ambient"), 1, lightAmbient);
-		glUniform3fv(glGetUniformLocation(mShaderHandle, "uLight.diffuse"), 1, lightDiffuse);
-		glUniform3fv(glGetUniformLocation(mShaderHandle, "uLight.specular"), 1, lightSpecular);
+		glUniform3fv(glGetUniformLocation(mShaderHandle, "uLight.position"), 1, inLightPositionEyeCoords.data);
+		glUniform3fv(glGetUniformLocation(mShaderHandle, "uLight.ambient"), 1, ambientLightColor.data);
+		glUniform3fv(glGetUniformLocation(mShaderHandle, "uLight.diffuse"), 1, inLightColor.data);
+		glUniform3fv(glGetUniformLocation(mShaderHandle, "uLight.specular"), 1, inLightColor.data);
 
 		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "uModelMatrix"), 1, 0, modelMatrix.data);
 		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "uProjectionMatrix"), 1, 0, projectionMatrix.data);

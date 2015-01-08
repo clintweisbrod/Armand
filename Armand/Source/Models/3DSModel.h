@@ -757,9 +757,11 @@ public:
 
 	// This is the function that you call to load the 3DS
 	bool		load(File& inFile, bool inLoadMetaOnly = false);
-	bool		render(Camera& inCamera, Mat4f& inTranslation, Quatf& inOrientation);
+	bool		render(Camera& inCamera, Mat4f& inTranslation, Quatf& inOrientation,
+					   Vec3f& inLightPositionEyeCoords, Vec3f& inLightColor);
 	float_t		getModelBoundingRadius() const { return mModelBoundingRadius; };
 	float_t		getPhysicalRadius() const { return mPhysicalRadiusInAU; };
+	float_t		getModelUnitsPerAU() const { return mModelUnitsPerAU; };
 	Vec3f		getModelUpVector() const { return mModelUpVector; };
 	Vec3f		getModelRotationAxis() const { return mModelUpVector; };
 	float_t		getRotationRate() const { return mRotationRateInRadiansPerCentury; };
@@ -835,6 +837,7 @@ private:
 
 	float_t				mModelBoundingRadius;
 	float_t				mPhysicalRadiusInAU;
+	float_t				mModelUnitsPerAU;
 	Vec3f				mModelUpVector;
 	float_t				mInclinationAngleInDegrees;
 	float_t				mRotationRateInRadiansPerCentury;
