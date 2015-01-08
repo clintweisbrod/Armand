@@ -142,7 +142,7 @@ void ModelObject::renderFull(Camera& inCamera)
 	lightPositionEyeCoords *= mModel->getModelUnitsPerAU();
 
 	// Eventually light color will come from "light source" object instance
-	Vec3f lightColor(1, 0, 0);
+	Vec3f lightColor(1, 1, 1);
 
 	// Render the model
 	mModel->render(inCamera, modelTranslation, modelOrientation, lightPositionEyeCoords, lightColor);
