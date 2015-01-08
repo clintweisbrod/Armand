@@ -117,7 +117,7 @@ template<class T> Quaternion<T>::Quaternion(const Matrix3<T>& m)
 
     if (trace >= (T) -1.0 + 1.0e-4f)
     {
-        root = (T) sqrt(trace + 1);
+		root = Math<T>::sqrt(trace + 1);
         w = (T) 0.5 * root;
         root = (T) 0.5 / root;
         x = (m[2][1] - m[1][2]) * root;
@@ -135,7 +135,7 @@ template<class T> Quaternion<T>::Quaternion(const Matrix3<T>& m)
         int j = (i == 2) ? 0 : i + 1;
         int k = (j == 2) ? 0 : j + 1;
 
-        root = (T) sqrt(m[i][i] - m[j][j] - m[k][k] + 1);
+		root = Math<T>::sqrt(m[i][i] - m[j][j] - m[k][k] + 1);
         T* xyz[3] = { &x, &y, &z };
         *xyz[i] = (T) 0.5 * root;
         root = (T) 0.5 / root;
@@ -262,7 +262,7 @@ template<class T> T norm(Quaternion<T> q)
 
 template<class T> T abs(Quaternion<T> q)
 {
-    return (T) sqrt(norm(q));
+	return Math<T>::sqrt(norm(q));
 }
 
 template<class T> Quaternion<T> exp(Quaternion<T> q)
@@ -273,10 +273,10 @@ template<class T> Quaternion<T> exp(Quaternion<T> q)
     }
     else
     {
-        T l = (T) sqrt(q.x * q.x + q.y * q.y + q.z * q.z);
-        T s = (T) sin(l);
-        T c = (T) cos(l);
-        T e = (T) exp(q.w);
+        T l = Math<T>::sqrt(q.x * q.x + q.y * q.y + q.z * q.z);
+		T s = Math<T>::sin(l);
+		T c = Math<T>::cos(l);
+		T e = Math<T>::exp(q.w);
         T t = e * s / l;
         return Quaternion<T>(e * c, t * q.x, t * q.y, t * q.z);
     }
@@ -288,7 +288,7 @@ template<class T> Quaternion<T> log(Quaternion<T> q)
     {
         if (q.w > 0)
         {
-            return Quaternion<T>((T) log(q.w));
+			return Quaternion<T>(Math<T>::log(q.w));
         }
         else if (q.w < 0)
         {
@@ -298,7 +298,7 @@ template<class T> Quaternion<T> log(Quaternion<T> q)
             // of (1, 0, 0) here and whereever else a similar choice is
             // necessary.  Geometrically, the set of roots is a sphere
             // of radius PI centered at ln(-w) on the real axis.
-            return Quaternion<T>((T) log(-q.w), (T) PI, 0, 0);
+			return Quaternion<T>(Math<T>::log(-q.w), (T)PI, 0, 0);
         }
         else
         {
@@ -308,24 +308,24 @@ template<class T> Quaternion<T> log(Quaternion<T> q)
     }
     else
     {
-        T l = (T) sqrt(q.x * q.x + q.y * q.y + q.z * q.z);
-        T r = (T) sqrt(l * l + q.w * q.w);
+		T l = Math<T>::sqrt(q.x * q.x + q.y * q.y + q.z * q.z);
+		T r = Math<T>::sqrt(l * l + q.w * q.w);
         T theta = (T) atan2(l, q.w);
         T t = theta / l;
-        return Quaternion<T>((T) log(r), t * q.x, t * q.y, t * q.z);
+		return Quaternion<T>(Math<T>::log(r), t * q.x, t * q.y, t * q.z);
     }
 }
 
 
 template<class T> Quaternion<T> pow(Quaternion<T> q, T s)
 {
-    return exp(s * log(q));
+	return exp(s * log(q));
 }
 
 
 template<class T> Quaternion<T> pow(Quaternion<T> q, Quaternion<T> p)
 {
-    return exp(p * log(q));
+	return exp(p * log(q));
 }
 
 
@@ -333,17 +333,17 @@ template<class T> Quaternion<T> sin(Quaternion<T> q)
 {
     if (q.isReal())
     {
-        return Quaternion<T>((T) sin(q.w));
+		return Quaternion<T>(Math<T>::sin(q.w));
     }
     else
     {
-        T l = (T) sqrt(q.x * q.x + q.y * q.y + q.z * q.z);
+		T l = Math<T>::sqrt(q.x * q.x + q.y * q.y + q.z * q.z);
         T m = q.w;
-        T s = (T) sin(m);
-        T c = (T) cos(m);
+		T s = Math<T>::sin(m);
+		T c = Math<T>::cos(m);
         T il = 1 / l;
-        T e0 = (T) exp(-l);
-        T e1 = (T) exp(l);
+		T e0 = Math<T>::exp(-l);
+		T e1 = Math<T>::exp(l);
 
         T c0 = (T) -0.5 * e0 * il * c;
         T c1 = (T)  0.5 * e1 * il * c;
@@ -361,13 +361,13 @@ template<class T> Quaternion<T> cos(Quaternion<T> q)
     }
     else
     {
-        T l = (T) sqrt(q.x * q.x + q.y * q.y + q.z * q.z);
+		T l = Math<T>::(q.x * q.x + q.y * q.y + q.z * q.z);
         T m = q.w;
-        T s = (T) sin(m);
-        T c = (T) cos(m);
+		T s = Math<T>::sin(m);
+		T c = Math<T>::cos(m);
         T il = 1 / l;
-        T e0 = (T) exp(-l);
-        T e1 = (T) exp(l);
+		T e0 = Math<T>::exp(-l);
+		T e1 = Math<T>::exp(l);
 
         T c0 = (T)  0.5 * e0 * il * s;
         T c1 = (T) -0.5 * e1 * il * s;
@@ -387,24 +387,24 @@ template<class T> Quaternion<T> sqrt(Quaternion<T> q)
     if (q.isReal())
     {
         if (q.w >= 0)
-            return Quaternion<T>((T) sqrt(q.w), 0, 0, 0);
+			return Quaternion<T>(Math<T>::sqrt(q.w), 0, 0, 0);
         else
-            return Quaternion<T>(0, (T) sqrt(-q.w), 0, 0);
+			return Quaternion<T>(0, Math<T>::sqrt(-q.w), 0, 0);
     }
     else
     {
-        T b = (T) sqrt(q.x * q.x + q.y * q.y + q.z * q.z);
-        T r = (T) sqrt(q.w * q.w + b * b);
+		T b = Math<T>::sqrt(q.x * q.x + q.y * q.y + q.z * q.z);
+		T r = Math<T>::sqrt(q.w * q.w + b * b);
         if (q.w >= 0)
         {
-            T m = (T) sqrt((T) 0.5 * (r + q.w));
+			T m = Math<T>::sqrt((T) 0.5 * (r + q.w));
             T l = b / (2 * m);
             T t = l / b;
             return Quaternion<T>(m, q.x * t, q.y * t, q.z * t);
         }
         else
         {
-            T l = (T) sqrt((T) 0.5 * (r - q.w));
+			T l = Math<T>::sqrt((T) 0.5 * (r - q.w));
             T m = b / (2 * l);
             T t = l / b;
             return Quaternion<T>(m, q.x * t, q.y * t, q.z * t);
@@ -437,7 +437,7 @@ template<class T> bool Quaternion<T>::isPure() const
 
 template<class T> T Quaternion<T>::normalize()
 {
-    T s = (T) sqrt(w * w + x * x + y * y + z * z);
+	T s = Math<T>::sqrt(w * w + x * x + y * y + z * z);
     T invs = (T) 1 / (T) s;
     x *= invs;
     y *= invs;
@@ -472,7 +472,7 @@ template<class T> void Quaternion<T>::getAxisAngle(Vector3<T>& axis,
     T magSquared = x * x + y * y + z * z;
     if (magSquared > (T) 1e-10)
     {
-        T s =  (T) 1 / (T) sqrt(magSquared);
+		T s = (T)1 / Math<T>::sqrt(magSquared);
         axis.x = x * s;
         axis.y = y * s;
         axis.z = z * s;
@@ -582,14 +582,14 @@ template<class T> Quaternion<T> Quaternion<T>::slerp(const Quaternion<T>& q0,
         cosAngle = (T) -1.0;
 #endif
 
-    T angle = (T) acos(cosAngle);
+	T angle = Math<T>::acos(cosAngle);
     T interpolatedAngle = t * angle;
 
     // qstart and q2 will form an orthonormal basis in the plane of interpolation.
     Quaternion q2 = q1 - qstart * cosAngle;
     q2.normalize();
 
-    return qstart * (T) cos(interpolatedAngle) + q2 * (T) sin(interpolatedAngle);
+	return qstart * Math<T>::cos(interpolatedAngle) + q2 * Math<T>::sin(interpolatedAngle);
 #if 0
     T s = (T) sin(angle);
     T is = (T) 1.0 / s;
@@ -647,7 +647,7 @@ template<class T> Quaternion<T> Quaternion<T>::matrixToQuaternion(const Matrix3<
 
     if (trace >= epsilon - 1)
     {
-        root = (T) sqrt(trace + 1);
+		root = Math<T>::sqrt(trace + 1);
         q.w = (T) 0.5 * root;
         root = (T) 0.5 / root;
 		q.x = (m.m21 - m.m12) * root;
@@ -665,7 +665,7 @@ template<class T> Quaternion<T> Quaternion<T>::matrixToQuaternion(const Matrix3<
         int j = (i == 2) ? 0 : i + 1;
         int k = (j == 2) ? 0 : j + 1;
 
-        root = (T) sqrt(m[i][i] - m[j][j] - m[k][k] + 1);
+		root = Math<T>::sqrt(m[i][i] - m[j][j] - m[k][k] + 1);
         T* xyz[3] = { &q.x, &q.y, &q.z };
         *xyz[i] = (T) 0.5 * root;
         root = (T) 0.5 / root;

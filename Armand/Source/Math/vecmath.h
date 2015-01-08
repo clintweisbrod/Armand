@@ -20,6 +20,7 @@
 #include <cmath>
 
 #include "Math/bigfix.h"
+#include "Math/mathlib.h"
 
 template<class T> class Point2
 {
@@ -1040,8 +1041,8 @@ template<class T> Matrix2<T>::Matrix2()
 
 template<class T> Matrix2<T> Matrix2<T>::rotation(const T angle)
 {
-	T c = (T)cos(angle);
-	T s = (T)sin(angle);
+	T s, c;
+	Math<T>::sincos(angle, s, c);
 
 	Matrix2<T> r;
 
@@ -1233,8 +1234,8 @@ template<class T> Matrix3<T> Matrix3<T>::inverse() const
 
 template<class T> Matrix3<T> Matrix3<T>::rotationX(const T angle)
 {
-	T c = (T)cos(angle);
-	T s = (T)sin(angle);
+	T s, c;
+	Math<T>::sincos(angle, s, c);
 
 	Matrix3<T> r;
 
@@ -1247,8 +1248,8 @@ template<class T> Matrix3<T> Matrix3<T>::rotationX(const T angle)
 
 template<class T> Matrix3<T> Matrix3<T>::rotationY(const T angle)
 {
-	T c = (T)cos(angle);
-	T s = (T)sin(angle);
+	T s, c;
+	Math<T>::sincos(angle, s, c);
 
 	Matrix3<T> r;
 
@@ -1261,8 +1262,8 @@ template<class T> Matrix3<T> Matrix3<T>::rotationY(const T angle)
 
 template<class T> Matrix3<T> Matrix3<T>::rotationZ(const T angle)
 {
-	T c = (T)cos(angle);
-	T s = (T)sin(angle);
+	T s, c;
+	Math<T>::sincos(angle, s, c);
 
 	Matrix3<T> r;
 
@@ -1402,8 +1403,8 @@ template<class T> Matrix4<T> Matrix4<T>::rotation(const Vector3<T>& axis, const 
 
 template<class T> void Matrix4<T>::setRotation(Matrix4<T>& m, const Vector3<T>& axis, const T angle)
 {
-	T c = (T)cos(angle);
-	T s = (T)sin(angle);
+	T s, c;
+	Math<T>::sincos(angle, s, c);
 	T t = 1 - c;
 
 	m.m00 = t * axis.x * axis.x + c;			m.m01 = t * axis.x * axis.y - s * axis.z;	m.m02 = t * axis.x * axis.z + s * axis.y;	m.m03 = 0;
@@ -1422,8 +1423,8 @@ template<class T> Matrix4<T> Matrix4<T>::rotationX(const T angle)
 
 template<class T> void Matrix4<T>::setRotationX(Matrix4<T>& m, const T angle)
 {
-	T c = (T)cos(angle);
-	T s = (T)sin(angle);
+	T s, c;
+	Math<T>::sincos(angle, s, c);
 
 	m.m00 = 1;	m.m01 = 0;	m.m02 = 0;	m.m03 = 0;
 	m.m10 = 0;	m.m11 = c;	m.m12 = -s;	m.m13 = 0;
@@ -1441,8 +1442,8 @@ template<class T> Matrix4<T> Matrix4<T>::rotationY(const T angle)
 
 template<class T> void Matrix4<T>::setRotationY(Matrix4<T>& m, const T angle)
 {
-	T c = (T)cos(angle);
-	T s = (T)sin(angle);
+	T s, c;
+	Math<T>::sincos(angle, s, c);
 
 	m.m00 = c;	m.m01 = 0;	m.m02 = s;	m.m03 = 0;
 	m.m10 = 0;	m.m11 = 1;	m.m12 = 0;	m.m13 = 0;
@@ -1460,8 +1461,8 @@ template<class T> Matrix4<T> Matrix4<T>::rotationZ(const T angle)
 
 template<class T> void Matrix4<T>::setRotationZ(Matrix4<T>& m, const T angle)
 {
-	T c = (T)cos(angle);
-	T s = (T)sin(angle);
+	T s, c;
+	Math<T>::sincos(angle, s, c);
 
 	m.m00 = c;	m.m01 = -s;	m.m02 = 0;	m.m03 = 0;
 	m.m10 = s;	m.m11 = c;	m.m12 = 0;	m.m13 = 0;

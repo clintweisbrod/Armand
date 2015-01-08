@@ -25,11 +25,18 @@
 template<class T> class Math
 {
 public:
-    static inline void sincos(T, T&, T&);
-    static inline T frand();
-    static inline T sfrand();
-    static inline T lerp(T t, T a, T b);
-    static inline T clamp(T t);
+	static inline T sin(T);
+	static inline T cos(T);
+	static inline void sincos(T, T&, T&);
+	static inline T acos(T);
+	static inline T sqrt(T);
+	static inline T exp(T);
+	static inline T log(T);
+
+	static inline T frand();
+	static inline T sfrand();
+	static inline T lerp(T t, T a, T b);
+	static inline T clamp(T t);
 	static inline void constrain(T& ioVal, T inMin, T inMax);
 
 	static T lerp2(T inX1, T inX2, T inY1, T inY2, T inX);
@@ -44,6 +51,70 @@ private:
 typedef Math<int> Mathi;
 typedef Math<float_t> Mathf;
 typedef Math<double_t> Mathd;
+
+// There are many templated methods that need to make heavy math calls. What I don't
+// want, for example, is to have a Mat3f instance calling the double_t version
+// of sin() or cos() when the faster sinf() and cosf() methods should be called.
+// Therefore, I'm providing overloaded methods for each math function that the 
+// corresponding templated methods will call.
+inline double_t sinT(double_t angle)
+{
+	return sin(angle);
+}
+inline float_t sinT(float_t angle)
+{
+	return sinf(angle);
+}
+inline double_t cosT(double_t angle)
+{
+	return cos(angle);
+}
+inline float_t cosT(float_t angle)
+{
+	return cosf(angle);
+}
+inline void sincosT(double_t angle, double_t& s, double_t& c)
+{
+	s = sin(angle);
+	c = cos(angle);
+}
+inline void sincosT(float_t angle, float_t& s, float_t& c)
+{
+	s = sinf(angle);
+	c = cosf(angle);
+}
+inline double_t acosT(double_t x)
+{
+	return acos(x);
+}
+inline float_t acosT(float_t x)
+{
+	return acosf(x);
+}
+inline double_t sqrtT(double_t x)
+{
+	return sqrt(x);
+}
+inline float_t sqrtT(float_t x)
+{
+	return sqrtf(x);
+}
+inline double_t expT(double_t x)
+{
+	return exp(x);
+}
+inline float_t expT(float_t x)
+{
+	return expf(x);
+}
+inline double_t logT(double_t x)
+{
+	return log(x);
+}
+inline float_t logT(float_t x)
+{
+	return logf(x);
+}
 
 
 template<class T> T degToRad(T d)
@@ -117,10 +188,39 @@ template<class T> bool isPowerOf2(T inValue)
 	return ((inValue & (inValue - 1)) == 0);
 }
 
+template<class T> T Math<T>::sin(T angle)
+{
+	return sinT(angle);
+}
+
+template<class T> T Math<T>::cos(T angle)
+{
+	return cosT(angle);
+}
+
 template<class T> void Math<T>::sincos(T angle, T& s, T& c)
 {
-    s = (T) sin(angle);
-    c = (T) cos(angle);
+	sincosT(angle, s, c);
+}
+
+template<class T> T Math<T>::acos(T x)
+{
+	return acosT(x);
+}
+
+template<class T> T Math<T>::sqrt(T x)
+{
+	return sqrtT(x);
+}
+
+template<class T> T Math<T>::exp(T x)
+{
+	return expT(x);
+}
+
+template<class T> T Math<T>::log(T x)
+{
+	return logT(x);
 }
 
 
