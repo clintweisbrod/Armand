@@ -29,6 +29,11 @@ T3DSModelFactory::~T3DSModelFactory()
 
 T3DSModel* T3DSModelFactory::get(const char* inModelFileName, bool inLoadMetaOnly)
 {
+	if (inModelFileName == NULL)
+		return NULL;
+	if (*inModelFileName == 0)
+		return NULL;
+
 	T3DSModelMapItem mapItem;
 	mapItem.mModel = NULL;
 
