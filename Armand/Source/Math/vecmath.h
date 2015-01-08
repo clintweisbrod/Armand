@@ -19,7 +19,6 @@
 
 #include <cmath>
 
-//#include "ttmath/ttmath.h"
 #include "Math/bigfix.h"
 
 template<class T> class Point2
