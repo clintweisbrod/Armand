@@ -21,14 +21,13 @@
 
 #include <GL/glew.h>
 #include <GL/wglew.h>
-#include <freetype-gl/mat4.h>
 
 #include "Math/vecmath.h"
 #include "OpenGL/Textures/Texture.h"
 #include "OpenGL/ShaderFactory.h"
 #include "OpenGL/VertexBufferStructs.h"
 #include "Utilities/Timer.h"
-#include "Camera.h"
+#include "Objects/Camera.h"
 
 class OpenGLWindow
 {
@@ -47,6 +46,7 @@ class OpenGLWindow
 		bool			getIsCreated() const { return mCreated; };
 		void			getSceneSize(Vec2i& ioSceneSize) const { ioSceneSize = mSceneSize; };
 		int				getGeometryRadius() const { return mGeometryRadius; };
+		bool			hasMultisampleBuffer() const { return mHasMultisampleBuffer; };
 
 		// OpenGL
 		void			drawScene();

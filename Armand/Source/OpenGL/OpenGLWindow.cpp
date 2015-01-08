@@ -27,6 +27,7 @@
 #include "Math/constants.h"
 #include "Math/mathlib.h"
 #include "Utilities/Timer.h"
+#include "Objects/ModelObject.h"
 
 bool OpenGLWindow::sEnabledGLExtensions = false;
 
@@ -655,125 +656,6 @@ void OpenGLWindow::initGL()
 	T3DSModelFactory* mf = T3DSModelFactory::inst();
 	if (!ff || !sf || !mf)
 		return;
-
-
-/*
-	// For testing 3DS models
-	glDrawBuffer(GL_BACK); // draw into the back buffer
-	// anti aliasing -- see page 236, example 6-3 OpenGL programming guide, 3rd ed.
-
-	// default has blending on, with additive saturation.
-	glEnable(GL_BLEND);
-	glBlendEquation(GL_FUNC_ADD);
-	glBlendColor(0.0, 0.0, 0.0, 0.0);
-
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE); 	// also try GL_ONE_MINUS_SRC_ALPHA as second param
-
-	// Lines are always done as smoothed..
-	glEnable(GL_LINE_SMOOTH);
-	glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-
-	// polygons are by default filled in
-	glPolygonMode(GL_FRONT, GL_FILL);
-	glPolygonMode(GL_BACK, GL_FILL);
-	glDisable(GL_POLYGON_SMOOTH);
-	glHint(GL_POLYGON_SMOOTH_HINT, GL_DONT_CARE); // this is the line that slows down some PC driver/card combos, if you pass nicest in
-	//glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST ); does not seem to do anything
-
-	// 3DS models use local-viewer light model. Make sure it is disabled.
-	glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_FALSE);
-
-	// Speed hints.....
-	//Be sure you have turned off lighting also if you don't need it:
-	// and specify the colors directly.
-	glDisable(GL_LIGHTING);
-	glDisable(GL_LIGHT0);
-	glDisable(GL_LIGHT1);
-
-	//Also, use 
-	glShadeModel(GL_FLAT); //to turn off color interpolation.
-
-	// this is so we get perspective on the texture mapping more often. see TRenderReadyTriangle::CalcZCoord and planet mapping
-	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);	// turn off the depth buffer:
-
-	glDisable(GL_DEPTH_TEST);
-	glDepthMask(GL_FALSE);
-
-	// alpha cut off by default
-	glDisable(GL_ALPHA_TEST);
-
-	// Including this because State3DSModel() enables culling of back-facing polygons and the default GL state is disabled.
-	glDisable(GL_CULL_FACE);
-
-	// CLW - Sep 22, 2006 - I'm disabling stencil test disable because we manage stencil in only a couple places and don't
-	// have to depend on setting default OpenGL state to turn off stenciling. Need this to manage drawing sky with stencil
-	// test. Stencil test is always off by default in an OpenGL state machine. So unless we explicitly call
-	// glEnable(GL_STENCIL_TEST);, we are guaranteed that it is off.
-	//	glDisable(GL_STENCIL_TEST);	// no stenciling by default
-
-	// the default texture functions:
-	// Added by RSW 9/11/2002 - Don't rely on this being the default
-	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
-	// If we have a multisample buffer, lets use it!
-	//	if (IsShiftKeyDown())
-	//	{
-	if (mHasMultisampleBuffer && GLEW_ARB_multisample)
-	{
-		glEnable(GL_MULTISAMPLE);
-		glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST);
-	}
-	else
-		glDisable(GL_MULTISAMPLE_ARB);
-
-	// VPoint sprite stuff
-	glDisable(GL_POINT_SPRITE_ARB);
-	glPointSize(1.0f);
-
-	// Setup lighting
-	GLfloat zeroLight[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-	GLfloat whiteLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	GLfloat defaultAmbient[] = { 0.2f, 0.2f, 0.2f, 1.0f };
-
-#ifdef GL_LIGHT_MODEL_COLOR_CONTROL_EXT
-	glLightModeli(GL_LIGHT_MODEL_COLOR_CONTROL_EXT, GL_SINGLE_COLOR);	// default GL state
-#endif
-
-	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, defaultAmbient);	// default GL state
-	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_FALSE);
-	glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
-
-	// Turn off any emissive material properties
-	glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, zeroLight);
-
-	// Turn on Light0 and enable lighting
-	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);
-
-	glLightfv(GL_LIGHT0, GL_AMBIENT, zeroLight);	// default GL state
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, whiteLight);	// default GL state
-	glLightfv(GL_LIGHT0, GL_SPECULAR, whiteLight);	// default GL state
-	glLightfv(GL_LIGHT1, GL_AMBIENT, zeroLight);
-	glLightfv(GL_LIGHT1, GL_SPECULAR, zeroLight);
-
-	// Enable depth testing
-	glDepthMask(GL_TRUE);
-	glEnable(GL_DEPTH_TEST);
-
-	// Enable surface culling
-	glEnable(GL_CULL_FACE);
-
-	// Smooth shading
-	glShadeModel(GL_SMOOTH);
-	glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-
-	// No blending to start with
-	glDisable(GL_BLEND);	// 3DS model objects are sorted by material opacity so blending is off to start with
-*/
-
-
-
 ///*
 	glShadeModel(GL_SMOOTH);
 	glClearColor(0, 0, 0, 1);
@@ -925,7 +807,7 @@ void OpenGLWindow::render()
 	glEnd();
 */
 
-///*
+/*
 	// FontFactory testing
 	string fontName("Verdana");
 	wstring text(L"\260 A quick brown fox jumped over the lazy dog. !@#$%^&*()-=+{}[];:'<>,.?/`~\"");
@@ -958,22 +840,19 @@ void OpenGLWindow::render()
 
 	glEnable(GL_BLEND);
 //	fontRenderer->render(text, 15, Vec2f(100, 100), Vec4f(1.0f, 1.0f, 1.0f, 1.0f), 30);
-	fontRenderer->renderSpherical(text, 25, Vec2f(degToRad(0.0f), degToRad(5.0f)), Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
-//*/
+	fontRenderer->renderSpherical(text, 25, Vec2f(degToRad(-150.0f), degToRad(5.0f)), Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
+*/
 
-/*
+///*
 	// Testing 3DS model loading and fisheye projection shader
 	mCamera.setUniveralPositionMetres(Vec3d(0.0, 0.0, 0.0));
 	mCamera.lookAt(Vec3f(0,0,-1), Vec3f(0,1,0));
-	Object theObject;
-	theObject.setUniveralPositionMetres(Vec3d(0.0, 0.0, -20.0));
-	T3DSModel* model = T3DSModelFactory::inst()->get("Apollo_3rdStage.3ds");
-//	T3DSModel* model = T3DSModelFactory::inst()->get("ISS.3ds");
-	if (model)
-		model->render(theObject);
+	ModelObject model("Apollo_3rdStage.3ds");
+	model.setUniveralPositionMetres(Vec3d(0.0, 0.0, -20.0));
+	model.render(mCamera);
 
 //	T3DSModelFactory::inst()->RemoveAll();
-*/
+//*/
 }
 
 void OpenGLWindow::postRender()
