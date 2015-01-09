@@ -1817,14 +1817,17 @@ bool T3DSModel::render(Camera& inCamera, Mat4f& inTranslation, Quatf& inOrientat
 	// We need to know (in eye coordinates) where the center of the model is
 	// to correctly set the near and far plane of the ortho viewing volume.
 	Vec4f modelPositionEye = modelMatrix * Vec4f(0.0f, 0.0f, 0.0f, 1.0f);
-	float_t modelDotView = modelPositionEye * viewDirection;
-	float_t n = modelDotView - (GLfloat)mModelBoundingRadius;
-	float_t f = modelDotView + (GLfloat)mModelBoundingRadius;
+	float_t eyeDistance = modelPositionEye.length3();
+	float_t n = eyeDistance - (GLfloat)mModelBoundingRadius;
+	float_t f = eyeDistance + (GLfloat)mModelBoundingRadius;
 	Mat4f projectionMatrix = Mat4f::orthographic(-h, h, -v, v, n, f);
 
 	// Default ambient light to 20% of passed-in light color
 	const GLfloat kAmbientFactor = 0.2f;
 	Vec3f ambientLightColor = inLightColor * kAmbientFactor;
+
+	float_t aperture = inCamera.getAperture();
+	float_t clipPlaneDistance = -cosf(aperture / 2);
 
 	// Need this to affect clipping vertices behind viewer
 	glEnable(GL_CLIP_DISTANCE0);
@@ -1835,7 +1838,8 @@ bool T3DSModel::render(Camera& inCamera, Mat4f& inTranslation, Quatf& inOrientat
 
 		// Draw the untextured vertices
 		glUniform1i(glGetUniformLocation(mShaderHandle, "uIsTexturing"), GL_FALSE);
-		glUniform1f(glGetUniformLocation(mShaderHandle, "uAperture"), inCamera.getAperture());
+		glUniform1f(glGetUniformLocation(mShaderHandle, "uAperture"), aperture);
+		glUniform1f(glGetUniformLocation(mShaderHandle, "uClipPlaneDistance"), clipPlaneDistance);
 		glUniform3fv(glGetUniformLocation(mShaderHandle, "uViewDirection"), 1, viewDirection.data);
 		glUniform3fv(glGetUniformLocation(mShaderHandle, "uUpDirection"), 1, upDirection.data);
 		glUniform3fv(glGetUniformLocation(mShaderHandle, "uLeftDirection"), 1, leftDirection.data);
