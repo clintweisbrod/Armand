@@ -66,6 +66,11 @@ OpenGLWindow::OpenGLWindow() : mCreated(false),
 	mIgnoreResizeEvents = false;
 
 //	mCmdShow = SW_SHOW;
+
+	// Setup camera
+	mCamera.setAperture(degToRad(192.0f));			// 192 degree fisheye
+	mCamera.setUniveralPositionAU(Vec3d(0,0,0));	// Located at origin in our universal coordinate system
+	mCamera.lookAt(Vec3f(0,0,-1), Vec3f(0,1,0));	// Looking down -z axis with +y axis up.
 }
 
 OpenGLWindow::~OpenGLWindow()
@@ -614,14 +619,20 @@ void OpenGLWindow::mouseWheelEvent(double inWheelDelta)
 {
 }
 
-void OpenGLWindow::keyboardKeyDown(WPARAM inKey)
+void OpenGLWindow::keyboardKeyDown(WPARAM inVirtualKeyCode)
 {
-	mKeys[inKey] = true;
+	mKeys[inVirtualKeyCode] = true;
 }
 
-void OpenGLWindow::keyboardKeyUp(WPARAM inKey)
+void OpenGLWindow::keyboardKeyUp(WPARAM inVirtualKeyCode)
 {
-	mKeys[inKey] = false;
+	mKeys[inVirtualKeyCode] = false;
+}
+
+void OpenGLWindow::keyboardKeyPressed(WPARAM inCharacterCode)
+{
+	if (inCharacterCode == 'q')
+		mCamera.negateSpeed();
 }
 
 void OpenGLWindow::handleKeys()
@@ -635,6 +646,24 @@ void OpenGLWindow::handleKeys()
 		//
 		// Process keys here
 		//
+
+		if (mKeys[VK_NUMPAD4])
+			mCamera.rotateLeft();
+		if (mKeys[VK_NUMPAD6])
+			mCamera.rotateRight();
+		if (mKeys[VK_NUMPAD2])
+			mCamera.rotateUp();
+		if (mKeys[VK_NUMPAD8])
+			mCamera.rotateDown();
+		if (mKeys[VK_NUMPAD7])
+			mCamera.rollLeft();
+		if (mKeys[VK_NUMPAD9])
+			mCamera.rollRight();
+
+		if (mKeys['A'])
+			mCamera.changeSpeed(1);
+		if (mKeys['Z'])
+			mCamera.changeSpeed(-1);
 
 		mLastKeyboardResponseSeconds = mFrameStartTime;
 	}
@@ -703,7 +732,6 @@ void OpenGLWindow::resizeScene(Vec2i inNewSize)
 	else
 		v = (float)mSceneSize.y / (float)mSceneSize.x;
 	mGeometryRadius = min(mSceneSize.x, mSceneSize.y) / 2;
-//	mProjectionMatrix = Mat4f::orthographic(-h, h, -v, v, 0, 1);
 
 	// Set the fixed pipeline projection to the same as described above
 	glMatrixMode(GL_PROJECTION);
@@ -760,6 +788,7 @@ void OpenGLWindow::drawScene()
 
 void OpenGLWindow::preRender()
 {
+	mCamera.updatePosition();
 }
 
 void OpenGLWindow::render()
@@ -807,10 +836,10 @@ void OpenGLWindow::render()
 	glEnd();
 */
 
-/*
+///*
 	// FontFactory testing
 	string fontName("Verdana");
-	wstring text(L"\260 A quick brown fox jumped over the lazy dog. !@#$%^&*()-=+{}[];:'<>,.?/`~\"");
+//	wstring text(L"\260 A quick brown fox jumped over the lazy dog. !@#$%^&*()-=+{}[];:'<>,.?/`~\"");
 
 	FontRenderer* fontRenderer = FontFactory::inst()->getFontRenderer(fontName);
 
@@ -840,13 +869,17 @@ void OpenGLWindow::render()
 
 	glEnable(GL_BLEND);
 //	fontRenderer->render(text, 15, Vec2f(100, 100), Vec4f(1.0f, 1.0f, 1.0f, 1.0f), 30);
-	fontRenderer->renderSpherical(text, 25, Vec2f(degToRad(-150.0f), degToRad(5.0f)), Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
-*/
+	float_t speed = mCamera.getSpeed() * (float_t)kMetrePerAu;
+	wchar_t infoBuffer[256];
+	swprintf(infoBuffer, 256, L"Speed: %.6f m/s", speed);
+	wstring text(infoBuffer);
+	fontRenderer->renderSpherical(text, 15, Vec2f(degToRad(-10.0f), degToRad(5.0f)), Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
+//*/
 
 ///*
 	// Testing 3DS model loading and fisheye projection shader
-	mCamera.setUniveralPositionMetres(Vec3d(0.0, 0.0, 0.0));
-	mCamera.lookAt(Vec3f(0,0,-1), Vec3f(0,1,0));
+//	mCamera.setUniveralPositionMetres(Vec3d(0.0, 0.0, 0.0));
+//	mCamera.lookAt(Vec3f(0,0,-1), Vec3f(0,1,0));
 	ModelObject model("Apollo_3rdStage.3ds");
 	model.setUniveralPositionMetres(Vec3d(0.0, 0.0, -20.0));
 	model.render(mCamera);

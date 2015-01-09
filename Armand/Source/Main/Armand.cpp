@@ -250,6 +250,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			return 0;
 		}
 
+//		case WM_CHAR:
+//		{
+//			gOpenGLWindow->keyboardKeyPressed(wParam);
+//			return 0;
+//		}
+
 		case WM_CLOSE:								// Did we receive a close message?
 		{
 			PostQuitMessage(0);						// Send a quit message

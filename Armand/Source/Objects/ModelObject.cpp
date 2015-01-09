@@ -133,7 +133,7 @@ void ModelObject::renderFull(Camera& inCamera)
 
 	// Apply rotation to model
 	static GLfloat rotationY = 0;
-	static GLfloat dRotationY = 0.25f;
+	static GLfloat dRotationY = 0.05f;
 	Quatf modelOrientation = Quatf::yrotation(degToRad(rotationY));
 
 	// Place light at eye for now.

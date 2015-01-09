@@ -55,8 +55,9 @@ class OpenGLWindow
 		// User input
 		void			mouseEvent(WORD inXPos, WORD inYPos, bool inCtrlDown, bool inShiftDown, bool inLeftDown, bool inMiddleDown, bool inRightDown);
 		void			mouseWheelEvent(double inWheelDelta);
-		void			keyboardKeyDown(WPARAM inKey);
-		void			keyboardKeyUp(WPARAM inKey);
+		void			keyboardKeyDown(WPARAM inVirtualKeyCode);
+		void			keyboardKeyUp(WPARAM inVirtualKeyCode);
+		void			keyboardKeyPressed(WPARAM inCharacterCode);
 		bool*			getKeys() { return mKeys; };
 
 		// Fullscreen
