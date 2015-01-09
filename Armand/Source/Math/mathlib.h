@@ -28,10 +28,13 @@ public:
 	static inline T sin(T);
 	static inline T cos(T);
 	static inline void sincos(T, T&, T&);
+	static inline T asin(T);
 	static inline T acos(T);
+	static inline T atan2(T, T);
 	static inline T sqrt(T);
 	static inline T exp(T);
 	static inline T log(T);
+	static inline T fabs(T);
 
 	static inline T frand();
 	static inline T sfrand();
@@ -83,6 +86,14 @@ inline void sincosT(float_t angle, float_t& s, float_t& c)
 	s = sinf(angle);
 	c = cosf(angle);
 }
+inline double_t asinT(double_t x)
+{
+	return asin(x);
+}
+inline float_t asinT(float_t x)
+{
+	return asinf(x);
+}
 inline double_t acosT(double_t x)
 {
 	return acos(x);
@@ -90,6 +101,14 @@ inline double_t acosT(double_t x)
 inline float_t acosT(float_t x)
 {
 	return acosf(x);
+}
+inline double_t atan2T(double_t x, double_t y)
+{
+	return atan2(x, y);
+}
+inline float_t atan2T(float_t x, float_t y)
+{
+	return atan2f(x, y);
 }
 inline double_t sqrtT(double_t x)
 {
@@ -114,6 +133,14 @@ inline double_t logT(double_t x)
 inline float_t logT(float_t x)
 {
 	return logf(x);
+}
+inline double_t fabsT(double_t x)
+{
+	return fabs(x);
+}
+inline float_t fabsT(float_t x)
+{
+	return fabsf(x);
 }
 
 

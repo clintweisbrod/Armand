@@ -142,17 +142,17 @@ public:
 	inline Vector3Big();
 	inline Vector3Big(const Vector3Big<T>&);
 	inline Vector3Big(const Vector3<double_t>&);
+	inline Vector3Big(const Vector3<float_t>&);
 	inline Vector3Big(const T, const T, const T);
 	inline Vector3Big(T* v);
 
 	operator Vector3<float_t>() const;
 
-	inline Vector3Big& operator+=(const Vector3Big<T>&);
+	inline Vector3Big& operator+=(const Vector3<float_t>&);
 	inline Vector3Big& operator-=(const Vector3Big<T>&);
 	inline Vector3Big& operator*=(T);
 	inline Vector3Big& operator/=(T);
 	inline Vector3Big operator-() const;
-	inline Vector3Big operator+() const;
 
 	inline T length() const;
 	inline T lengthSquared() const;
@@ -174,6 +174,8 @@ public:
 
 	inline Vector4 operator-() const;
 	inline Vector4 operator+() const;
+
+	inline T length3() const;
 
 	// Use union to alias the members
 	union
@@ -270,7 +272,7 @@ public:
 	void translate(const Point3<T>&);
 
 	Matrix4<T> transpose() const;
-	//	Matrix4<T> inverse() const;
+	Matrix4<T> inverse() const;
 
 	union
 	{
@@ -469,7 +471,7 @@ template<class T> Point3<T> operator*(T s, const Point3<T>& p)
 
 template<class T> T Point3<T>::distanceTo(const Point3& p) const
 {
-	return (T)sqrt((p.x - x) * (p.x - x) +
+	return Math<T>::sqrt((p.x - x) * (p.x - x) +
 		(p.y - y) * (p.y - y) +
 		(p.z - z) * (p.z - z));
 }
@@ -483,7 +485,7 @@ template<class T> T Point3<T>::distanceToSquared(const Point3& p) const
 
 template<class T> T Point3<T>::distanceFromOrigin() const
 {
-	return (T)sqrt(x * x + y * y + z * z);
+	return Math<T>::sqrt(x * x + y * y + z * z);
 }
 
 template<class T> T Point3<T>::distanceFromOriginSquared() const
@@ -581,7 +583,7 @@ template<class T> Vector2<T> operator/(const Vector2<T>& v, T s)
 
 template<class T> void Vector2<T>::normalize()
 {
-	T s = 1 / (T)sqrt(x * x + y * y);
+	T s = 1 / Math<T>::sqrt(x * x + y * y);
 	x *= s;
 	y *= s;
 }
@@ -749,7 +751,7 @@ template<class T> Vector3<T> cross(const Vector3<T>& a, const Vector3<T>& b)
 
 template<class T> T Vector3<T>::length() const
 {
-    return (T) sqrt(x * x + y * y + z * z);
+	return Math<T>::sqrt(x * x + y * y + z * z);
 }
 
 template<class T> T Vector3<T>::lengthSquared() const
@@ -759,7 +761,7 @@ template<class T> T Vector3<T>::lengthSquared() const
 
 template<class T> void Vector3<T>::normalize()
 {
-    T s = 1 / (T) sqrt(x * x + y * y + z * z);
+	T s = 1 / Math<T>::sqrt(x * x + y * y + z * z);
     x *= s;
     y *= s;
     z *= s;
@@ -786,6 +788,10 @@ template<class T> Vector3Big<T>::Vector3Big(const Vector3<double_t>& v) : x(v.x)
 {
 }
 
+template<class T> Vector3Big<T>::Vector3Big(const Vector3<float_t>& v) : x(v.x), y(v.y), z(v.z)
+{
+}
+
 template<class T> Vector3Big<T>::Vector3Big(T _x, T _y, T _z) : x(_x), y(_y), z(_z)
 {
 }
@@ -799,7 +805,7 @@ template<class T> Vector3Big<T>::operator Vector3<float_t>() const
 	return Vec3f((float_t)x, (float_t)y, (float_t)z);
 }
 
-template<class T> Vector3Big<T>& Vector3Big<T>::operator+=(const Vector3Big<T>& a)
+template<class T> Vector3Big<T>& Vector3Big<T>::operator+=(const Vector3<float_t>& a)
 {
 	x += a.x; y += a.y; z += a.z;
 	return *this;
@@ -828,12 +834,12 @@ template<class T> Vector3Big<T> Vector3Big<T>::operator-() const
 	return Vector3Big<T>(-x, -y, -z);
 }
 
-template<class T> Vector3Big<T> Vector3Big<T>::operator+() const
+template<class T> Vector3Big<T> operator+(const Vector3Big<T>& a, const Vector3<T>& b)
 {
-	return *this;
+	return Vector3Big<T>(a.x + b.x, a.y + b.y, a.z + b.z);
 }
 
-template<class T> Vector3Big<T> operator+(const Vector3Big<T>& a, const Vector3Big<T>& b)
+template<class T> Vector3Big<T> operator+(const Vector3<T>& a, const Vector3Big<T>& b)
 {
 	return Vector3Big<T>(a.x + b.x, a.y + b.y, a.z + b.z);
 }
@@ -896,17 +902,12 @@ template<class T> Vector3Big<T> cross(const Vector3Big<T>& a, const Vector3Big<T
 
 template<class T> T Vector3Big<T>::length() const
 {
-	return (T)sqrt(x * x + y * y + z * z);
+	return Math<T>::sqrt(x * x + y * y + z * z);
 }
 
 template<class T> T Vector3Big<T>::lengthSquared() const
 {
 	return x * x + y * y + z * z;
-}
-
-template<class T> Vector3Big<T> operator-(const Point3<T>& a, const Point3<T>& b)
-{
-	return Vector3_ttmath<T>(a.x - b.x, a.y - b.y, a.z - b.z);
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -1000,6 +1001,11 @@ template<class T> T dot(const Vector4<T>& a, const Vector4<T>& b)
     return a * b;
 }
 
+template<class T> T Vector4<T>::length3() const
+{
+	return Math<T>::sqrt(x * x + y * y + z * z);
+}
+
 ///////////////////////////////////////////////////////////////////////
 
 template<class T> Polar3<T>::Polar3() : fRadius(1), fLongitude(0), fLatitude(0)
@@ -1023,12 +1029,12 @@ template<class T> Polar3<T>::Polar3(const Vector3<T>& a)
 	theX = a.x;
 	theY = a.y;
 	theZ = a.z;
-	fRadius = sqrt(theX*theX + theY*theY + theZ*theZ);
+	fRadius = Math<T>::sqrt(theX*theX + theY*theY + theZ*theZ);
 	if (theZ == 0.0 || fRadius == 0.0)
 		fLatitude = 0.0;
 	else
-		fLatitude = asin(theZ / fRadius);
-	fLongitude = atan2(theY, theX);
+		fLatitude = Math<T>::asin(theZ / fRadius);
+	fLongitude = Math<T>::atan2(theY, theX);
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -1595,7 +1601,6 @@ template<class T> Matrix4<T> operator+(const Matrix4<T>& a, const Matrix4<T>& b)
 	return Matrix4<T>(sum);
 }
 
-/*
 // Compute inverse using Gauss-Jordan elimination; caller is responsible
 // for ensuring that the matrix isn't singular.
 template<class T> Matrix4<T> Matrix4<T>::inverse() const
@@ -1610,7 +1615,7 @@ template<class T> Matrix4<T> Matrix4<T>::inverse() const
         p = j;
         for (i = j + 1; i < 4; i++)
         {
-            if (fabs(a.r[i][j]) > fabs(a.r[p][j]))
+			if (Math<T>::fabs(a.r[i][j]) > Math<T>::fabs(a.r[p][j]))
                 p = i;
         }
 
@@ -1640,4 +1645,3 @@ template<class T> Matrix4<T> Matrix4<T>::inverse() const
 
     return b;
 }
-*/
