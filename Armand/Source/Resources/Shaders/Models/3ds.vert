@@ -47,6 +47,7 @@ struct LightInfo
 uniform LightInfo uLight;
 
 uniform float	uAperture;		// In radians. Typically a value near PI.
+uniform float	uClipPlaneDistance;	// Is only dependent on uAperture and requires a cos().
 uniform vec3	uViewDirection;
 uniform vec3	uUpDirection;
 uniform vec3	uLeftDirection;
@@ -67,7 +68,7 @@ void main()
 	
 	// Setup clipping for vertices that are behind the viewer
 	float halfAperture = uAperture * 0.5;
-	vec4 clipPlane = vec4(uViewDirection, -cos(halfAperture));
+	vec4 clipPlane = vec4(uViewDirection, uClipPlaneDistance);
 	gl_ClipDistance[0] = dot(vec4(vPositionEyeNorm, 1.0), clipPlane); 
 	
 	// Perform lighting calculations
