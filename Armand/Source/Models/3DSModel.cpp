@@ -1785,7 +1785,7 @@ GLuint T3DSModel::getShaderHandle()
 //	that index's into them.  This might be confusing, but most 3D files use this format.
 //----------------------------------------------------------------------
 bool T3DSModel::render(Camera& inCamera, Mat4f& inTranslation, Quatf& inOrientation,
-					   Vec3f& inLightPositionEyeCoords, Vec3f& inLightColor)
+					   Vec3f& inLightPositionEyeCoords, Vec3f& inLightColor, float inAlpha)
 {
 	// Orient model using mModelUpVector. For now, mModelUpVector is relative to universal
 	// coordinate system, where (0,1,0) is considered "up".
@@ -1830,6 +1830,7 @@ bool T3DSModel::render(Camera& inCamera, Mat4f& inTranslation, Quatf& inOrientat
 
 		// Draw the untextured vertices
 		glUniform1i(glGetUniformLocation(mShaderHandle, "uIsTexturing"), GL_FALSE);
+		glUniform1f(glGetUniformLocation(mShaderHandle, "uAlpha"), inAlpha);
 		glUniform1f(glGetUniformLocation(mShaderHandle, "uAperture"), aperture);
 		glUniform1f(glGetUniformLocation(mShaderHandle, "uClipPlaneDistance"), clipPlaneDistance);
 		glUniform3fv(glGetUniformLocation(mShaderHandle, "uViewDirection"), 1, viewDirection.data);

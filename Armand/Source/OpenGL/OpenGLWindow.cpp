@@ -893,7 +893,7 @@ void OpenGLWindow::render()
 //	mCamera.lookAt(Vec3f(0,0,-1), Vec3f(0,1,0));
 	ModelObject model("Apollo_3rdStage.3ds");
 	model.setUniveralPositionMetres(Vec3d(0.0, 0.0, -20.0));
-	model.render(mCamera);
+	model.render(mCamera, 0.2f);
 
 //	T3DSModelFactory::inst()->RemoveAll();
 //*/

@@ -6,8 +6,11 @@
 
 ModelObject::ModelObject(const char* inModelFileName)
 {
-//	mModel = T3DSModelFactory::inst()->get(inModelFileName);
-	mModel = T3DSModelFactory::inst()->get(inModelFileName, true);
+	mModel = T3DSModelFactory::inst()->get(inModelFileName);
+//	mModel = T3DSModelFactory::inst()->get(inModelFileName, true);
+
+	mPointVAO = 0;
+	mPointShaderHandle = 0;
 }
 
 ModelObject::~ModelObject()
@@ -70,7 +73,7 @@ bool ModelObject::shouldRenderAsPoint(Camera& inCamera) const
 		return false;
 }
 
-void ModelObject::setGLStateForFullRender() const
+void ModelObject::setGLStateForFullRender(float inAlpha) const
 {
 	// Enable multisampling if we can
 	if (gOpenGLWindow->hasMultisampleBuffer() && GLEW_ARB_multisample)
@@ -96,21 +99,18 @@ void ModelObject::setGLStateForFullRender() const
 	glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
-	// No blending to start with
 	glDisable(GL_BLEND);
-
-	glBlendEquation(GL_FUNC_ADD);
 }
 
-void ModelObject::render(Camera& inCamera)
+void ModelObject::render(Camera& inCamera, float inAlpha)
 {
 	if (!isInView(inCamera))
 		return;
 
 	if (shouldRenderAsPoint(inCamera))
 	{
-		setGLStateForPoint();
-		renderAsPoint(inCamera);
+		setGLStateForPoint(inAlpha);
+		renderAsPoint(inCamera, inAlpha);
 	}
 	else
 	{
@@ -119,16 +119,16 @@ void ModelObject::render(Camera& inCamera)
 		if (!mModel->getShaderHandle())
 			return;
 
-		setGLStateForFullRender();
-		renderFull(inCamera);
+		setGLStateForFullRender(inAlpha);
+		renderFull(inCamera, inAlpha);
 	}
 }
 
-void ModelObject::renderAsPoint(Camera& inCamera)
+void ModelObject::renderAsPoint(Camera& inCamera, float inAlpha)
 {
 }
 
-void ModelObject::renderFull(Camera& inCamera)
+void ModelObject::renderFull(Camera& inCamera, float inAlpha)
 {
 	// Apply translation to model to position it in world coordinates
 	Mat4f modelTranslation = Mat4f::translation(mLastScaledViewerModelVector);
@@ -147,7 +147,7 @@ void ModelObject::renderFull(Camera& inCamera)
 	Vec3f lightColor(1, 1, 1);
 
 	// Render the model
-	mModel->render(inCamera, modelTranslation, modelOrientation, lightPositionEyeCoords, lightColor);
+	mModel->render(inCamera, modelTranslation, modelOrientation, lightPositionEyeCoords, lightColor, inAlpha);
 
 	rotationY += dRotationY;
 	if (rotationY > 360)

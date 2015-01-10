@@ -7,7 +7,7 @@ vec3 gVertexPositionInEyeCoords;
 vec3 gNormalizedVertexPositionInEyeCoords;
 
 // VAO definition
-layout (location = 0) in vec3 vPosition;	// In local model coordinates
+layout (location = 0) in vec3 vaoPosition;	// In local model coordinates
 
 //
 // Outputs
@@ -35,7 +35,7 @@ void setupClipPlane()
 void fisheyeProject()
 {
 	// Transform vertex in model coordinates to eye coordinates
-	gVertexPositionInEyeCoords = (uModelMatrix * vec4(vPosition, 1.0)).xyz;
+	gVertexPositionInEyeCoords = (uModelMatrix * vec4(vaoPosition, 1.0)).xyz;
 	
 	// Sensible depth value is length of gVertexPositionInEyeCoords
 	float depthValue = length(gVertexPositionInEyeCoords);

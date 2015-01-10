@@ -1,10 +1,19 @@
 #version 330
 
+//
+// VAO definition
+//
+layout (location = 0) out vec4 outFragColor;
+
+//
+// Inputs
+//
 in vec3 lightIntensity;
 in vec2 texCoords;
 
-layout (location = 0) out vec4 outFragColor;
-
+//
+// Uniforms
+//
 uniform sampler2D	uTexture;
 uniform bool		uIsTexturing;
 

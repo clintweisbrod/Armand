@@ -21,6 +21,7 @@ out vec3 lightIntensity;
 //
 // Uniforms
 //
+uniform float 	uAlpha;
 uniform mat3	uNormalMatrix;	// Transforms vertex notmals to eye coordinates.
 struct LightInfo
  {
@@ -43,5 +44,5 @@ void computeLighting()
 	vec3 spec = vec3(0.0);
 	if (sDotN > 0.0)
 		spec = uLight.specular * vaoMaterialSpecular * pow(max(dot(r, v), 0.0), vaoMaterialShininess);
-	lightIntensity = ambient + diffuse + spec;
+	lightIntensity = (ambient + diffuse + spec) * uAlpha;
 }

@@ -10,6 +10,10 @@ RenderObject::~RenderObject()
 {
 }
 
-void RenderObject::setGLStateForPoint() const
+void RenderObject::setGLStateForFullRender(float inAlpha) const
+{
+}
+
+void RenderObject::setGLStateForPoint(float inAlpha) const
 {
 }
