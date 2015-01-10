@@ -19,24 +19,12 @@
 
 #pragma once
 
+#define INCLUDE_STRING "#include"
+
 #include <GL/glew.h>
 #include <GL/wglew.h>
 
 #include "Utilities/Singleton.h"
-
-class ShaderObject
-{
-public:
-	ShaderObject(const char* inShaderFilePath, const GLenum inType);
-	virtual ~ShaderObject();
-
-	bool isCompiled() const { return mCompileStatus == GL_TRUE; }
-	GLuint getHandle() const { return mHandle; }
-
-private:
-	GLuint	mHandle;
-	GLint	mCompileStatus;
-};
 
 class ShaderProgram
 {
@@ -52,6 +40,7 @@ private:
 
 typedef map<string, ShaderProgram*> ShaderProgramMap_t;
 typedef map<string, bool> BoolMap_t;
+typedef vector<GLuint> ShaderHandleVec_t;
 class ShaderFactory : public Singleton<ShaderFactory>
 {
 	friend class Singleton<ShaderFactory>;
@@ -64,7 +53,10 @@ protected:
 	virtual ~ShaderFactory();
 
 private:
-	string genKey(const char* inVertexShader, const char* inFragmentShader);
+	string	genKey(const char* inVertexShader, const char* inFragmentShader);
+	bool	loadShaderObject(const char* inShaderFilePath, const GLenum inType, ShaderHandleVec_t& ioShaderHandles);
+	bool	isStringPositionInCommentBlock(string::size_type inPosition, string& inSource);
+
 	BoolMap_t			mProgramLoadAttempts;
 	ShaderProgramMap_t	mPrograms;
 };

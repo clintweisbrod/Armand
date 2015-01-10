@@ -1753,8 +1753,8 @@ GLuint T3DSModel::getShaderHandle()
 	if (mShaderHandle == 0)
 	{
 		// This is a good time load the shader program
-		ShaderProgram* shaderProgram = ShaderFactory::inst()->getShaderProgram("Models/3ds.vert",
-			"Models/3ds.frag");
+		ShaderProgram* shaderProgram = ShaderFactory::inst()->getShaderProgram(	"Models/3ds.vert",
+																				"Models/3ds.frag");
 		if (shaderProgram)
 			mShaderHandle = shaderProgram->getHandle();
 	}

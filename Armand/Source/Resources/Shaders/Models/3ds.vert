@@ -20,7 +20,7 @@
 
 #version 330
 
-//const float	kPi			= 3.1415926536;
+#include "/Projection/Fisheye.glsl"
 
 // VAO definition
 layout (location = 0) in vec3 vPosition;	// In local model coordinates
@@ -31,12 +31,15 @@ layout (location = 4) in vec3 vMaterialSpecular;
 layout (location = 5) in float vMaterialShininess;
 layout (location = 6) in vec2 vTextureCoordinates;
 
+//
 // Outputs
+//
 out vec3 lightIntensity;
 out vec2 texCoords;
-out float gl_ClipDistance[1];	// Need this to clip vertices behind viewer
 
+//
 // Uniforms
+//
 struct LightInfo
  {
 	vec3 position;	// Light position in eye coordinates.
@@ -46,14 +49,15 @@ struct LightInfo
 };
 uniform LightInfo uLight;
 
-uniform float	uAperture;		// In radians. Typically a value near PI.
-uniform float	uClipPlaneDistance;	// Is only dependent on uAperture and requires a cos().
-uniform vec3	uViewDirection;	// This points to the center of the fisheye space.
-uniform vec3	uUpDirection;
-uniform vec3	uLeftDirection;
 uniform mat4	uModelMatrix;	// Transforms model coordinates to eye coordinates.
 uniform mat4 	uProjectionMatrix;	// Transforms computed fisheye coordinates and depth value to clipping space.
 uniform mat3	uNormalMatrix;	// Transforms vertex notmals to eye coordinates.
+
+//
+// Common function declarations
+//
+vec2 fisheyeProject(vec3 vPositionEyeNorm);
+void setupClipPlane(vec3 vPositionEyeNorm);
 
 void main()
 {
@@ -67,9 +71,7 @@ void main()
 	vec3 vPositionEyeNorm = vPositionEye.xyz / depthValue;
 	
 	// Setup clipping for vertices that are behind the viewer
-	float halfAperture = uAperture * 0.5;
-	vec4 clipPlane = vec4(uViewDirection, uClipPlaneDistance);
-	gl_ClipDistance[0] = dot(vec4(vPositionEyeNorm, 1.0), clipPlane); 
+	setupClipPlane(vPositionEyeNorm);
 	
 	// Perform lighting calculations
 	vec3 t = uNormalMatrix * vNormal;
@@ -85,22 +87,7 @@ void main()
 	lightIntensity = ambient + diffuse + spec;
 	
 	// Do fisheye projection
-	
-	// Compute angular distance between view direction (center of projection) and vertex position
-	// and scale by aperture.
-	float fisheyeAngleFactor = acos(dot(uViewDirection, vPositionEyeNorm)) / halfAperture;
-	
-	vec2 point = vec2(0.0, 0.0);
-	if (fisheyeAngleFactor > 0.0)
-	{
-		// Compute normalized proportions of up and left relative to center of projection
-		vec2 xyComponents = vec2(dot(vPositionEyeNorm, uLeftDirection), dot(vPositionEyeNorm, uUpDirection));
-		xyComponents = normalize(xyComponents);
-		
-		// Use the normalized up and left components and the angular distance
-		point.x = -fisheyeAngleFactor * xyComponents.x;
-		point.y = fisheyeAngleFactor * xyComponents.y;
-	}
+	vec2 point = fisheyeProject(vPositionEyeNorm);
 	
 	// Why does depthValue need to be negated???
 	// I think this is because m22 in ortho matrix is negated

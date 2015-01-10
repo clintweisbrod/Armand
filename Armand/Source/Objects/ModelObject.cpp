@@ -103,10 +103,6 @@ void ModelObject::setGLStateForFullRender() const
 
 void ModelObject::render(Camera& inCamera)
 {
-	if (mModel == NULL)
-		return;
-	if (!mModel->getShaderHandle())
-		return;
 	if (!isInView(inCamera))
 		return;
 
@@ -117,6 +113,11 @@ void ModelObject::render(Camera& inCamera)
 	}
 	else
 	{
+		if (mModel == NULL)
+			return;
+		if (!mModel->getShaderHandle())
+			return;
+
 		setGLStateForFullRender();
 		renderFull(inCamera);
 	}
