@@ -1,6 +1,6 @@
 // See: http://paulbourke.net/dome/domegeom/
 
-// Some explanation is in order here. In order to correctly render a 3DS model
+// Some explanation is in order here. To correctly render a 3DS model
 // using fisheye projection, every vertex of the model must be transformed
 // by the fisheye projection math. This is entirely impossible in software
 // as 3DS models can typically have many thousands of vertices.
@@ -48,7 +48,7 @@ uniform LightInfo uLight;
 
 uniform float	uAperture;		// In radians. Typically a value near PI.
 uniform float	uClipPlaneDistance;	// Is only dependent on uAperture and requires a cos().
-uniform vec3	uViewDirection;
+uniform vec3	uViewDirection;	// This points to the center of the fisheye space.
 uniform vec3	uUpDirection;
 uniform vec3	uLeftDirection;
 uniform mat4	uModelMatrix;	// Transforms model coordinates to eye coordinates.

@@ -253,9 +253,9 @@ public:
 	static Matrix4<T> rotationZ(const T);
 	static Matrix4<T> scaling(const Vector3<T>&);
 	static Matrix4<T> scaling(T);
-	static Matrix4<T> orthographic(const T l, const T r,
-		const T b, const T t,
-		const T n, const T f);
+	static Matrix4<T> orthographic(	const T l, const T r,
+									const T b, const T t,
+									const T n, const T f);
 
 	static void setIdentity(Matrix4<T>&);
 	static void setRotation(Matrix4<T>&, const Vector3<T>&, const T);
