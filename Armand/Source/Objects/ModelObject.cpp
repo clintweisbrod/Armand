@@ -6,7 +6,8 @@
 
 ModelObject::ModelObject(const char* inModelFileName)
 {
-	mModel = T3DSModelFactory::inst()->get(inModelFileName);
+//	mModel = T3DSModelFactory::inst()->get(inModelFileName);
+	mModel = T3DSModelFactory::inst()->get(inModelFileName, true);
 }
 
 ModelObject::~ModelObject()
