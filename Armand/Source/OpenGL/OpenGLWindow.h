@@ -51,6 +51,7 @@ class OpenGLWindow
 		// OpenGL
 		void			drawScene();
 		void			resizeScene(Vec2i inNewSize);
+		Mat4f			getProjectionMatrix(float_t inNear, float_t inFar);
 		
 		// User input
 		void			mouseEvent(WORD inXPos, WORD inYPos, bool inCtrlDown, bool inShiftDown, bool inLeftDown, bool inMiddleDown, bool inRightDown);

@@ -706,6 +706,17 @@ void OpenGLWindow::initGL()
 	mGLInitialized = true;
 }
 
+Mat4f OpenGLWindow::getProjectionMatrix(float_t inNear, float_t inFar)
+{
+	float h = 1, v = 1;
+	if (mSceneSize.x > mSceneSize.y)
+		h = (float)mSceneSize.x / (float)mSceneSize.y;
+	else
+		v = (float)mSceneSize.y / (float)mSceneSize.x;
+
+	return Mat4f::orthographic(-h, h, -v, v, inNear, inFar);
+}
+
 void OpenGLWindow::resizeScene(Vec2i inNewSize)
 {
 	if (mIgnoreResizeEvents)

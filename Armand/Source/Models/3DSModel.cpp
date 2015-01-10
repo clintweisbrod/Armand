@@ -1802,14 +1802,6 @@ bool T3DSModel::render(Camera& inCamera, Mat4f& inTranslation, Quatf& inOrientat
 	Mat3f normalMatrix(modelMatrix);
 
 	// Setup orthographic projection
-	Vec2i sceneSize;
-	gOpenGLWindow->getSceneSize(sceneSize);
-	float h = 1, v = 1;
-	if (sceneSize.x > sceneSize.y)
-		h = (float)sceneSize.x / (float)sceneSize.y;
-	else
-		v = (float)sceneSize.y / (float)sceneSize.x;
-
 	// Get camera orthonormal basis
 	Vec3f viewDirection, upDirection, leftDirection;
 	inCamera.getViewerOrthoNormalBasis(viewDirection, upDirection, leftDirection);
@@ -1820,7 +1812,7 @@ bool T3DSModel::render(Camera& inCamera, Mat4f& inTranslation, Quatf& inOrientat
 	float_t eyeDistance = modelPositionEye.length3();
 	float_t n = eyeDistance - (GLfloat)mModelBoundingRadius;
 	float_t f = eyeDistance + (GLfloat)mModelBoundingRadius;
-	Mat4f projectionMatrix = Mat4f::orthographic(-h, h, -v, v, n, f);
+	Mat4f projectionMatrix = gOpenGLWindow->getProjectionMatrix(n, f);
 
 	// Default ambient light to 20% of passed-in light color
 	const GLfloat kAmbientFactor = 0.2f;
