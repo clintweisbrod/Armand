@@ -757,7 +757,7 @@ public:
 
 	// This is the function that you call to load the 3DS
 	bool		load(File& inFile, bool inLoadMetaOnly = false);
-	bool		render(Camera& inCamera, Mat4f& inTranslation, Quatf& inOrientation,
+	bool		render(Camera& inCamera, Mat4f& inViewMatrix, Quatf& inOrientation,
 					   Vec3f& inLightPositionEyeCoords, Vec3f& inLightColor, float inAlpha);
 	float_t		getModelBoundingRadius() const { return mModelBoundingRadius; };
 	float_t		getPhysicalRadius() const { return mPhysicalRadiusInAU; };

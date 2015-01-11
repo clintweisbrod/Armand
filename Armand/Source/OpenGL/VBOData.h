@@ -23,8 +23,6 @@
 
 #pragma once
 
-#define BUFFER_OFFSET(offset) ((void*)(offset))
-
 #include <GL/glew.h>
 
 #include <map>

@@ -3,11 +3,7 @@
 //
 // Globals
 //
-vec3 gVertexPositionInEyeCoords;
 vec3 gNormalizedVertexPositionInEyeCoords;
-
-// VAO definition
-layout (location = 0) in vec3 vaoPosition;	// In local model coordinates
 
 //
 // Outputs
@@ -22,7 +18,6 @@ uniform float	uClipPlaneDistance;	// Is only dependent on uAperture and requires
 uniform vec3	uViewDirection;		// This points to the center of the fisheye space.
 uniform vec3	uUpDirection;		// The "up" direction relative to uViewDirection.
 uniform vec3	uLeftDirection;		// The left direction relative to uViewDirection and uUpDirection.
-uniform mat4	uModelMatrix;	// Transforms model coordinates to eye coordinates.
 uniform mat4 	uProjectionMatrix;	// Transforms computed fisheye coordinates and depth value to clipping space.
 
 void setupClipPlane()
@@ -32,16 +27,13 @@ void setupClipPlane()
 	gl_ClipDistance[0] = dot(vec4(gNormalizedVertexPositionInEyeCoords, 1.0), clipPlane);
 }
 
-void fisheyeProject()
+void fisheyeProject(vec3 inVertexPositionInEyeCoordinates)
 {
-	// Transform vertex in model coordinates to eye coordinates
-	gVertexPositionInEyeCoords = (uModelMatrix * vec4(vaoPosition, 1.0)).xyz;
+	// Sensible depth value is length of inVertexPositionInEyeCoordinates
+	float depthValue = length(inVertexPositionInEyeCoordinates);
 	
-	// Sensible depth value is length of gVertexPositionInEyeCoords
-	float depthValue = length(gVertexPositionInEyeCoords);
-	
-	// Compute: ||p-vp||	vp is assumed to be (0, 0, 0)
-	gNormalizedVertexPositionInEyeCoords = gVertexPositionInEyeCoords / depthValue;
+	// Need normalized version of inVertexPositionInEyeCoordinates.
+	gNormalizedVertexPositionInEyeCoords = inVertexPositionInEyeCoordinates / depthValue;
 	
 	// Setup clipping for vertices that are behind the viewer
 	setupClipPlane();

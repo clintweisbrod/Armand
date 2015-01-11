@@ -1784,7 +1784,7 @@ GLuint T3DSModel::getShaderHandle()
 //	You don't save duplicate UV coordinates, you just save the unique ones, then an array
 //	that index's into them.  This might be confusing, but most 3D files use this format.
 //----------------------------------------------------------------------
-bool T3DSModel::render(Camera& inCamera, Mat4f& inTranslation, Quatf& inOrientation,
+bool T3DSModel::render(Camera& inCamera, Mat4f& inViewMatrix, Quatf& inOrientation,
 					   Vec3f& inLightPositionEyeCoords, Vec3f& inLightColor, float inAlpha)
 {
 	// Orient model using mModelUpVector. For now, mModelUpVector is relative to universal
@@ -1795,11 +1795,11 @@ bool T3DSModel::render(Camera& inCamera, Mat4f& inTranslation, Quatf& inOrientat
 	Quatf modelRotation = upRotation * inOrientation;
 
 	// Compute model matrix to transform model coordinates to world coordinates
-	Mat4f modelMatrix = inTranslation * modelRotation.toMatrix4();
+	Mat4f modelViewMatrix = inViewMatrix * modelRotation.toMatrix4();
 
 	// As long as we don't have any scaling, we can simply take the upper-left 3x3
 	// matrix for transforming normals.
-	Mat3f normalMatrix(modelMatrix);
+	Mat3f normalMatrix(modelViewMatrix);
 
 	// Setup orthographic projection
 	// Get camera orthonormal basis
@@ -1808,7 +1808,7 @@ bool T3DSModel::render(Camera& inCamera, Mat4f& inTranslation, Quatf& inOrientat
 
 	// We need to know (in eye coordinates) where the center of the model is
 	// to correctly set the near and far plane of the ortho viewing volume.
-	Vec4f modelPositionEye = modelMatrix * Vec4f(0.0f, 0.0f, 0.0f, 1.0f);
+	Vec4f modelPositionEye = modelViewMatrix * Vec4f(0.0f, 0.0f, 0.0f, 1.0f);
 	float_t eyeDistance = modelPositionEye.length3();
 	float_t n = eyeDistance - (GLfloat)mModelBoundingRadius;
 	float_t f = eyeDistance + (GLfloat)mModelBoundingRadius;
@@ -1842,14 +1842,13 @@ bool T3DSModel::render(Camera& inCamera, Mat4f& inTranslation, Quatf& inOrientat
 		glUniform3fv(glGetUniformLocation(mShaderHandle, "uLight.diffuse"), 1, inLightColor.data);
 		glUniform3fv(glGetUniformLocation(mShaderHandle, "uLight.specular"), 1, inLightColor.data);
 
-		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "uModelMatrix"), 1, 0, modelMatrix.data);
+		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "uModelViewMatrix"), 1, 0, modelViewMatrix.data);
 		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "uProjectionMatrix"), 1, 0, projectionMatrix.data);
 		glUniformMatrix3fv(glGetUniformLocation(mShaderHandle, "uNormalMatrix"), 1, 0, normalMatrix.data);
 		
 		glBindVertexArray(mVAOs[eUntexturedVAO]);
 		glMultiDrawArrays(GL_TRIANGLES, mArrayFirstUntextured.data(), mArrayCountUntextured.data(), (GLsizei)mArrayCountUntextured.size());
-		glBindVertexArray(0);
-
+	
 		// Draw the textured vertices
 		glUniform1i(glGetUniformLocation(mShaderHandle, "uIsTexturing"), GL_TRUE);
 		glBindVertexArray(mVAOs[eTexturedVAO]);

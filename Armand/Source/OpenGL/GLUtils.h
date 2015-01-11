@@ -22,6 +22,8 @@
 #include <GL/glew.h>
 #include "Math/vecmath.h"
 
+#define BUFFER_OFFSET(offset) ((void*)(offset))
+
 bool glCheckForError();
 void glTexturingOn(GLuint inTextureMode, GLuint inTextureID);
 void glTexturingOff();

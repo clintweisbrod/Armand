@@ -21,31 +21,38 @@
 
 typedef struct
 {
-	float x, y;			// position
+	GLfloat x, y;		// position
 } v2f;
 
 typedef struct
 {
-	float x, y;			// position
-	float r, g, b, a;	// color
+	GLfloat x, y;		// position
+	GLfloat r, g, b, a;	// color
 } v2f_c4f;
 
 typedef struct
 {
-	float x, y, z;
-	float n1, n2, n3;
+	GLfloat x, y, z;
+	GLfloat n1, n2, n3;
 } v3f_n3f;
 
 typedef struct
 {
-	float x, y, z;
-	float n1, n2, n3;
-	float s, t;
+	GLfloat x, y, z;
+	GLfloat n1, n2, n3;
+	GLfloat s, t;
 } v3f_n3f_t2f;
 
 typedef struct
 {
-	float x, y, z;		// position
-	float s, t;			// texture
-	float r, g, b, a;	// color
+	GLfloat x, y, z;		// position
+	GLfloat s, t;			// texture
+	GLfloat r, g, b, a;		// color
 } v3f_t2f_c4f;
+
+typedef struct
+{
+	GLfloat position[3];
+	GLfloat size;
+	GLubyte color[4];
+} PointStarVertex;

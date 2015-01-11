@@ -1,8 +1,5 @@
 #version 330
 
-//
-// VAO definition
-//
 layout (location = 0) out vec4 outFragColor;
 
 //

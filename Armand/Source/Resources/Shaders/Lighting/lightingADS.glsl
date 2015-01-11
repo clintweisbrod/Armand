@@ -1,6 +1,8 @@
 #version 330
 
+//
 // VAO definition
+//
 layout (location = 1) in vec3 vaoNormal;		// In local model coordinates
 layout (location = 2) in vec3 vaoMaterialAmbient;
 layout (location = 3) in vec3 vaoMaterialDiffuse;
@@ -10,7 +12,6 @@ layout (location = 5) in float vaoMaterialShininess;
 //
 // Globals
 //
-vec3 gVertexPositionInEyeCoords;
 vec3 gNormalizedVertexPositionInEyeCoords;
 
 //
@@ -32,10 +33,10 @@ struct LightInfo
 };
 uniform LightInfo uLight;
 
-void computeLighting()
+void computeLighting(vec3 inVertexPositionInEyeCoordinates)
 {
 	vec3 t = uNormalMatrix * vaoNormal;
-	vec3 s = normalize(uLight.position - gVertexPositionInEyeCoords);
+	vec3 s = normalize(uLight.position - inVertexPositionInEyeCoordinates);
 	vec3 v = -gNormalizedVertexPositionInEyeCoords;
 	vec3 r = reflect(-s, t);
 	vec3 ambient = uLight.ambient * vaoMaterialAmbient;

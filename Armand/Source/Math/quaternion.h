@@ -67,7 +67,7 @@ public:
     static Quaternion<T> zrotation(T);
 
 	static Quaternion<T> lookAt(const Point3<T>& from, const Point3<T>& to, const Vector3<T>& up);
-	static Quaternion<T> lookAtFromOrgin(const Vector3<T>& to, const Vector3<T>& up);
+	static Quaternion<T> lookAt(const Vector3<T>& viewDirection, const Vector3<T>& up);
 
     T w, x, y, z;
 };
@@ -758,11 +758,12 @@ Quaternion<T>::lookAt(const Point3<T>& from, const Point3<T>& to, const Vector3<
 }
 
 template<class T> Quaternion<T>
-Quaternion<T>::lookAtFromOrgin(const Vector3<T>& to, const Vector3<T>& up)
+Quaternion<T>::lookAt(const Vector3<T>& viewDirection, const Vector3<T>& up)
 {
-	// We assume both to and up are already normalized.
-	Vector3<T> v = to ^ up;
-	Vector3<T> u = v ^ to;
+	// We assume both viewDirection and up are already normalized.
+	Vector3<T> n = viewDirection;
+	Vector3<T> v = n ^ up;
+	Vector3<T> u = v ^ n;
 
-	return Quaternion<T>::matrixToQuaternion(Matrix3<T>(v, u, -to));
+	return Quaternion<T>::matrixToQuaternion(Matrix3<T>(v, u, -n));
 }

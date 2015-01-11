@@ -28,7 +28,7 @@ void Camera::updateOrthoNormalBasis()
 
 void Camera::lookAt(Vec3f& inViewerDirection, Vec3f& inUpDirection)
 {
-	mOrientation = Quatf::lookAtFromOrgin(inViewerDirection, inUpDirection);
+	mOrientation = Quatf::lookAt(inViewerDirection, inUpDirection);
 	updateOrthoNormalBasis();
 }
 
