@@ -15,11 +15,13 @@ public:
 	virtual void renderAsPoint(Camera& inCamera, float inAlpha);
 	virtual void renderFull(Camera& inCamera, float inAlpha);
 	virtual void setGLStateForFullRender(float inAlpha) const;
+	virtual void setGLStateForPoint(float inAlpha) const;
 
 protected:
 	T3DSModel*	mModel;
 
 	GLuint		mPointVAO;
+	GLuint		mPointVBO;
 	GLuint		mPointShaderHandle;
 
 	Vec3f		mLastViewerModelVector;
