@@ -1818,9 +1818,6 @@ bool T3DSModel::render(Camera& inCamera, Mat4f& inViewMatrix, Quatf& inOrientati
 	const GLfloat kAmbientFactor = 0.2f;
 	Vec3f ambientLightColor = inLightColor * kAmbientFactor;
 
-	float_t aperture = inCamera.getAperture();
-	float_t clipPlaneDistance = -cosf(aperture / 2);
-
 	// Need this to affect clipping vertices behind viewer
 	glEnable(GL_CLIP_DISTANCE0);
 
@@ -1831,8 +1828,8 @@ bool T3DSModel::render(Camera& inCamera, Mat4f& inViewMatrix, Quatf& inOrientati
 		// Draw the untextured vertices
 		glUniform1i(glGetUniformLocation(mShaderHandle, "uIsTexturing"), GL_FALSE);
 		glUniform1f(glGetUniformLocation(mShaderHandle, "uAlpha"), inAlpha);
-		glUniform1f(glGetUniformLocation(mShaderHandle, "uAperture"), aperture);
-		glUniform1f(glGetUniformLocation(mShaderHandle, "uClipPlaneDistance"), clipPlaneDistance);
+		glUniform1f(glGetUniformLocation(mShaderHandle, "uAperture"), inCamera.getAperture());
+		glUniform1f(glGetUniformLocation(mShaderHandle, "uClipPlaneDistance"), inCamera.getFisheyeClipPlaneDistance());
 		glUniform3fv(glGetUniformLocation(mShaderHandle, "uViewDirection"), 1, viewDirection.data);
 		glUniform3fv(glGetUniformLocation(mShaderHandle, "uUpDirection"), 1, upDirection.data);
 		glUniform3fv(glGetUniformLocation(mShaderHandle, "uLeftDirection"), 1, leftDirection.data);

@@ -9,13 +9,21 @@ Vec3f Camera::sDefaultViewDirection = Vec3f(0,0,-1);
 Vec3f Camera::sDefaultUpDirection = Vec3f(0,1,0);
 Vec3f Camera::sDefaultLeftDirection = sDefaultUpDirection ^ sDefaultViewDirection;
 
-Camera::Camera() : mAperture((float_t)kPi),
-				   mSpeedAUPerSecond(0)
+Camera::Camera() : mSpeedAUPerSecond(0)
 {
+	setAperture((float_t)kPi);
 }
 
 Camera::~Camera()
 {
+}
+
+void Camera::setAperture(float_t inAperture)
+{
+	mAperture = inAperture;
+
+	// This is needed by Fisheye.glsl so best to cache it.
+	mFisheyeClipPlaneDistance = -cosf(mAperture / 2);
 }
 
 void Camera::updateOrthoNormalBasis()

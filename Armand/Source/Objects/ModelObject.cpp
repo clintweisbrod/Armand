@@ -232,17 +232,14 @@ void ModelObject::renderAsPoint(Camera& inCamera, float inAlpha)
 	float_t f = mLastViewerDistance + nfDelta;
 	Mat4f projectionMatrix = gOpenGLWindow->getProjectionMatrix(n, f);
 
-	float_t aperture = inCamera.getAperture();
-	float_t clipPlaneDistance = -cosf(aperture / 2);
-
 	// Need this to affect clipping vertices behind viewer
 	glEnable(GL_CLIP_DISTANCE0);
 
 	glUseProgram(mPointShaderHandle);
 	{
 		glUniform1f(glGetUniformLocation(mPointShaderHandle, "uAlpha"), inAlpha);
-		glUniform1f(glGetUniformLocation(mPointShaderHandle, "uAperture"), aperture);
-		glUniform1f(glGetUniformLocation(mPointShaderHandle, "uClipPlaneDistance"), clipPlaneDistance);
+		glUniform1f(glGetUniformLocation(mPointShaderHandle, "uAperture"), inCamera.getAperture());
+		glUniform1f(glGetUniformLocation(mPointShaderHandle, "uClipPlaneDistance"), inCamera.getFisheyeClipPlaneDistance());
 		glUniform3fv(glGetUniformLocation(mPointShaderHandle, "uViewDirection"), 1, viewDirection.data);
 		glUniform3fv(glGetUniformLocation(mPointShaderHandle, "uUpDirection"), 1, upDirection.data);
 		glUniform3fv(glGetUniformLocation(mPointShaderHandle, "uLeftDirection"), 1, leftDirection.data);
