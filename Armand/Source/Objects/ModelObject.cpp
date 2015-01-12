@@ -1,5 +1,7 @@
 #include "stdafx.h"
 
+#include <random>
+
 #include "ModelObject.h"
 #include "Models/3DSModelFactory.h"
 #include "OpenGL/OpenGLWindow.h"
@@ -7,12 +9,30 @@
 
 ModelObject::ModelObject(const char* inModelFileName)
 {
-	mModel = T3DSModelFactory::inst()->get(inModelFileName);
-//	mModel = T3DSModelFactory::inst()->get(inModelFileName, true);
+//	mModel = T3DSModelFactory::inst()->get(inModelFileName);
+	mModel = T3DSModelFactory::inst()->get(inModelFileName, true);
 
 	mPointVAO = 0;
 	mPointVBO = 0;
 	mPointShaderHandle = 0;
+
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_real_distribution<> posDis(-10000000.0, 10000000.0);
+	std::uniform_real_distribution<> sizeDis(1.0, 5.0);
+	std::uniform_real_distribution<> colorDis(0.5, 1.0);
+	const int kNumSamples = 1000000;
+	for (int n = 0; n < kNumSamples; ++n)
+	{
+		mStarArray[n].position[0] = (GLfloat)posDis(gen);
+		mStarArray[n].position[1] = (GLfloat)posDis(gen);
+		mStarArray[n].position[2] = (GLfloat)posDis(gen);
+		mStarArray[n].size = (GLfloat)sizeDis(gen);
+		mStarArray[n].color[0] = (GLubyte)(colorDis(gen) * 255.0);
+		mStarArray[n].color[1] = (GLubyte)(colorDis(gen) * 255.0);
+		mStarArray[n].color[2] = (GLubyte)(colorDis(gen) * 255.0);
+		mStarArray[n].color[3] = 255;
+	}
 }
 
 ModelObject::~ModelObject()
@@ -66,6 +86,8 @@ bool ModelObject::isInView(Camera& inCamera)
 
 bool ModelObject::shouldRenderAsPoint(Camera& inCamera) const
 {
+	return true;
+
 	if (mModel == NULL)
 		return false;
 
@@ -176,6 +198,14 @@ void ModelObject::render(Camera& inCamera, float inAlpha)
 
 void ModelObject::renderAsPoint(Camera& inCamera, float inAlpha)
 {
+	PointStarVertex vertexInfo;
+	vertexInfo.position[0] = 0;
+	vertexInfo.position[1] = 0;
+	vertexInfo.position[2] = 0;
+	vertexInfo.size = 5;
+	const GLfloat kWhiteLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	glColor4fToColor4ub(kWhiteLight, vertexInfo.color);
+
 	// TODO: This is a lot of code to render ONE point! Furthermore, I shouldn't be
 	// using GL_POINTS or GL_POINT_SPRITE because although the point vertex will be
 	// transformed through the fisheye math, the actual rasterized shape of the point
@@ -206,30 +236,27 @@ void ModelObject::renderAsPoint(Camera& inCamera, float inAlpha)
 		glEnableVertexAttribArray(0);
 		glEnableVertexAttribArray(1);
 		glEnableVertexAttribArray(2);
+
+		// Place our origin point in the buffer at index 0
+		memcpy(&mStarArray[0], &vertexInfo, sizeof(PointStarVertex));
+
+		// Copy the buffer up to the VBO
+		glBufferData(GL_ARRAY_BUFFER, 1000000 * sizeof(PointStarVertex), mStarArray, GL_STATIC_DRAW);
+
+		glCheckForError();
 	}
 
 	glBindVertexArray(mPointVAO);
-
-	PointStarVertex vertexInfo;
-	vertexInfo.position[0] = mLastViewerModelVector.x;
-	vertexInfo.position[1] = mLastViewerModelVector.y;
-	vertexInfo.position[2] = mLastViewerModelVector.z;
-	vertexInfo.size = 5;	// not working
-	const GLfloat kWhiteLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	glColor4fToColor4ub(kWhiteLight, vertexInfo.color);
-
-	glBufferData(GL_ARRAY_BUFFER, 1 * sizeof(PointStarVertex), &vertexInfo, GL_DYNAMIC_DRAW);
-	glCheckForError();
 
 	// Get camera orthonormal basis
 	Vec3f viewDirection, upDirection, leftDirection;
 	inCamera.getViewerOrthoNormalBasis(viewDirection, upDirection, leftDirection);
 
-	Mat4f modelViewMatrix = Mat4f::identity();
+	Mat4f modelViewMatrix = Mat4f::translation(mLastViewerModelVector);
 
-	float_t nfDelta = mLastViewerDistance * 0.01f;
-	float_t n = mLastViewerDistance - nfDelta;
-	float_t f = mLastViewerDistance + nfDelta;
+	float_t starFieldDepth = 20000000;
+	float_t n = mLastViewerDistance - starFieldDepth;
+	float_t f = mLastViewerDistance + starFieldDepth;
 	Mat4f projectionMatrix = gOpenGLWindow->getProjectionMatrix(n, f);
 
 	// Need this to affect clipping vertices behind viewer
@@ -247,7 +274,8 @@ void ModelObject::renderAsPoint(Camera& inCamera, float inAlpha)
 		glUniformMatrix4fv(glGetUniformLocation(mPointShaderHandle, "uModelViewMatrix"), 1, 0, modelViewMatrix.data);
 		glUniformMatrix4fv(glGetUniformLocation(mPointShaderHandle, "uProjectionMatrix"), 1, 0, projectionMatrix.data);
 
-		glDrawArrays(GL_POINTS, 0, 1);
+//		glDrawArrays(GL_POINTS, 0, 1);
+		glDrawArrays(GL_POINTS, 0, 1000000);
 
 		glUseProgram(0);
 	}

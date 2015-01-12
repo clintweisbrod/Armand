@@ -72,7 +72,7 @@ OpenGLWindow::OpenGLWindow() : mCreated(false),
 	mCamera.setUniveralPositionAU(Vec3d(0,0,0));	// Located at origin in our universal coordinate system
 	mCamera.lookAt(Vec3f(0,0,-1), Vec3f(0,1,0));	// Looking down -z axis with +y axis up.
 
-	mCamera.setUniveralPositionMetres(Vec3d(0.0, 0.0, 20.0));
+	mCamera.setUniveralPositionAU(Vec3d(0.0, 0.0, 15000000.0));
 }
 
 OpenGLWindow::~OpenGLWindow()
@@ -884,14 +884,14 @@ void OpenGLWindow::render()
 //	fontRenderer->render(text, 15, Vec2f(100, 100), Vec4f(1.0f, 1.0f, 1.0f, 1.0f), 30);
 	wchar_t infoBuffer[256];
 	wstring text;
-	float_t speed = mCamera.getSpeed() * (float_t)kMetresPerAu;
-	swprintf(infoBuffer, 256, L"Speed: %.3f m/s", speed);
+	float_t speed = mCamera.getSpeed();
+	swprintf(infoBuffer, 256, L"Speed: %.3f AU/s", speed);
 	text = infoBuffer;
 	fontRenderer->renderSpherical(text, 15, Vec2f(degToRad(-20.0f), degToRad(5.0f)), Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
 
 	Vec3f cameraPos = (Vec3f)mCamera.getUniveralPosition();
-	float_t cameraDistanceFromOrigin = cameraPos.length() * (float_t)kMetresPerAu;
-	swprintf(infoBuffer, 256, L"Origin: %.3f m", cameraDistanceFromOrigin);
+	float_t cameraDistanceFromOrigin = cameraPos.length();
+	swprintf(infoBuffer, 256, L"Origin: %.3f AU", cameraDistanceFromOrigin);
 	text = infoBuffer;
 	fontRenderer->renderSpherical(text, 15, Vec2f(degToRad(10.0f), degToRad(5.0f)), Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
 //*/
@@ -900,7 +900,7 @@ void OpenGLWindow::render()
 	// Testing 3DS model loading and fisheye projection shader
 //	mCamera.setUniveralPositionMetres(Vec3d(0.0, 0.0, 2000.0));
 //	mCamera.lookAt(Vec3f(0,0,-1), Vec3f(0,1,0));
-	ModelObject model("Apollo_3rdStage.3ds");
+	static ModelObject model("Apollo_3rdStage.3ds");
 	model.setUniveralPositionMetres(Vec3d(0.0, 0.0, 0.0));
 	model.render(mCamera, 1.0f);
 

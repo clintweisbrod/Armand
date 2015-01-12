@@ -1,5 +1,6 @@
 #include "RenderObject.h"
 #include "Models/3DSModel.h"
+#include "OpenGL/VertexBufferStructs.h"
 
 #pragma once
 
@@ -27,4 +28,6 @@ protected:
 	Vec3f		mLastViewerModelVector;
 	Vec3f		mLastScaledViewerModelVector;
 	float_t		mLastViewerDistance;
+
+	PointStarVertex	mStarArray[1000000];
 };
