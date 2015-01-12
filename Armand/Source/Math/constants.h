@@ -84,12 +84,12 @@ const short		kNovember=				11;
 const short		kDecember=				12;
 
 // Physical constants
-const double	kMetrePerKilometre		=1000.0;
+const double	kMetresPerKilometre		=1000.0;
 const double	kLightYearsPerParsec	=3.261633;
 const double	kParsecsPerLightYear	=1.0/kLightYearsPerParsec;
-const double	kMetrePerAu				=1.4959787066e11;			// number of metres per astronomical unit
-const double	kAuPerMetre				=1.0/kMetrePerAu;			// number of astronomical unit per metres
-const double	kKilometersPerAu		=kMetrePerAu/kMetrePerKilometre;
+const double	kMetresPerAu			=1.4959787066e11;			// number of metres per astronomical unit
+const double	kAuPerMetre				=1.0/kMetresPerAu;			// number of astronomical unit per metres
+const double	kKilometersPerAu		=kMetresPerAu/kMetresPerKilometre;
 const double	kAuPerKilometer			=6.68458712405579e-9;		//.. this # does not jive with astro-almanac sup. p.716
 const double	kSpeedOfLight			=1.581250732e-7;			// measured as centuries per AU
 const double	kSpeedOfLightPerMetre	=kAuPerMetre*kSpeedOfLight;	// measured as centuries per Metre
@@ -97,24 +97,24 @@ const double	kSpeedOfLightAUPerHour	=kDaysInHour/kDaysPerCentury/kSpeedOfLight;
 const double 	kParsecsPerAu 			= 4.848136811e-6;			// explanatory suppl, page 716
 const double 	kAuPerParsec 			= 1.0/kParsecsPerAu;		// explanatory suppl, page 716
 const double 	kAuPerLightYear 		= kAuPerParsec/kLightYearsPerParsec;	
-const double 	kLightYearPerAu 		= 1.0/kAuPerLightYear;
-const double	kMetrePerLightYear		=kAuPerLightYear*kMetrePerAu;
-const double	kLightYearPerMetre		= 1.0/kMetrePerLightYear;
-const double	kCentimetrePerInch		=2.54;
-const double	kMillimetrePerInch		=kCentimetrePerInch*10.0;
-const double	kInchesPerMillimetre	=1.0/kMillimetrePerInch;
+const double 	kLightYearsPerAu 		= 1.0/kAuPerLightYear;
+const double	kMetresPerLightYear		=kAuPerLightYear*kMetresPerAu;
+const double	kLightYearsPerMetre		= 1.0/kMetresPerLightYear;
+const double	kCentimetresPerInch		=2.54;
+const double	kMillimetresPerInch		=kCentimetresPerInch*10.0;
+const double	kInchesPerMillimetre	=1.0/kMillimetresPerInch;
 const double	kFeetPerYard			=3.0;
-const double	kMetrePerFoot			=kCentimetrePerInch*12.0/100.0;
-const double	kMetrePerMile			=kMetrePerFoot*5280.0;
-const double	kMetrePerParsec			=kMetrePerLightYear*kLightYearsPerParsec;
+const double	kMetresPerFoot			=kCentimetresPerInch*12.0/100.0;
+const double	kMetresPerMile			=kMetresPerFoot*5280.0;
+const double	kMetresPerParsec		=kMetresPerLightYear*kLightYearsPerParsec;
 const double 	kOneOverRootTwo 		=7.07106781187E-01;
 const double	kAbsoluteZeroInCelcius	= -273.1;	// Alsolute zero,
 const double	kGravitationalConstant	= 6.693e-11;
 const double	kAltOfHorizonAtSeaLevel    = -0.5667*kRadPerDegree;
 const double	kSinAltOfHorizonAtSeaLevel = -0.009890619607;
 const double	kCosAltOfHorizonAtSeaLevel = 9.99951086626E-01;
-const double	kSizeOfSolarSytemMeters = 760.0*kMetrePerAu;
-const double	kDistanceToBigBang = 13500e6*kMetrePerAu*kAuPerLightYear;		// 13.5 Billion ly is the distance to the BB in Tully's cosmology.
+const double	kSizeOfSolarSytemMeters = 760.0*kMetresPerAu;
+const double	kDistanceToBigBang = 13500e6*kMetresPerAu*kAuPerLightYear;		// 13.5 Billion ly is the distance to the BB in Tully's cosmology.
 
 // Astronomical constants
 const double	kJ2000ObliquityAngle	=0.4090926292045900569;		// from Explanatory Sup 2 Astro Almanac p 696
@@ -123,12 +123,12 @@ const double	kJ2000SinObliquityAngle =0.397776995356271641;		// from Explanatory
 
 // Solar System Physical constants
 const double	kRadiusOfEarthMetres		= 6378140;		// this seems to be close to our value
-const double	kRadiusOfEarthKM			= kRadiusOfEarthMetres/kMetrePerKilometre;
+const double	kRadiusOfEarthKM			= kRadiusOfEarthMetres/kMetresPerKilometre;
 const double	kRadiusOfEarthAU			= kRadiusOfEarthKM*kAuPerKilometer;
 const double	kEarthRadiusAu				= kRadiusOfEarthAU;
 
 const double	kRadiusOfMoonMetres			= 1738000;
-const double	kRadiusOfMoonKM				= kRadiusOfMoonMetres/kMetrePerKilometre;
+const double	kRadiusOfMoonKM				= kRadiusOfMoonMetres/kMetresPerKilometre;
 const double	kRadiusOfMoonAU				= kRadiusOfMoonKM*kAuPerKilometer;
 const double	kMoonRadiusAu				= kRadiusOfMoonAU;
 
