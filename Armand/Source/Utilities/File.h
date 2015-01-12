@@ -29,12 +29,13 @@ public:
 	// Returns absolute path
 	static void initAppFolder();
 	static string getAppFolderFullPath() { return sAppFolder; }
+	static string getPreferencesFolder() { return getAppDataLocalFolder().append("/Spitz/ArmandPrefs"); }
 
 	// Returns paths relative to application folder
 	static string getDataFolder() { return "Data"; }
 	static string getResourcesFolder() { return "Resources"; }
-	static string getShadersFolder() { return getResourcesFolder().append("/").append("Shaders"); }
-	static string getModelsFolder() { return getDataFolder().append("/").append("Models"); }
+	static string getShadersFolder() { return getResourcesFolder().append("/Shaders"); }
+	static string getModelsFolder() { return getDataFolder().append("/Models"); }
 
 	static bool	folderExists(const char* inRelativePath);
 	static bool createFolder(const char* inRelativePath);
@@ -55,6 +56,8 @@ public:
 	string	getFileNameWithoutExtension() const { return mFileNameWithoutExtension; }
 
 private:
+	static string getAppDataLocalFolder();
+
 	static string sAppFolder;
 
 	string	mRelativePath;

@@ -19,7 +19,8 @@
 
 #include "stdafx.h"
 
-#include "Shlwapi.h"
+#include <ShlObj.h>
+#include <Shlwapi.h>
 #include "File.h"
 #include "StringUtils.h"
 
@@ -73,6 +74,21 @@ bool File::createFolder(const char* inRelativePath)	// static
 	BOOL created = CreateDirectory(fullPath.c_str(), NULL);
 
 	return (created == TRUE);
+}
+
+string File::getAppDataLocalFolder()
+{
+	string result;
+
+	PWSTR localAppData = 0;
+	SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, NULL, &localAppData);
+	wstring path = localAppData;
+	CoTaskMemFree(static_cast<void*>(localAppData));
+
+	result = stringFromWstring(path);
+	std::replace(result.begin(), result.end(), '\\', '/');
+
+	return result;
 }
 
 File::File(const char* inRelativeFilePath) : File(string(inRelativeFilePath))
