@@ -150,9 +150,9 @@ int APIENTRY _tWinMain(	_In_ HINSTANCE hInstance,
 					gOpenGLWindow->drawScene();
 			}
 
-			if (gOpenGLWindow->getKeys()[VK_F1])	// Is F1 being pressed?
+			if (gOpenGLWindow->getKeys()[VK_F7])	// Is F1 being pressed?
 			{
-				gOpenGLWindow->getKeys()[VK_F1] = false;	// If so, make key FALSE
+				gOpenGLWindow->getKeys()[VK_F7] = false;	// If so, make key FALSE
 
 				fullscreen = !fullscreen;			// Toggle fullscreen / windowed mode
 				gOpenGLWindow->setFullScreen(fullscreen);
