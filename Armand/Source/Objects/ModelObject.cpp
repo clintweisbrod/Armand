@@ -18,8 +18,8 @@ ModelObject::ModelObject(const char* inModelFileName)
 
 	std::random_device rd;
 	std::mt19937 gen(rd());
-	std::uniform_real_distribution<> posDis(-10000000.0, 10000000.0);
-	std::uniform_real_distribution<> sizeDis(1.0, 5.0);
+	std::uniform_real_distribution<> posDis(-1000000.0, 1000000.0);
+	std::uniform_real_distribution<> sizeDis(0.1, 3.0);
 	std::uniform_real_distribution<> colorDis(0.5, 1.0);
 	const int kNumSamples = 1000000;
 	for (int n = 0; n < kNumSamples; ++n)
@@ -48,16 +48,7 @@ bool ModelObject::isInView(Camera& inCamera)
 	if (mModel == NULL)
 		return false;
 
-	// This is the rudiments of a viewer model coordinate system. We're positioning a viewer
-	// and a model in Cartesian space, computing a viewer-model vector, applying a rotation
-	// to the model, and a rotation to the viewer, and then letting the shader do the hard
-	// work of fisheye projecting the resulting image.
-	// We have to perform the viewer-model vector computation in software as in general,
-	// all objects (including the viewer) will maintain 128-bit integer Cartesian positions.
-	// We will perform the vector subtraction in 128-bit integer math, and then cast to
-	// Vec3f.
-
-	// Get viewer-model vector, viewer distance and cache
+	// Get viewer-model vector, viewer distance and cache them
 	mLastViewerModelVector = inCamera.getCameraRelativePosition(this);
 	mLastViewerDistance = mLastViewerModelVector.length();
 
@@ -254,7 +245,7 @@ void ModelObject::renderAsPoint(Camera& inCamera, float inAlpha)
 
 	Mat4f modelViewMatrix = Mat4f::translation(mLastViewerModelVector);
 
-	float_t starFieldDepth = 20000000;
+	float_t starFieldDepth = 2000000;
 	float_t n = mLastViewerDistance - starFieldDepth;
 	float_t f = mLastViewerDistance + starFieldDepth;
 	Mat4f projectionMatrix = gOpenGLWindow->getProjectionMatrix(n, f);

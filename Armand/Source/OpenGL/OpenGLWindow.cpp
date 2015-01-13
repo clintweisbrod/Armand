@@ -68,11 +68,11 @@ OpenGLWindow::OpenGLWindow() : mCreated(false),
 //	mCmdShow = SW_SHOW;
 
 	// Setup camera
-	mCamera.setAperture(degToRad(192.0f));			// 192 degree fisheye
+	mCamera.setAperture(degToRad(180.0f));			// 180 degree fisheye
 	mCamera.setUniveralPositionAU(Vec3d(0,0,0));	// Located at origin in our universal coordinate system
 	mCamera.lookAt(Vec3f(0,0,-1), Vec3f(0,1,0));	// Looking down -z axis with +y axis up.
 
-	mCamera.setUniveralPositionAU(Vec3d(0.0, 0.0, 15000000.0));
+	mCamera.setUniveralPositionAU(Vec3d(0.0, 0.0, 1500000.0));
 }
 
 OpenGLWindow::~OpenGLWindow()

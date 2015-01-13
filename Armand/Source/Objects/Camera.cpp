@@ -29,7 +29,7 @@ void Camera::setAperture(float_t inAperture)
 void Camera::updateOrthoNormalBasis()
 {
 	// This normalize call is critical. Anytime we change mOrientation with a rotate() call,
-	// mOrientation is multipled by another quaternions. Over time, mOrientation will gather
+	// mOrientation is multipled by another quaternion. Over time, mOrientation will gather
 	// rounding errors and will produce non-normalized orthonormal vectors. This will lead 
 	// to artifacts in the fisheye projection, specifically the center of the projection will
 	// no longer contain geometry, it will always be black. Over time, this black central 
