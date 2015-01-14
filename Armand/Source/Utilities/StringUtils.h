@@ -27,6 +27,8 @@ using namespace std;
 bool intFromString(string& inString, int& outInt);
 bool doubleFromString(string& inString, double_t& outDouble);
 bool floatFromString(string& inString, float_t& outFloat);
+wstring getNiceDistanceString(float_t inSpeedInAUPerSecond, int inNumDecimalPlaces);
+wstring getNiceSpeedString(float_t inSpeedInAUPerSecond, int inNumDecimalPlaces);
 
 template<class T>
 void trimString(basic_string<T>& ioString)

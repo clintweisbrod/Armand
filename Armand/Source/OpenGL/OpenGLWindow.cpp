@@ -27,6 +27,7 @@
 #include "Math/constants.h"
 #include "Math/mathlib.h"
 #include "Utilities/Timer.h"
+#include "Utilities/StringUtils.h"
 #include "Objects/ModelObject.h"
 
 bool OpenGLWindow::sEnabledGLExtensions = false;
@@ -882,16 +883,17 @@ void OpenGLWindow::render()
 
 	glEnable(GL_BLEND);
 //	fontRenderer->render(text, 15, Vec2f(100, 100), Vec4f(1.0f, 1.0f, 1.0f, 1.0f), 30);
+	wstring speedStr = getNiceSpeedString(mCamera.getSpeed(), 2);
 	wchar_t infoBuffer[256];
 	wstring text;
-	float_t speed = mCamera.getSpeed();
-	swprintf(infoBuffer, 256, L"Speed: %.3f AU/s", speed);
+	swprintf(infoBuffer, 256, L"Speed: %s", speedStr.c_str());
 	text = infoBuffer;
 	fontRenderer->renderSpherical(text, 15, Vec2f(degToRad(-20.0f), degToRad(5.0f)), Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
 
 	Vec3f cameraPos = (Vec3f)mCamera.getUniveralPosition();
 	float_t cameraDistanceFromOrigin = cameraPos.length();
-	swprintf(infoBuffer, 256, L"Origin: %.3f AU", cameraDistanceFromOrigin);
+	wstring distanceStr = getNiceDistanceString(cameraDistanceFromOrigin, 1);
+	swprintf(infoBuffer, 256, L"Origin: %s", distanceStr.c_str());
 	text = infoBuffer;
 	fontRenderer->renderSpherical(text, 15, Vec2f(degToRad(10.0f), degToRad(5.0f)), Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
 //*/

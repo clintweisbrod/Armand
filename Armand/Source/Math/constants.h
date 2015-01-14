@@ -94,6 +94,7 @@ const double	kAuPerKilometer			=6.68458712405579e-9;		//.. this # does not jive 
 const double	kSpeedOfLight			=1.581250732e-7;			// measured as centuries per AU
 const double	kSpeedOfLightPerMetre	=kAuPerMetre*kSpeedOfLight;	// measured as centuries per Metre
 const double	kSpeedOfLightAUPerHour	=kDaysInHour/kDaysPerCentury/kSpeedOfLight;
+const double	kSpeedOfLightMetresPerSecond = 299792458;
 const double 	kParsecsPerAu 			= 4.848136811e-6;			// explanatory suppl, page 716
 const double 	kAuPerParsec 			= 1.0/kParsecsPerAu;		// explanatory suppl, page 716
 const double 	kAuPerLightYear 		= kAuPerParsec/kLightYearsPerParsec;	
