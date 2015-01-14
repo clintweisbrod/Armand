@@ -278,6 +278,10 @@ bool FontRenderer::render(wstring& inString, int inFontSize, Vec2f& inPen, Vec4f
 	return (numGlyphsRendered == inString.length());
 }
 
+// TODO: As noted in comments, text is currently always rendered in increasing azimuth,
+// starting from the pspecified pen location. It would be really helpful to be able to
+// render the text from right to left (right-justification)
+
 // inPen.x is interpreted as azimuth
 // inPen.y is interpreted as altitude
 // Azimuth is [0, 2pi). 0 is at bottom of screen (front of dome) and moves counterclockwise
