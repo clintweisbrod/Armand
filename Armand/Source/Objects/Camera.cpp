@@ -51,7 +51,8 @@ void Camera::lookAt(Vec3f& inViewerDirection, Vec3f& inUpDirection)
 void Camera::changeSpeed(int inSense)
 {
 	const float_t kMinimumNonZeroSpeed = (float_t)kAuPerMetre * 0.01f;	// 1 cm/s :-)
-	const float_t kAccelFactor = 0.01f;
+	const float_t kAccelFactor = 0.05f;
+//	float_t speedDelta = mSpeedAUPerSecond * kAccelFactor * inSense;
 	float_t speedDelta = mSpeedAUPerSecond * kAccelFactor * inSense;
 	if ((speedDelta == 0) && (inSense == 1))
 		speedDelta = kMinimumNonZeroSpeed;
