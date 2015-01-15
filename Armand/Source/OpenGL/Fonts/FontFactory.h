@@ -36,13 +36,18 @@ class FontRenderer
 		FontRenderer(string& inFontName, GLuint inShader);
 		virtual ~FontRenderer();
 
-		bool render(wstring& inString, int inFontSize, Vec2f& inPen, Vec4f& inColor, float inRotationInDegrees = 0);
-		bool renderSpherical(wstring& inString, int inFontSize, Vec2f& inPen, Vec4f& inColor);
+		bool render(wstring& inString, int inFontSize, Vec2f& inPen, Vec4f& inColor, float inRotationInDegrees = 0, bool inRightJustify = false);
+		bool renderSpherical(wstring& inString, int inFontSize, Vec2f& inPen, Vec4f& inColor, bool inRightJustify = false);
 
 	private:
 		string getSystemFontFile(const string &inFontName) const;
 		void setSceneSize(Vec2i& inSceneSize);
 		texture_font_t* getFontTexture(int inFontSize);
+
+		size_t buildLeftJustifiedLinear(wstring& inString, Vec4f& inColor, texture_font_t* inFont);
+		size_t buildRightJustifiedLinear(wstring& inString, Vec4f& inColor, texture_font_t* inFont);
+		size_t buildLeftJustifiedSpherical(wstring& inString, Vec4f& inColor, Vec2f& inPen, texture_font_t* inFont);
+		size_t buildRightJustifiedSpherical(wstring& inString, Vec4f& inColor, Vec2f& inPen, texture_font_t* inFont);
 
 		string					mFontName;
 		texture_atlas_t*		mAtlas;
