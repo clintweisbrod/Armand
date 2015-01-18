@@ -198,7 +198,9 @@ exit 0
     <ClInclude Include="..\..\Source\Objects\ModelObject.h" />
     <ClInclude Include="..\..\Source\Objects\Camera.h" />
     <ClInclude Include="..\..\Source\Objects\Object.h" />
+    <ClInclude Include="..\..\Source\Objects\RandomPointsCube.h" />
     <ClInclude Include="..\..\Source\Objects\RenderObject.h" />
+    <ClInclude Include="..\..\Source\Objects\Static3DPointSet.h" />
     <ClInclude Include="..\..\Source\OpenGL\Fonts\FontFactory.h" />
     <ClInclude Include="..\..\Source\OpenGL\GLUtils.h" />
     <ClInclude Include="..\..\Source\OpenGL\OpenGLWindow.h" />
@@ -228,7 +230,9 @@ exit 0
     <ClCompile Include="..\..\Source\Objects\Camera.cpp" />
     <ClCompile Include="..\..\Source\Objects\ModelObject.cpp" />
     <ClCompile Include="..\..\Source\Objects\Object.cpp" />
+    <ClCompile Include="..\..\Source\Objects\RandomPointsCube.cpp" />
     <ClCompile Include="..\..\Source\Objects\RenderObject.cpp" />
+    <ClCompile Include="..\..\Source\Objects\Static3DPointSet.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\Fonts\FontFactory.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\GLUtils.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\OpenGLWindow.cpp" />

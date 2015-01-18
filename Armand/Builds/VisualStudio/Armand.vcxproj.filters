@@ -189,6 +189,12 @@
     <ClInclude Include="..\..\Source\Objects\RenderObject.h">
       <Filter>Header Files\Objects</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Source\Objects\RandomPointsCube.h">
+      <Filter>Header Files\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Objects\Static3DPointSet.h">
+      <Filter>Header Files\Objects</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\Main\Armand.cpp">
@@ -249,6 +255,12 @@
       <Filter>Source Files\Objects</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\Objects\RenderObject.cpp">
+      <Filter>Source Files\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Objects\RandomPointsCube.cpp">
+      <Filter>Source Files\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Objects\Static3DPointSet.cpp">
       <Filter>Source Files\Objects</Filter>
     </ClCompile>
   </ItemGroup>

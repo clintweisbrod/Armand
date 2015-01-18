@@ -1,3 +1,22 @@
+// ----------------------------------------------------------------------------
+// Copyright (C) 2015 Clint Weisbrod. All rights reserved.
+//
+// Camera.cpp
+//
+// Class defining location and orientation of viewer in Universal coordinates.
+//
+// THIS SOFTWARE IS PROVIDED BY CLINT WEISBROD "AS IS" AND ANY EXPRESS OR
+// IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+// MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+// EVENT SHALL CLINT WEISBROD OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+// THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// ----------------------------------------------------------------------------
+
 #include "stdafx.h"
 
 #include "Objects/Camera.h"
@@ -71,7 +90,7 @@ void Camera::updatePosition()
 		double_t elapsedSeconds = mTimer.elapsedSeconds();
 		float_t distanceTravelled = mSpeedAUPerSecond * (float_t)elapsedSeconds;
 		Vec3f positionDelta = mLastViewDirection * distanceTravelled;
-		mUniversalPosition += positionDelta;
+		mUniversalPositionAU += positionDelta;
 	}
 	mTimer.reset();
 }
@@ -121,7 +140,7 @@ void Camera::getViewerOrthoNormalBasis(Vec3f& ioViewDirection, Vec3f& ioUpDirect
 
 Vec3f Camera::getCameraRelativePosition(const Object* inObject) const
 {
-	return (Vec3f)(inObject->getUniveralPosition() - mUniversalPosition);
+	return (Vec3f)(inObject->getUniveralPositionAU() - mUniversalPositionAU);
 }
 
 float_t Camera::getObjectPixelDiameter(float_t inObjectDistanceAU, float_t inObjectRadiusAU) const

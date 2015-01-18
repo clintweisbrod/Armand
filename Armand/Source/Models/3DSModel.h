@@ -760,7 +760,7 @@ public:
 	bool		render(Camera& inCamera, Mat4f& inViewMatrix, Quatf& inOrientation,
 					   Vec3f& inLightPositionEyeCoords, Vec3f& inLightColor, float inAlpha);
 	float_t		getModelBoundingRadius() const { return mModelBoundingRadius; };
-	float_t		getPhysicalRadius() const { return mPhysicalRadiusInAU; };
+	float_t		getPhysicalRadiusAU() const { return mPhysicalRadiusInAU; };
 	float_t		getModelUnitsPerAU() const { return mModelUnitsPerAU; };
 	Vec3f		getModelUpVector() const { return mModelUpVector; };
 	Vec3f		getModelRotationAxis() const { return mModelUpVector; };
