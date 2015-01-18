@@ -29,6 +29,7 @@
 #include "Utilities/Timer.h"
 #include "Utilities/StringUtils.h"
 #include "Objects/ModelObject.h"
+#include "Objects/RandomPointsCube.h"
 
 bool OpenGLWindow::sEnabledGLExtensions = false;
 
@@ -70,10 +71,11 @@ OpenGLWindow::OpenGLWindow() : mCreated(false),
 
 	// Setup camera
 	mCamera.setAperture(degToRad(180.0f));			// 180 degree fisheye
-	mCamera.setUniveralPositionAU(Vec3d(0,0,0));	// Located at origin in our universal coordinate system
+	mCamera.setUniveralPositionMetres(Vec3d(0,0,20));	// Located at origin in our universal coordinate system
 	mCamera.lookAt(Vec3f(0,0,-1), Vec3f(0,1,0));	// Looking down -z axis with +y axis up.
 
-	mCamera.setUniveralPositionAU(Vec3d(0.0, 0.0, 1500000.0));
+//	mCamera.setUniveralPositionAU(Vec3d(0.0, 0.0, 1500000.0));
+	mCamera.setUniveralPositionAU(Vec3d(0.0, 0.0, 0.0));
 }
 
 OpenGLWindow::~OpenGLWindow()
@@ -890,7 +892,7 @@ void OpenGLWindow::render()
 	text = infoBuffer;
 	fontRenderer->renderSpherical(text, 15, Vec2f(degToRad(-30.0f), degToRad(-5.0f)), Vec4f(1.0f, 1.0f, 1.0f, 1.0f), true);
 
-	Vec3f cameraPos = (Vec3f)mCamera.getUniveralPosition();
+	Vec3f cameraPos = (Vec3f)mCamera.getUniveralPositionAU();
 	float_t cameraDistanceFromOrigin = cameraPos.length();
 	wstring distanceStr = getNiceDistanceString(cameraDistanceFromOrigin, 1);
 	swprintf(infoBuffer, 256, L"Origin: %s", distanceStr.c_str());
@@ -900,14 +902,16 @@ void OpenGLWindow::render()
 
 ///*
 	// Testing 3DS model loading and fisheye projection shader
-//	mCamera.setUniveralPositionMetres(Vec3d(0.0, 0.0, 2000.0));
-//	mCamera.lookAt(Vec3f(0,0,-1), Vec3f(0,1,0));
-	static ModelObject model("Apollo_3rdStage.3ds");
-	model.setUniveralPositionMetres(Vec3d(0.0, 0.0, 0.0));
-	model.render(mCamera, 1.0f);
+
+//	static ModelObject model("Apollo_3rdStage.3ds");
+//	model.setUniveralPositionMetres(Vec3d(0.0, 0.0, 0.0));
+//	model.render(mCamera, 1.0f);
 
 //	T3DSModelFactory::inst()->RemoveAll();
 //*/
+
+	static RandomPointsCube dataCube;
+	dataCube.render(mCamera, 1.0f);
 }
 
 void OpenGLWindow::postRender()
