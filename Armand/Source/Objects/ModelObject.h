@@ -1,3 +1,22 @@
+// ----------------------------------------------------------------------------
+// Copyright (C) 2015 Clint Weisbrod. All rights reserved.
+//
+// ModelObject.h
+//
+// Class defining location and orientation of a 3DS model.
+//
+// THIS SOFTWARE IS PROVIDED BY CLINT WEISBROD "AS IS" AND ANY EXPRESS OR
+// IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+// MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+// EVENT SHALL CLINT WEISBROD OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+// THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// ----------------------------------------------------------------------------
+
 #include "RenderObject.h"
 #include "Models/3DSModel.h"
 #include "OpenGL/VertexBufferStructs.h"
@@ -12,7 +31,7 @@ public:
 
 	virtual bool isInView(Camera& inCamera);
 	virtual	bool shouldRenderAsPoint(Camera& inCamera) const;
-	virtual void render(Camera& inCamera, float inAlpha);
+	virtual bool render(Camera& inCamera, float inAlpha);
 	virtual void renderAsPoint(Camera& inCamera, float inAlpha);
 	virtual void renderFull(Camera& inCamera, float inAlpha);
 	virtual void setGLStateForFullRender(float inAlpha) const;
@@ -25,9 +44,7 @@ protected:
 	GLuint		mPointVBO;
 	GLuint		mPointShaderHandle;
 
-	Vec3f		mLastViewerModelVector;
 	Vec3f		mLastScaledViewerModelVector;
-	float_t		mLastViewerDistance;
 
 	PointStarVertex	mStarArray[1000000];
 };

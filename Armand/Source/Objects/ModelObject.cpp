@@ -1,3 +1,22 @@
+// ----------------------------------------------------------------------------
+// Copyright (C) 2015 Clint Weisbrod. All rights reserved.
+//
+// ModelObject.cpp
+//
+// Class defining location and orientation of a 3DS model.
+//
+// THIS SOFTWARE IS PROVIDED BY CLINT WEISBROD "AS IS" AND ANY EXPRESS OR
+// IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+// MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+// EVENT SHALL CLINT WEISBROD OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+// THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// ----------------------------------------------------------------------------
+
 #include "stdafx.h"
 
 #include <random>
@@ -9,30 +28,14 @@
 
 ModelObject::ModelObject(const char* inModelFileName)
 {
-//	mModel = T3DSModelFactory::inst()->get(inModelFileName);
-	mModel = T3DSModelFactory::inst()->get(inModelFileName, true);
-
 	mPointVAO = 0;
 	mPointVBO = 0;
 	mPointShaderHandle = 0;
 
-	std::random_device rd;
-	std::mt19937 gen(rd());
-	std::uniform_real_distribution<> posDis(-1000000.0, 1000000.0);
-	std::uniform_real_distribution<> sizeDis(0.1, 3.0);
-	std::uniform_real_distribution<> colorDis(0.5, 1.0);
-	const int kNumSamples = 1000000;
-	for (int n = 0; n < kNumSamples; ++n)
-	{
-		mStarArray[n].position[0] = (GLfloat)posDis(gen);
-		mStarArray[n].position[1] = (GLfloat)posDis(gen);
-		mStarArray[n].position[2] = (GLfloat)posDis(gen);
-		mStarArray[n].size = (GLfloat)sizeDis(gen);
-		mStarArray[n].color[0] = (GLubyte)(colorDis(gen) * 255.0);
-		mStarArray[n].color[1] = (GLubyte)(colorDis(gen) * 255.0);
-		mStarArray[n].color[2] = (GLubyte)(colorDis(gen) * 255.0);
-		mStarArray[n].color[3] = 255;
-	}
+	// Get pointer to model
+	mModel = T3DSModelFactory::inst()->get(inModelFileName);
+	if (mModel)
+		setBoundingRadiusAU(mModel->getPhysicalRadiusAU());
 }
 
 ModelObject::~ModelObject()
@@ -48,24 +51,19 @@ bool ModelObject::isInView(Camera& inCamera)
 	if (mModel == NULL)
 		return false;
 
-	// Get viewer-model vector, viewer distance and cache them
-	mLastViewerModelVector = inCamera.getCameraRelativePosition(this);
-	mLastViewerDistance = mLastViewerModelVector.length();
-
 	// viewerModelVector is in AU. We need to use mModelBoundingRadius and mPhysicalRadiusInAU
 	// to correctly scale viewerModelVector so that things look correct. Compute modelUnitsPerAU.
 	float_t modelBoundingRadius = mModel->getModelBoundingRadius();
 	float_t modelUnitsPerAU = mModel->getModelUnitsPerAU();
-	mLastScaledViewerModelVector = mLastViewerModelVector * modelUnitsPerAU;
+	mLastScaledViewerModelVector = mLastViewerObjectVector * modelUnitsPerAU;
 
 	// Get camera direction
 	Vec3f viewDirection, upDirection, leftDirection;
 	inCamera.getViewerOrthoNormalBasis(viewDirection, upDirection, leftDirection);
 	GLfloat fisheyeAperture = inCamera.getAperture();
-	float_t viewerModelLength = mLastViewerDistance * modelUnitsPerAU;
+	float_t viewerModelLength = mLastViewerDistanceAU * modelUnitsPerAU;
 	double_t modelAngularRadius = atan(modelBoundingRadius / viewerModelLength);
-	Vec3f viewerModelVectorNorm = mLastViewerModelVector / mLastViewerDistance;
-	double_t angleBetween = acosf(viewDirection * viewerModelVectorNorm);
+	double_t angleBetween = acosf(viewDirection * mLastViewerObjectVectorNormalized);
 	if (angleBetween - modelAngularRadius > fisheyeAperture / 2)
 	{
 		// Model is not visible.
@@ -77,19 +75,10 @@ bool ModelObject::isInView(Camera& inCamera)
 
 bool ModelObject::shouldRenderAsPoint(Camera& inCamera) const
 {
-	return true;
-
 	if (mModel == NULL)
 		return false;
-
-	// Decide if model is big enough (in pixels) to warrant rendering.
-	const float_t kMinPixelDiameter = 5;
-	float_t physicalRadiusInAU = mModel->getPhysicalRadius();
-	float_t pixelDiameter = inCamera.getObjectPixelDiameter(mLastViewerDistance, physicalRadiusInAU);
-	if (pixelDiameter < kMinPixelDiameter)
-		return true;
 	else
-		return false;
+		return RenderObject::shouldRenderAsPoint(inCamera);
 }
 
 void ModelObject::setGLStateForPoint(float inAlpha) const
@@ -156,10 +145,10 @@ void ModelObject::setGLStateForFullRender(float inAlpha) const
 	glDisable(GL_BLEND);
 }
 
-void ModelObject::render(Camera& inCamera, float inAlpha)
+bool ModelObject::render(Camera& inCamera, float inAlpha)
 {
-	if (!isInView(inCamera))
-		return;
+	if (!RenderObject::render(inCamera, inAlpha))
+		return false;
 
 	if (shouldRenderAsPoint(inCamera))
 	{
@@ -171,6 +160,8 @@ void ModelObject::render(Camera& inCamera, float inAlpha)
 			if (shaderProgram)
 				mPointShaderHandle = shaderProgram->getHandle();
 		}
+		if (mPointShaderHandle == 0)
+			return false;
 
 		setGLStateForPoint(inAlpha);
 		renderAsPoint(inCamera, inAlpha);
@@ -178,17 +169,27 @@ void ModelObject::render(Camera& inCamera, float inAlpha)
 	else
 	{
 		if (mModel == NULL)
-			return;
+			return false;
 		if (!mModel->getShaderHandle())
-			return;
+			return false;
 
 		setGLStateForFullRender(inAlpha);
 		renderFull(inCamera, inAlpha);
 	}
+
+	return true;
 }
 
 void ModelObject::renderAsPoint(Camera& inCamera, float inAlpha)
 {
+	// REVISIT: 
+	// TODO: This is a lot of code to render ONE point! Furthermore, I shouldn't be
+	// using GL_POINTS or GL_POINT_SPRITE because although the point vertex will be
+	// transformed through the fisheye math, the actual rasterized shape of the point
+	// will always be circular. This will cause the point to look egg-shaped. This
+	// seems like a lot of complaining for one point, but we will need a generalized
+	// method for rendering thousands of nice points when we get to star rendering.
+/*
 	PointStarVertex vertexInfo;
 	vertexInfo.position[0] = 0;
 	vertexInfo.position[1] = 0;
@@ -197,12 +198,6 @@ void ModelObject::renderAsPoint(Camera& inCamera, float inAlpha)
 	const GLfloat kWhiteLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	glColor4fToColor4ub(kWhiteLight, vertexInfo.color);
 
-	// TODO: This is a lot of code to render ONE point! Furthermore, I shouldn't be
-	// using GL_POINTS or GL_POINT_SPRITE because although the point vertex will be
-	// transformed through the fisheye math, the actual rasterized shape of the point
-	// will always be circular. This will cause the point to look egg-shaped. This
-	// seems like a lot of complaining for one point, but we will need a generalized
-	// method for rendering thousands of nice points when we get to star rendering.
 	if (mPointVAO == 0)
 	{
 		// Allocate VAOs
@@ -228,11 +223,8 @@ void ModelObject::renderAsPoint(Camera& inCamera, float inAlpha)
 		glEnableVertexAttribArray(1);
 		glEnableVertexAttribArray(2);
 
-		// Place our origin point in the buffer at index 0
-		memcpy(&mStarArray[0], &vertexInfo, sizeof(PointStarVertex));
-
 		// Copy the buffer up to the VBO
-		glBufferData(GL_ARRAY_BUFFER, 1000000 * sizeof(PointStarVertex), mStarArray, GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(PointStarVertex), &vertexInfo, GL_STATIC_DRAW);
 
 		glCheckForError();
 	}
@@ -243,11 +235,11 @@ void ModelObject::renderAsPoint(Camera& inCamera, float inAlpha)
 	Vec3f viewDirection, upDirection, leftDirection;
 	inCamera.getViewerOrthoNormalBasis(viewDirection, upDirection, leftDirection);
 
-	Mat4f modelViewMatrix = Mat4f::translation(mLastViewerModelVector);
+	Mat4f modelViewMatrix = Mat4f::translation(mLastViewerObjectVector);
 
 	float_t starFieldDepth = 2000000;
-	float_t n = mLastViewerDistance - starFieldDepth;
-	float_t f = mLastViewerDistance + starFieldDepth;
+	float_t n = mLastViewerDistanceAU - starFieldDepth;
+	float_t f = mLastViewerDistanceAU + starFieldDepth;
 	Mat4f projectionMatrix = gOpenGLWindow->getProjectionMatrix(n, f);
 
 	// Need this to affect clipping vertices behind viewer
@@ -265,8 +257,7 @@ void ModelObject::renderAsPoint(Camera& inCamera, float inAlpha)
 		glUniformMatrix4fv(glGetUniformLocation(mPointShaderHandle, "uModelViewMatrix"), 1, 0, modelViewMatrix.data);
 		glUniformMatrix4fv(glGetUniformLocation(mPointShaderHandle, "uProjectionMatrix"), 1, 0, projectionMatrix.data);
 
-//		glDrawArrays(GL_POINTS, 0, 1);
-		glDrawArrays(GL_POINTS, 0, 1000000);
+		glDrawArrays(GL_POINTS, 0, 1);
 
 		glUseProgram(0);
 	}
@@ -275,6 +266,7 @@ void ModelObject::renderAsPoint(Camera& inCamera, float inAlpha)
 
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+*/
 }
 
 void ModelObject::renderFull(Camera& inCamera, float inAlpha)
