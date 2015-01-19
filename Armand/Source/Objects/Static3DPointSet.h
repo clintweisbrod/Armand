@@ -30,17 +30,15 @@ public:
 	virtual ~Static3DPointSet();
 
 	virtual bool render(Camera& inCamera, float inAlpha);
-	virtual void renderAsPoint(Camera& inCamera, float inAlpha);
-	virtual void renderFull(Camera& inCamera, float inAlpha);
+	virtual bool renderFull(Camera& inCamera, float inAlpha);
 	virtual void setGLStateForFullRender(float inAlpha) const;
-	virtual void setGLStateForPoint(float inAlpha) const;
 
 protected:
 	bool setNumPoints(GLsizei inNumPoints);
+	void finalize();
 
-	GLuint				mPointVAO;
-	GLuint				mPointVBO;
-	GLuint				mPointShaderHandle;
+	GLuint				mPointsVAO;
+	GLuint				mPointsVBO;
 
 	GLsizei				mNumPoints;
 	PointStarVertex*	mPointArray;

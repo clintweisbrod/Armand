@@ -28,10 +28,6 @@
 
 ModelObject::ModelObject(const char* inModelFileName)
 {
-	mPointVAO = 0;
-	mPointVBO = 0;
-	mPointShaderHandle = 0;
-
 	// Get pointer to model
 	mModel = T3DSModelFactory::inst()->get(inModelFileName);
 	if (mModel)
@@ -40,10 +36,6 @@ ModelObject::ModelObject(const char* inModelFileName)
 
 ModelObject::~ModelObject()
 {
-	if (mPointVAO)
-		glDeleteVertexArrays(1, &mPointVAO);
-	if (mPointVBO)
-		glDeleteBuffers(1, &mPointVBO);
 }
 
 bool ModelObject::isInView(Camera& inCamera)
@@ -147,24 +139,15 @@ void ModelObject::setGLStateForFullRender(float inAlpha) const
 
 bool ModelObject::render(Camera& inCamera, float inAlpha)
 {
+	bool result = false;
+
 	if (!RenderObject::render(inCamera, inAlpha))
 		return false;
 
 	if (shouldRenderAsPoint(inCamera))
 	{
-		if (mPointShaderHandle == 0)
-		{
-			// This is a good time load the shader program
-			ShaderProgram* shaderProgram = ShaderFactory::inst()->getShaderProgram("Stars/PointStars.vert",
-																				   "Stars/PointStars.frag");
-			if (shaderProgram)
-				mPointShaderHandle = shaderProgram->getHandle();
-		}
-		if (mPointShaderHandle == 0)
-			return false;
-
 		setGLStateForPoint(inAlpha);
-		renderAsPoint(inCamera, inAlpha);
+		result = renderAsPoint(inCamera, inAlpha);
 	}
 	else
 	{
@@ -174,103 +157,21 @@ bool ModelObject::render(Camera& inCamera, float inAlpha)
 			return false;
 
 		setGLStateForFullRender(inAlpha);
-		renderFull(inCamera, inAlpha);
+		result = renderFull(inCamera, inAlpha);
 	}
 
-	return true;
+	return result;
 }
 
-void ModelObject::renderAsPoint(Camera& inCamera, float inAlpha)
+bool ModelObject::renderAsPoint(Camera& inCamera, float inAlpha)
 {
-	// REVISIT: 
-	// TODO: This is a lot of code to render ONE point! Furthermore, I shouldn't be
-	// using GL_POINTS or GL_POINT_SPRITE because although the point vertex will be
-	// transformed through the fisheye math, the actual rasterized shape of the point
-	// will always be circular. This will cause the point to look egg-shaped. This
-	// seems like a lot of complaining for one point, but we will need a generalized
-	// method for rendering thousands of nice points when we get to star rendering.
-/*
-	PointStarVertex vertexInfo;
-	vertexInfo.position[0] = 0;
-	vertexInfo.position[1] = 0;
-	vertexInfo.position[2] = 0;
-	vertexInfo.size = 5;
-	const GLfloat kWhiteLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	glColor4fToColor4ub(kWhiteLight, vertexInfo.color);
-
-	if (mPointVAO == 0)
-	{
-		// Allocate VAOs
-		glGenVertexArrays(1, &mPointVAO);
-
-		// Allocate VBOs
-		glGenBuffers(1, &mPointVBO);
-
-		// Bind the VAO as the current used object
-		glBindVertexArray(mPointVAO);
-
-		// Bind the VBO as being the active buffer and storing vertex attributes (coordinates)
-		glBindBuffer(GL_ARRAY_BUFFER, mPointVBO);
-
-		GLuint offset = 0;
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(PointStarVertex), BUFFER_OFFSET(offset));	// vaoPosition
-		offset += (3 * sizeof(GLfloat));
-		glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, sizeof(PointStarVertex), BUFFER_OFFSET(offset));	// vaoPointSize
-		offset += (1 * sizeof(GLfloat));
-		glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(PointStarVertex), BUFFER_OFFSET(offset));	// vaoColor
-
-		glEnableVertexAttribArray(0);
-		glEnableVertexAttribArray(1);
-		glEnableVertexAttribArray(2);
-
-		// Copy the buffer up to the VBO
-		glBufferData(GL_ARRAY_BUFFER, sizeof(PointStarVertex), &vertexInfo, GL_STATIC_DRAW);
-
-		glCheckForError();
-	}
-
-	glBindVertexArray(mPointVAO);
-
-	// Get camera orthonormal basis
-	Vec3f viewDirection, upDirection, leftDirection;
-	inCamera.getViewerOrthoNormalBasis(viewDirection, upDirection, leftDirection);
-
-	Mat4f modelViewMatrix = Mat4f::translation(mLastViewerObjectVector);
-
-	float_t starFieldDepth = 2000000;
-	float_t n = mLastViewerDistanceAU - starFieldDepth;
-	float_t f = mLastViewerDistanceAU + starFieldDepth;
-	Mat4f projectionMatrix = gOpenGLWindow->getProjectionMatrix(n, f);
-
-	// Need this to affect clipping vertices behind viewer
-	glEnable(GL_CLIP_DISTANCE0);
-
-	glUseProgram(mPointShaderHandle);
-	{
-		glUniform1f(glGetUniformLocation(mPointShaderHandle, "uAlpha"), inAlpha);
-		glUniform1f(glGetUniformLocation(mPointShaderHandle, "uAperture"), inCamera.getAperture());
-		glUniform1f(glGetUniformLocation(mPointShaderHandle, "uClipPlaneDistance"), inCamera.getFisheyeClipPlaneDistance());
-		glUniform3fv(glGetUniformLocation(mPointShaderHandle, "uViewDirection"), 1, viewDirection.data);
-		glUniform3fv(glGetUniformLocation(mPointShaderHandle, "uUpDirection"), 1, upDirection.data);
-		glUniform3fv(glGetUniformLocation(mPointShaderHandle, "uLeftDirection"), 1, leftDirection.data);
-
-		glUniformMatrix4fv(glGetUniformLocation(mPointShaderHandle, "uModelViewMatrix"), 1, 0, modelViewMatrix.data);
-		glUniformMatrix4fv(glGetUniformLocation(mPointShaderHandle, "uProjectionMatrix"), 1, 0, projectionMatrix.data);
-
-		glDrawArrays(GL_POINTS, 0, 1);
-
-		glUseProgram(0);
-	}
-
-	glDisable(GL_CLIP_DISTANCE0);
-
-	glBindVertexArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-*/
+	return RenderObject::renderAsPoint(inCamera, inAlpha);
 }
 
-void ModelObject::renderFull(Camera& inCamera, float inAlpha)
+bool ModelObject::renderFull(Camera& inCamera, float inAlpha)
 {
+	bool result = false;
+
 	// Apply translation to model to position it in world coordinates
 	Mat4f viewMatrix = Mat4f::translation(mLastScaledViewerModelVector);
 
@@ -288,7 +189,7 @@ void ModelObject::renderFull(Camera& inCamera, float inAlpha)
 	Vec3f lightColor(1, 1, 1);
 
 	// Render the model
-	mModel->render(inCamera, viewMatrix, modelOrientation, lightPositionEyeCoords, lightColor, inAlpha);
+	result = mModel->render(inCamera, viewMatrix, modelOrientation, lightPositionEyeCoords, lightColor, inAlpha);
 
 	rotationY += dRotationY;
 	if (rotationY > 360)
@@ -339,4 +240,6 @@ void ModelObject::renderFull(Camera& inCamera, float inAlpha)
 		glEnd();
 	}
 #endif
+
+	return result;
 }

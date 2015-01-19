@@ -32,18 +32,13 @@ public:
 	virtual bool isInView(Camera& inCamera);
 	virtual	bool shouldRenderAsPoint(Camera& inCamera) const;
 	virtual bool render(Camera& inCamera, float inAlpha);
-	virtual void renderAsPoint(Camera& inCamera, float inAlpha);
-	virtual void renderFull(Camera& inCamera, float inAlpha);
+	virtual bool renderAsPoint(Camera& inCamera, float inAlpha);
+	virtual bool renderFull(Camera& inCamera, float inAlpha);
 	virtual void setGLStateForFullRender(float inAlpha) const;
 	virtual void setGLStateForPoint(float inAlpha) const;
 
 protected:
 	T3DSModel*	mModel;
-
-	GLuint		mPointVAO;
-	GLuint		mPointVBO;
-	GLuint		mPointShaderHandle;
-
 	Vec3f		mLastScaledViewerModelVector;
 
 	PointStarVertex	mStarArray[1000000];

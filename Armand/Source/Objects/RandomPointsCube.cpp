@@ -30,7 +30,7 @@ RandomPointsCube::RandomPointsCube()
 	loadData();
 
 	// Position the center of the cube in Universal coordinates
-	setUniveralPositionAU(Vec3d(0.0, 0.0, -1500000.0));
+	setUniveralPositionLY(Vec3d(0.0, 0.0, -15000.0));
 }
 
 RandomPointsCube::~RandomPointsCube()
@@ -64,4 +64,7 @@ void RandomPointsCube::loadData()
 
 	// Set the bounding radius of the data set
 	setBoundingRadiusAU((float_t)(kRoot3 * kCubeDimensionAU));
+
+	// finalize
+	finalize();
 }

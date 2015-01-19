@@ -17,7 +17,9 @@
 // THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // ----------------------------------------------------------------------------
 
+#include <GL/glew.h>
 #include "Camera.h"
+#include "OpenGL/VertexBufferStructs.h"
 
 #pragma once
 
@@ -27,18 +29,35 @@ public:
 	RenderObject();
 	virtual ~RenderObject();
 
+	void init();
 	void preRender(Camera& inCamera);
 
 	virtual bool isInView(Camera& inCamera);
 	virtual bool shouldRenderAsPoint(Camera& inCamera) const;
 	virtual bool render(Camera& inCamera, float inAlpha);
-	virtual void renderAsPoint(Camera& inCamera, float inAlpha) = 0;
-	virtual void renderFull(Camera& inCamera, float inAlpha) = 0;
+	virtual bool renderAsPoint(Camera& inCamera, float inAlpha);
+	virtual bool renderFull(Camera& inCamera, float inAlpha) = 0;
 	virtual void setGLStateForFullRender(float inAlpha) const;
 	virtual void setGLStateForPoint(float inAlpha) const;
 
 protected:
-	Vec3f		mLastViewerObjectVector;
-	Vec3f		mLastViewerObjectVectorNormalized;
-	float_t		mLastViewerDistanceAU;
+	Vec3f	mLastViewerObjectVector;
+	Vec3f	mLastViewerObjectVectorNormalized;
+	float_t	mLastViewerDistanceAU;
+
+
+	//
+	// Render as point
+	//
+	void	setPointSize(GLfloat inSize);
+	void	setPointColor(const GLubyte* inColor);
+	void	enableShader(Camera& inCamera, float inAlpha);
+	void	disableShader();
+
+	PointStarVertex	mPoint;
+
+	// These are static so that multiple instances of RenderObject can share
+	static GLuint	sPointVAO;
+	static GLuint	sPointVBO;
+	static GLuint	sPointShaderHandle;
 };

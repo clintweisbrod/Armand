@@ -71,11 +71,11 @@ OpenGLWindow::OpenGLWindow() : mCreated(false),
 
 	// Setup camera
 	mCamera.setAperture(degToRad(180.0f));			// 180 degree fisheye
-	mCamera.setUniveralPositionMetres(Vec3d(0,0,20));	// Located at origin in our universal coordinate system
+	mCamera.setUniveralPositionMetres(Vec3d(0,0,0));	// Located at origin in our universal coordinate system
 	mCamera.lookAt(Vec3f(0,0,-1), Vec3f(0,1,0));	// Looking down -z axis with +y axis up.
 
 //	mCamera.setUniveralPositionAU(Vec3d(0.0, 0.0, 1500000.0));
-	mCamera.setUniveralPositionAU(Vec3d(0.0, 0.0, 0.0));
+//	mCamera.setUniveralPositionAU(Vec3d(0.0, 0.0, 0.0));
 }
 
 OpenGLWindow::~OpenGLWindow()
@@ -791,7 +791,7 @@ void OpenGLWindow::drawScene()
 	mAverageRenderedFrameRate += 1.0 / kNumberOfFramesToAverageOver * frameRenderTime;
 
 	// Report frames per second in window caption ever 60 frames, which with VSYNC enabled should give
-	// an update frequency on 1 Hz.
+	// an update frequency of 1 Hz.
 	if (!mFullscreen && ((mFrameCount % 60) == 0))
 	{
 		double fps = 1.0 / mAverageRenderedFrameRate;
@@ -894,7 +894,7 @@ void OpenGLWindow::render()
 
 	Vec3f cameraPos = (Vec3f)mCamera.getUniveralPositionAU();
 	float_t cameraDistanceFromOrigin = cameraPos.length();
-	wstring distanceStr = getNiceDistanceString(cameraDistanceFromOrigin, 1);
+	wstring distanceStr = getNiceDistanceString(cameraDistanceFromOrigin, 2);
 	swprintf(infoBuffer, 256, L"Origin: %s", distanceStr.c_str());
 	text = infoBuffer;
 	fontRenderer->renderSpherical(text, 15, Vec2f(degToRad(30.0f), degToRad(-5.0f)), Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
@@ -903,9 +903,9 @@ void OpenGLWindow::render()
 ///*
 	// Testing 3DS model loading and fisheye projection shader
 
-//	static ModelObject model("Apollo_3rdStage.3ds");
-//	model.setUniveralPositionMetres(Vec3d(0.0, 0.0, 0.0));
-//	model.render(mCamera, 1.0f);
+	static ModelObject model("Apollo_3rdStage.3ds");
+	model.setUniveralPositionAU(Vec3d(0.0, 0.0, 1.0));
+	model.render(mCamera, 1.0f);
 
 //	T3DSModelFactory::inst()->RemoveAll();
 //*/
