@@ -129,10 +129,15 @@ bool RenderObject::isInView(Camera& inCamera)
 	// Get camera direction
 	Vec3f viewDirection, upDirection, leftDirection;
 	inCamera.getViewerOrthoNormalBasis(viewDirection, upDirection, leftDirection);
-	float_t fisheyeAperture = inCamera.getAperture();
-	double_t objectAngularRadius = atan(mBoundingRadiusAU / mLastViewerDistanceAU);
+
+	// Compute model angular radius
+	double_t modelAngularRadius = atan(mBoundingRadiusAU / mLastViewerDistanceAU);
+
+	// Compute angle between viewDirection and viewer-object direction
 	double_t angleBetween = acosf(viewDirection * mLastViewerObjectVectorNormalized);
-	if (angleBetween - objectAngularRadius > fisheyeAperture / 2)
+
+	GLfloat halfFisheyeAperture = inCamera.getAperture() / 2;
+	if (angleBetween - modelAngularRadius > halfFisheyeAperture)
 	{
 		// Model is not visible.
 		return false;

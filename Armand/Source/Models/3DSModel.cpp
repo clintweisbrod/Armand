@@ -114,6 +114,7 @@ T3DSObject::T3DSObject() :	mNumVertices(0),
 T3DSModel::T3DSModel()
 {
 	mModelDataLoaded = false;
+	mModelDataLoadAttempted = false;
 	mMetaDataLoaded = false;
 
     try {
@@ -209,6 +210,14 @@ void T3DSModel::cleanUp()
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
+bool T3DSModel::load()
+{
+	if (mModelDataLoadAttempted)
+		return isLoaded();
+
+	return load(mFile);
+}
+
 bool T3DSModel::load(File& inModelFile, bool inLoadMetaOnly)
 {
 	bool bResult = true;
@@ -294,13 +303,16 @@ bool T3DSModel::load(File& inModelFile, bool inLoadMetaOnly)
 		{
 			bResult = false;
 		}
+
+		mModelDataLoadAttempted = true;
 	}
 	
 	// Load model meta data, which will be found in same folder as the model.
 	if (!mMetaDataLoaded)
 		loadMetaData(inModelFile);
 
-	mModelUnitsPerAU = mModelBoundingRadius / mPhysicalRadiusInAU;
+	if (mModelDataLoaded)
+		mModelUnitsPerAU = mModelBoundingRadius / mPhysicalRadiusInAU;
 
 	return bResult;
 }

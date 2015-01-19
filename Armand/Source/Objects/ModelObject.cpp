@@ -28,41 +28,14 @@
 
 ModelObject::ModelObject(const char* inModelFileName)
 {
-	// Get pointer to model
-	mModel = T3DSModelFactory::inst()->get(inModelFileName);
+	// Get pointer to model but only load meta data for now
+	mModel = T3DSModelFactory::inst()->get(inModelFileName, true);
 	if (mModel)
 		setBoundingRadiusAU(mModel->getPhysicalRadiusAU());
 }
 
 ModelObject::~ModelObject()
 {
-}
-
-bool ModelObject::isInView(Camera& inCamera)
-{
-	if (mModel == NULL)
-		return false;
-
-	// viewerModelVector is in AU. We need to use mModelBoundingRadius and mPhysicalRadiusInAU
-	// to correctly scale viewerModelVector so that things look correct. Compute modelUnitsPerAU.
-	float_t modelBoundingRadius = mModel->getModelBoundingRadius();
-	float_t modelUnitsPerAU = mModel->getModelUnitsPerAU();
-	mLastScaledViewerModelVector = mLastViewerObjectVector * modelUnitsPerAU;
-
-	// Get camera direction
-	Vec3f viewDirection, upDirection, leftDirection;
-	inCamera.getViewerOrthoNormalBasis(viewDirection, upDirection, leftDirection);
-	GLfloat fisheyeAperture = inCamera.getAperture();
-	float_t viewerModelLength = mLastViewerDistanceAU * modelUnitsPerAU;
-	double_t modelAngularRadius = atan(modelBoundingRadius / viewerModelLength);
-	double_t angleBetween = acosf(viewDirection * mLastViewerObjectVectorNormalized);
-	if (angleBetween - modelAngularRadius > fisheyeAperture / 2)
-	{
-		// Model is not visible.
-		return false;
-	}
-	else
-		return true;
 }
 
 bool ModelObject::shouldRenderAsPoint(Camera& inCamera) const
@@ -151,10 +124,19 @@ bool ModelObject::render(Camera& inCamera, float inAlpha)
 	}
 	else
 	{
+		// Make sure the model factory found the file this instance was created with
 		if (mModel == NULL)
 			return false;
+
+		// Make sure the model shader was successfully loaded
 		if (!mModel->getShaderHandle())
 			return false;
+
+		// Make sure the model data is loaded
+		if (!mModel->isLoaded())
+			mModel->load();
+		if (!mModel->isLoaded())
+			return false;	// Error while loading model data
 
 		setGLStateForFullRender(inAlpha);
 		result = renderFull(inCamera, inAlpha);
@@ -173,6 +155,7 @@ bool ModelObject::renderFull(Camera& inCamera, float inAlpha)
 	bool result = false;
 
 	// Apply translation to model to position it in world coordinates
+	mLastScaledViewerModelVector = mLastViewerObjectVector * mModel->getModelUnitsPerAU();
 	Mat4f viewMatrix = Mat4f::translation(mLastScaledViewerModelVector);
 
 	// Apply rotation to model

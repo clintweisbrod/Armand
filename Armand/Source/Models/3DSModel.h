@@ -756,6 +756,7 @@ public:
 	~T3DSModel();
 
 	// This is the function that you call to load the 3DS
+	bool		load();
 	bool		load(File& inFile, bool inLoadMetaOnly = false);
 	bool		render(Camera& inCamera, Mat4f& inViewMatrix, Quatf& inOrientation,
 					   Vec3f& inLightPositionEyeCoords, Vec3f& inLightColor, float inAlpha);
@@ -767,7 +768,7 @@ public:
 	float_t		getRotationRate() const { return mRotationRateInRadiansPerCentury; };
 	float_t		getInclinationAngle() const { return mInclinationAngleInDegrees; };
 	string		getName() const { return mFilename; };
-	bool		isLoaded() const { return mModelDataLoaded; };
+	bool		isLoaded() const { return mModelDataLoaded || mModelDataLoadAttempted; };
 	string		getTextureFolderName() const { return mTextureFolderName; };
 	GLuint		getShaderHandle();
 
@@ -843,6 +844,7 @@ private:
 	float_t				mRotationRateInRadiansPerCentury;
 	
 	bool				mModelDataLoaded;
+	bool				mModelDataLoadAttempted;
 	bool				mMetaDataLoaded;
 
 	// VBO rendering

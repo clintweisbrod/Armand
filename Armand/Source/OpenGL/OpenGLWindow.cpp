@@ -904,7 +904,7 @@ void OpenGLWindow::render()
 	// Testing 3DS model loading and fisheye projection shader
 
 	static ModelObject model("Apollo_3rdStage.3ds");
-	model.setUniveralPositionAU(Vec3d(0.0, 0.0, 1.0));
+	model.setUniveralPositionKm(Vec3d(0.0, 0.0, 10));
 	model.render(mCamera, 1.0f);
 
 //	T3DSModelFactory::inst()->RemoveAll();
