@@ -26,10 +26,11 @@
 class Static3DPointSet : public RenderObject
 {
 public:
-	Static3DPointSet();
+	Static3DPointSet(int inNumPoints);
 	virtual ~Static3DPointSet();
 
-	virtual bool render(Camera& inCamera, float inAlpha);
+	virtual bool canRenderFull();
+	virtual bool renderAsPoint(Camera& inCamera, float inAlpha);
 	virtual bool renderFull(Camera& inCamera, float inAlpha);
 	virtual void setGLStateForFullRender(float inAlpha) const;
 

@@ -26,7 +26,7 @@
 class RandomPointsCube : public Static3DPointSet
 {
 public:
-	RandomPointsCube();
+	RandomPointsCube(int inNumSamples);
 	virtual ~RandomPointsCube();
 
 protected:

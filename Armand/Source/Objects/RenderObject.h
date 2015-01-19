@@ -30,13 +30,13 @@ public:
 	virtual ~RenderObject();
 
 	void init();
-	void preRender(Camera& inCamera);
+	bool render(Camera& inCamera, float inAlpha);
 
+	virtual bool canRenderFull();
 	virtual bool isInView(Camera& inCamera);
 	virtual bool shouldRenderAsPoint(Camera& inCamera) const;
-	virtual bool render(Camera& inCamera, float inAlpha);
 	virtual bool renderAsPoint(Camera& inCamera, float inAlpha);
-	virtual bool renderFull(Camera& inCamera, float inAlpha) = 0;
+	virtual bool renderFull(Camera& inCamera, float inAlpha);
 	virtual void setGLStateForFullRender(float inAlpha) const;
 	virtual void setGLStateForPoint(float inAlpha) const;
 

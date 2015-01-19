@@ -38,47 +38,17 @@ ModelObject::~ModelObject()
 {
 }
 
-bool ModelObject::shouldRenderAsPoint(Camera& inCamera) const
+bool ModelObject::canRenderFull()
 {
+	// Make sure the model factory found the file this instance was created with
 	if (mModel == NULL)
 		return false;
-	else
-		return RenderObject::shouldRenderAsPoint(inCamera);
-}
 
-void ModelObject::setGLStateForPoint(float inAlpha) const
-{
-	// Enable multisampling if we can
-	if (gOpenGLWindow->hasMultisampleBuffer() && GLEW_ARB_multisample)
-	{
-		glEnable(GL_MULTISAMPLE);
-		glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST);
-	}
-	else
-		glDisable(GL_MULTISAMPLE_ARB);
+	// Make sure the model shader was successfully loaded
+	if (!mModel->getShaderHandle())
+		return false;
 
-	// Disable alpha test
-	glDisable(GL_ALPHA_TEST);
-
-	// Disable depth testing
-	glDisable(GL_DEPTH_TEST);
-
-	// Disable surface culling
-	glDisable(GL_CULL_FACE);
-
-	// Disable texturing
-	glTexturingOff();
-
-	// Enable setting point size within vertex shader
-	glEnable(GL_PROGRAM_POINT_SIZE);
-
-	// Smooth shading
-	glShadeModel(GL_SMOOTH);
-	glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-
-	// Disable blend
-	glDisable(GL_BLEND);
+	return true;
 }
 
 void ModelObject::setGLStateForFullRender(float inAlpha) const
@@ -110,49 +80,24 @@ void ModelObject::setGLStateForFullRender(float inAlpha) const
 	glDisable(GL_BLEND);
 }
 
-bool ModelObject::render(Camera& inCamera, float inAlpha)
-{
-	bool result = false;
-
-	if (!RenderObject::render(inCamera, inAlpha))
-		return false;
-
-	if (shouldRenderAsPoint(inCamera))
-	{
-		setGLStateForPoint(inAlpha);
-		result = renderAsPoint(inCamera, inAlpha);
-	}
-	else
-	{
-		// Make sure the model factory found the file this instance was created with
-		if (mModel == NULL)
-			return false;
-
-		// Make sure the model shader was successfully loaded
-		if (!mModel->getShaderHandle())
-			return false;
-
-		// Make sure the model data is loaded
-		if (!mModel->isLoaded())
-			mModel->load();
-		if (!mModel->isLoaded())
-			return false;	// Error while loading model data
-
-		setGLStateForFullRender(inAlpha);
-		result = renderFull(inCamera, inAlpha);
-	}
-
-	return result;
-}
-
 bool ModelObject::renderAsPoint(Camera& inCamera, float inAlpha)
 {
+	// Set color
+	GLubyte theColor[] = { 0, 0, 255, 255 };
+	this->setPointColor(theColor);
+
 	return RenderObject::renderAsPoint(inCamera, inAlpha);
 }
 
 bool ModelObject::renderFull(Camera& inCamera, float inAlpha)
 {
 	bool result = false;
+
+	// Make sure the model data is loaded
+	if (!mModel->isLoaded())
+		mModel->load();
+	if (!mModel->isLoaded())
+		return false;	// Error while loading model data
 
 	// Apply translation to model to position it in world coordinates
 	mLastScaledViewerModelVector = mLastViewerObjectVector * mModel->getModelUnitsPerAU();

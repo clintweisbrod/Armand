@@ -24,13 +24,19 @@
 #include <random>
 #include "RandomPointsCube.h"
 
-RandomPointsCube::RandomPointsCube()
+RandomPointsCube::RandomPointsCube(int inNumSamples) : Static3DPointSet(inNumSamples)
 {
-	// Generate random data
-	loadData();
-
 	// Position the center of the cube in Universal coordinates
 	setUniveralPositionLY(Vec3d(0.0, 0.0, -15000.0));
+
+	// Load data
+	if (mPointArray)
+	{
+		loadData();
+
+		// Compute average color of points and setup VBO
+		finalize();
+	}
 }
 
 RandomPointsCube::~RandomPointsCube()
@@ -39,32 +45,26 @@ RandomPointsCube::~RandomPointsCube()
 
 void RandomPointsCube::loadData()
 {
-	const int kNumSamples = 10000;
 	const double_t kCubeDimensionAU = 1000000.0;
 
-	if (setNumPoints(kNumSamples))
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_real_distribution<> posDis(-kCubeDimensionAU, kCubeDimensionAU);
+	std::uniform_real_distribution<> sizeDis(0.1, 3.0);
+	std::uniform_real_distribution<> colorDis(0.5, 1.0);
+	for (int n = 0; n < mNumPoints; ++n)
 	{
-		std::random_device rd;
-		std::mt19937 gen(rd());
-		std::uniform_real_distribution<> posDis(-kCubeDimensionAU, kCubeDimensionAU);
-		std::uniform_real_distribution<> sizeDis(0.1, 3.0);
-		std::uniform_real_distribution<> colorDis(0.5, 1.0);
-		for (int n = 0; n < kNumSamples; ++n)
-		{
-			mPointArray[n].position[0] = (GLfloat)posDis(gen);
-			mPointArray[n].position[1] = (GLfloat)posDis(gen);
-			mPointArray[n].position[2] = (GLfloat)posDis(gen);
-			mPointArray[n].size = (GLfloat)sizeDis(gen);
-			mPointArray[n].color[0] = (GLubyte)(colorDis(gen) * 255.0);
-			mPointArray[n].color[1] = (GLubyte)(colorDis(gen) * 255.0);
-			mPointArray[n].color[2] = (GLubyte)(colorDis(gen) * 255.0);
-			mPointArray[n].color[3] = 255;
-		}
+		mPointArray[n].position[0] = (GLfloat)posDis(gen);
+		mPointArray[n].position[1] = (GLfloat)posDis(gen);
+		mPointArray[n].position[2] = (GLfloat)posDis(gen);
+		mPointArray[n].size = (GLfloat)sizeDis(gen);
+		mPointArray[n].color[0] = (GLubyte)(colorDis(gen) * 255.0);
+		mPointArray[n].color[1] = (GLubyte)(colorDis(gen) * 255.0);
+		mPointArray[n].color[2] = (GLubyte)(colorDis(gen) * 255.0);
+		mPointArray[n].color[3] = 255;
 	}
 
 	// Set the bounding radius of the data set
 	setBoundingRadiusAU((float_t)(kRoot3 * kCubeDimensionAU));
-
-	// finalize
-	finalize();
 }
+

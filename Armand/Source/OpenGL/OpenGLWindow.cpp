@@ -910,7 +910,7 @@ void OpenGLWindow::render()
 //	T3DSModelFactory::inst()->RemoveAll();
 //*/
 
-	static RandomPointsCube dataCube;
+	static RandomPointsCube dataCube(10000);
 	dataCube.render(mCamera, 1.0f);
 }
 

@@ -112,12 +112,9 @@ void RenderObject::setPointColor(const GLubyte* inColor)
 	}
 }
 
-void RenderObject::preRender(Camera& inCamera)
+bool RenderObject::canRenderFull()
 {
-	// Get viewer-model vector, viewer distance and cache them
-	mLastViewerObjectVector = inCamera.getCameraRelativePosition(this);
-	mLastViewerDistanceAU = mLastViewerObjectVector.length();
-	mLastViewerObjectVectorNormalized = mLastViewerObjectVector / mLastViewerDistanceAU;
+	return false;
 }
 
 bool RenderObject::isInView(Camera& inCamera)
@@ -148,12 +145,31 @@ bool RenderObject::isInView(Camera& inCamera)
 
 bool RenderObject::render(Camera& inCamera, float inAlpha)
 {
+	bool result = false;
+
 	if (inAlpha <= 0)
 		return false;
 
-	preRender(inCamera);
+	// Get viewer-model vector, viewer distance and cache them
+	mLastViewerObjectVector = inCamera.getCameraRelativePosition(this);
+	mLastViewerDistanceAU = mLastViewerObjectVector.length();
+	mLastViewerObjectVectorNormalized = mLastViewerObjectVector / mLastViewerDistanceAU;
 
-	return isInView(inCamera);
+	if (isInView(inCamera))
+	{
+		if (shouldRenderAsPoint(inCamera))
+		{
+			setGLStateForPoint(inAlpha);
+			result = renderAsPoint(inCamera, inAlpha);
+		}
+		else if (canRenderFull())
+		{
+			setGLStateForFullRender(inAlpha);
+			result = renderFull(inCamera, inAlpha);
+		}
+	}
+
+	return result;
 }
 
 bool RenderObject::shouldRenderAsPoint(Camera& inCamera) const
@@ -265,4 +281,9 @@ bool RenderObject::renderAsPoint(Camera& inCamera, float inAlpha)
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	return true;
+}
+
+bool RenderObject::renderFull(Camera& inCamera, float inAlpha)
+{
+	return false;
 }

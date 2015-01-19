@@ -23,12 +23,14 @@
 #include "OpenGL/GLUtils.h"
 #include "OpenGL/ShaderFactory.h"
 
-Static3DPointSet::Static3DPointSet()
+Static3DPointSet::Static3DPointSet(int inNumPoints)
 {
-	mNumPoints = 0;
 	mPointArray = NULL;
 	mPointsVAO = 0;
 	mPointsVBO = 0;
+
+	// Allocate buffer for points
+	setNumPoints(inNumPoints);
 }
 
 Static3DPointSet::~Static3DPointSet()
@@ -116,37 +118,29 @@ void Static3DPointSet::finalize()
 	}
 }
 
+bool Static3DPointSet::canRenderFull()
+{
+	if (mNumPoints == 0)
+		return false;
+
+	if (mPointsVAO == 0)
+		return false;
+
+	return true;
+}
+
 void Static3DPointSet::setGLStateForFullRender(float inAlpha) const
 {
 	setGLStateForPoint(inAlpha);
 }
 
-bool Static3DPointSet::render(Camera& inCamera, float inAlpha)
+bool Static3DPointSet::renderAsPoint(Camera& inCamera, float inAlpha)
 {
-	bool result = false;
+	// Set color
+	GLubyte theColor[] = { 255, 0, 0, 255 };
+	this->setPointColor(theColor);
 
-	if (!RenderObject::render(inCamera, inAlpha))
-		return false;
-
-	if (shouldRenderAsPoint(inCamera))	// Render as point
-	{
-		setGLStateForPoint(inAlpha);
-		result = renderAsPoint(inCamera, inAlpha);
-	}
-	else	// Full render
-	{
-		if (mNumPoints == 0)
-			return false;
-
-		if (mPointsVAO == 0)
-			return false;
-
-		// Render the points
-		setGLStateForFullRender(inAlpha);
-		result = renderFull(inCamera, inAlpha);
-	}
-
-	return result;
+	return RenderObject::renderAsPoint(inCamera, inAlpha);
 }
 
 bool Static3DPointSet::renderFull(Camera& inCamera, float inAlpha)
