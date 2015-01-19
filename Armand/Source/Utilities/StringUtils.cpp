@@ -96,12 +96,12 @@ wstring getNiceDistanceString(float_t inSpeedInAUPerSecond, int inNumDecimalPlac
 		factor = 1 / ((float_t)kMetresPerLightYear * 1e6f);
 		unit = L"MLY";
 	}
-	else if (distanceInMetres > (float_t)kMetresPerLightYear * 0.01f)
+	else if (distanceInMetres > (float_t)kMetresPerLightYear * 0.1f)
 	{
 		factor = 1 / (float_t)kMetresPerLightYear;
 		unit = L"LY";
 	}
-	else if (distanceInMetres > (float_t)kMetresPerAu)
+	else if (distanceInMetres > (float_t)kMetresPerAu * 0.01f)
 	{
 		factor = 1 / (float_t)kMetresPerAu;
 		unit = L"AU";
