@@ -27,7 +27,7 @@
 RandomPointsCube::RandomPointsCube(int inNumSamples) : Static3DPointSet(inNumSamples)
 {
 	// Position the center of the cube in Universal coordinates
-	setUniveralPositionLY(Vec3d(0.0, 0.0, -15000.0));
+	setUniveralPositionLY(Vec3d(0.0, 0.0, -145e12));
 
 	// Load data
 	if (mPointArray)
