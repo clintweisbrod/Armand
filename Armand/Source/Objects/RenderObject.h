@@ -30,7 +30,10 @@ public:
 	virtual ~RenderObject();
 
 	void init();
+	void preRender(Camera& inCamera);
 	bool render(Camera& inCamera, float inAlpha);
+
+	float_t	getLastViewerDistanceAU() const { return mLastViewerDistanceAU; };
 
 	virtual bool canRenderFull();
 	virtual bool isInView(Camera& inCamera);

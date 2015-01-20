@@ -28,6 +28,7 @@
 #include "OpenGL/VertexBufferStructs.h"
 #include "Utilities/Timer.h"
 #include "Objects/Camera.h"
+#include "Objects/Rendering/RenderObjectList.h"
 
 class OpenGLWindow
 {
@@ -138,6 +139,9 @@ class OpenGLWindow
 
 		// Viewer state
 		Camera			mCamera;
+
+		// Rendering
+		RenderObjectList	mRenderList;
 };
 
 extern OpenGLWindow* gOpenGLWindow;

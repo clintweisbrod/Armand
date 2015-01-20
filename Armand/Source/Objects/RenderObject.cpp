@@ -143,17 +143,23 @@ bool RenderObject::isInView(Camera& inCamera)
 		return true;
 }
 
+//
+// This is called per-frame by RenderObjectList::renderObjects()
+//
+void RenderObject::preRender(Camera& inCamera)
+{
+	// Get viewer-model vector, viewer distance and cache them
+	mLastViewerObjectVector = inCamera.getCameraRelativePosition(this);
+	mLastViewerDistanceAU = mLastViewerObjectVector.length();
+	mLastViewerObjectVectorNormalized = mLastViewerObjectVector / mLastViewerDistanceAU;
+}
+
 bool RenderObject::render(Camera& inCamera, float inAlpha)
 {
 	bool result = false;
 
 	if (inAlpha <= 0)
 		return false;
-
-	// Get viewer-model vector, viewer distance and cache them
-	mLastViewerObjectVector = inCamera.getCameraRelativePosition(this);
-	mLastViewerDistanceAU = mLastViewerObjectVector.length();
-	mLastViewerObjectVectorNormalized = mLastViewerObjectVector / mLastViewerDistanceAU;
 
 	if (isInView(inCamera))
 	{

@@ -812,6 +812,8 @@ void OpenGLWindow::render()
 	// Clear screen and modelview matrix
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	// Clear screen and depth buffer
 
+	mRenderList.clear();
+
 	glDisable(GL_LIGHTING);
 	glDisable(GL_TEXTURE_2D);
 
@@ -902,16 +904,19 @@ void OpenGLWindow::render()
 
 ///*
 	// Testing 3DS model loading and fisheye projection shader
-
 	static ModelObject model("Apollo_3rdStage.3ds");
 	model.setUniveralPositionKm(Vec3d(0.0, 0.0, 10));
-	model.render(mCamera, 1.0f);
+	mRenderList.push_back(&model);
 
 //	T3DSModelFactory::inst()->RemoveAll();
 //*/
 
 	static RandomPointsCube dataCube(10000);
 	dataCube.render(mCamera, 1.0f);
+	mRenderList.push_back(&dataCube);
+
+	// Render the objects in the render list
+	mRenderList.renderObjects(mCamera);
 }
 
 void OpenGLWindow::postRender()

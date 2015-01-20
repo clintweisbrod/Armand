@@ -61,6 +61,12 @@
     <Filter Include="Header Files\Objects">
       <UniqueIdentifier>{8d310e9c-4816-45e8-a738-f9585cc35efd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Objects\Rendering">
+      <UniqueIdentifier>{1410b935-10e0-4eec-af45-54c037f4d3e4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Objects\Rendering">
+      <UniqueIdentifier>{1679a6c7-21e3-4188-a829-d06055e05f9b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -195,6 +201,9 @@
     <ClInclude Include="..\..\Source\Objects\Static3DPointSet.h">
       <Filter>Header Files\Objects</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Source\Objects\Rendering\RenderObjectList.h">
+      <Filter>Header Files\Objects\Rendering</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\Main\Armand.cpp">
@@ -262,6 +271,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\Objects\Static3DPointSet.cpp">
       <Filter>Source Files\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Objects\Rendering\RenderObjectList.cpp">
+      <Filter>Source Files\Objects\Rendering</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
