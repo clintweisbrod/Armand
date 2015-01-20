@@ -27,14 +27,19 @@ bool EyeDistanceComparator::operator()(const RenderObject* inItem1, const Render
 	return (inItem1->getLastViewerDistanceAU() > inItem2->getLastViewerDistanceAU());
 }
 
+void RenderObjectList::addObject(Camera& inCamera, RenderObject& inObject)
+{
+	// Only add object to list if it is in view
+	inObject.preRender(inCamera);
+	if (inObject.isInView(inCamera))
+		push_back(&inObject);
+}
+
 void RenderObjectList::renderObjects(Camera& inCamera)
 {
-	// Compute the eye distance for each object
-	for (iterator it = begin(); it != end(); it++)
-		(*it)->preRender(inCamera);
-
 	// Sort in descending eye distance
-	std::stable_sort(begin(), end(), mEyeDistanceComparator);
+	if (size() > 1)
+		std::stable_sort(begin(), end(), mEyeDistanceComparator);
 
 	// Render each object
 	for (iterator it = begin(); it != end(); it++)

@@ -135,10 +135,7 @@ bool RenderObject::isInView(Camera& inCamera)
 
 	GLfloat halfFisheyeAperture = inCamera.getAperture() / 2;
 	if (angleBetween - modelAngularRadius > halfFisheyeAperture)
-	{
-		// Model is not visible.
 		return false;
-	}
 	else
 		return true;
 }
