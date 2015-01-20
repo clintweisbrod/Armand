@@ -47,21 +47,11 @@
 //
 // Investigating fixed-point implementations seems like a good idea. In particular, 64.64
 // fixed-point. If we decide to represent distances in AU using 64.64 fixed-point, we can
-// represent numbers as large as 2^63-1 AU or 1.38e30 metres. That's roughly 3000 times
-// larger than our observable Universe. That makes me a little nervous since the accepted
-// observable size probably will increase as new discoveries are made. If we choose light
-// years instead, our upper-bound becomes 8.7e34 metres, or roughly 185 million times the
-// size of the observable Universe. What about precision? Using 64.64 fixed-point, we can
-// divide 1 LY up into 2^64 pieces, each piece would be about 5.3e-4 metres or 0.53 mm.
-// Half a millimetre precision. Not bad at all.
-//
-// Performance analysis has been based on casting to floats. Why? Because, ultimately we
-// will be subtracting two 3D vectors having 64.64 components and casting the result to a
-// Vec3f. In other words, subtracting the camera's position from some object's position to
-// obtain eye coordinates. If we choose the LY as our base unit, I'm worried there will
-// not be adequate precision when both vectors are nearly the same. May have to dynamically
-// change what the base unit is depending on where camera is. Or maybe using AUs as the
-// base unit is sufficient.
+// represent signed numbers as large as 2^63-1 AU or 1.38e30 metres. That's roughly 3000
+// times larger than our observable Universe or 145 TLY. It's hard to imagine new
+// discoveries would increase the known size of the observable universe by a factor of
+// 3000. What about precision? Using 64.64 fixed-point, we can divide 1 AU up into 2^64
+// pieces, each piece would be about 8.1e-9 metres or 8.1 nanometres. Nice!
 //
 // In terms of performance, the 64.64 fixed-point implementation was able to cast a million
 // floats in 80 milliseconds. Hoping to reduce this number further, but reasonably quick.
