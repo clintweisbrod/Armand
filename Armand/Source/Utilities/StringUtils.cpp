@@ -91,7 +91,17 @@ wstring getNiceDistanceString(float_t inSpeedInAUPerSecond, int inNumDecimalPlac
 	float_t factor = 1;
 	wstring unit;
 
-	if (distanceInMetres > (float_t)kMetresPerLightYear * 1e6f)
+	if (distanceInMetres > (float_t)kMetresPerLightYear * 1e12f)
+	{
+		factor = 1 / ((float_t)kMetresPerLightYear * 1e12f);
+		unit = L"TLY";
+	}
+	else if (distanceInMetres > (float_t)kMetresPerLightYear * 1e9f)
+	{
+		factor = 1 / ((float_t)kMetresPerLightYear * 1e9f);
+		unit = L"GLY";
+	}
+	else if (distanceInMetres > (float_t)kMetresPerLightYear * 1e6f)
 	{
 		factor = 1 / ((float_t)kMetresPerLightYear * 1e6f);
 		unit = L"MLY";
