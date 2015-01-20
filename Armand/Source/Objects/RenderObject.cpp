@@ -135,15 +135,14 @@ bool RenderObject::isInView(Camera& inCamera)
 	// Compute angle between viewDirection and viewer-object direction
 	float_t angleBetween = acosf(viewDirection * mLastViewerObjectVectorNormalized);
 
-	GLfloat halfFisheyeAperture = inCamera.getAperture() / 2;
-	if (angleBetween - angularRadius > halfFisheyeAperture)
+	GLfloat halfAperture = inCamera.getAperture() / 2;
+	if (angleBetween - angularRadius > halfAperture)
 		return false;
 	else
 	{
 		// Since object is in view, we will need to compute a few other values.
 		mLastAngularDiameter = angularRadius * 2;
-		float_t fractionOfScene = mLastAngularDiameter / inCamera.getAperture();
-		mLastPixelDiameter = fractionOfScene * gOpenGLWindow->getGeometryRadius();
+		mLastPixelDiameter = gOpenGLWindow->getGeometryRadius() * mLastAngularDiameter / halfAperture;
 
 		return true;
 	}
