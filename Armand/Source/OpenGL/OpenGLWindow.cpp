@@ -912,7 +912,6 @@ void OpenGLWindow::render()
 //*/
 
 	static RandomPointsCube dataCube(10000);
-	dataCube.render(mCamera, 1.0f);
 	mRenderList.addObject(mCamera, dataCube);
 
 	// Render the objects in the render list

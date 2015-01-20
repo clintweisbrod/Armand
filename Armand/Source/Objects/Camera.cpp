@@ -142,11 +142,3 @@ Vec3f Camera::getCameraRelativePosition(const Object* inObject) const
 {
 	return (Vec3f)(inObject->getUniveralPositionAU() - mUniversalPositionAU);
 }
-
-float_t Camera::getObjectPixelDiameter(float_t inObjectDistanceAU, float_t inObjectRadiusAU) const
-{
-	double_t angularDiameter = 2 * inObjectRadiusAU / inObjectDistanceAU;
-	double_t fractionOfScene = angularDiameter / mAperture;
-	int geometryRadius = gOpenGLWindow->getGeometryRadius();
-	return (float_t)(fractionOfScene * geometryRadius);
-}

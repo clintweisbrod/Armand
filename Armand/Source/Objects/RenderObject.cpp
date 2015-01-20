@@ -29,6 +29,8 @@ GLuint RenderObject::sPointShaderHandle = 0;
 
 RenderObject::RenderObject()
 {
+	mBoundingRadiusAU = (float_t)kAuPerMetre;	// Default to 1 metre
+
 	mPoint.position[0] = 0;
 	mPoint.position[1] = 0;
 	mPoint.position[2] = 0;
@@ -127,17 +129,24 @@ bool RenderObject::isInView(Camera& inCamera)
 	Vec3f viewDirection, upDirection, leftDirection;
 	inCamera.getViewerOrthoNormalBasis(viewDirection, upDirection, leftDirection);
 
-	// Compute model angular radius
-	double_t modelAngularRadius = atan(mBoundingRadiusAU / mLastViewerDistanceAU);
+	// Compute angular radius
+	float_t angularRadius = mBoundingRadiusAU / mLastViewerDistanceAU;
 
 	// Compute angle between viewDirection and viewer-object direction
-	double_t angleBetween = acosf(viewDirection * mLastViewerObjectVectorNormalized);
+	float_t angleBetween = acosf(viewDirection * mLastViewerObjectVectorNormalized);
 
 	GLfloat halfFisheyeAperture = inCamera.getAperture() / 2;
-	if (angleBetween - modelAngularRadius > halfFisheyeAperture)
+	if (angleBetween - angularRadius > halfFisheyeAperture)
 		return false;
 	else
+	{
+		// Since object is in view, we will need to compute a few other values.
+		mLastAngularDiameter = angularRadius * 2;
+		float_t fractionOfScene = mLastAngularDiameter / inCamera.getAperture();
+		mLastPixelDiameter = fractionOfScene * gOpenGLWindow->getGeometryRadius();
+
 		return true;
+	}
 }
 
 //
@@ -178,8 +187,8 @@ bool RenderObject::render(Camera& inCamera, float inAlpha)
 bool RenderObject::shouldRenderAsPoint(Camera& inCamera) const
 {
 	// Decide if model is big enough (in pixels) to warrant rendering.
-	float_t pixelDiameter = inCamera.getObjectPixelDiameter(mLastViewerDistanceAU, mBoundingRadiusAU);
-	if (pixelDiameter < mPoint.size)
+	float_t kMaxPixelDiameter = 5.0f;
+	if (mLastPixelDiameter < kMaxPixelDiameter)
 		return true;
 	else
 		return false;
@@ -273,6 +282,8 @@ bool RenderObject::renderAsPoint(Camera& inCamera, float inAlpha)
 {
 	if (sPointVAO == 0)
 		return false;
+
+	setPointSize(max(mLastPixelDiameter, 1));
 
 	glBindVertexArray(sPointVAO);
 

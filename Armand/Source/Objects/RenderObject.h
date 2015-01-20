@@ -30,10 +30,13 @@ public:
 	virtual ~RenderObject();
 
 	void init();
+	void setBoundingRadiusAU(float_t inBoundingRadiusAU) { mBoundingRadiusAU = inBoundingRadiusAU; };
 	void preRender(Camera& inCamera);
 	bool render(Camera& inCamera, float inAlpha);
 
 	float_t	getLastViewerDistanceAU() const { return mLastViewerDistanceAU; };
+	float_t getLastAngularDiameter() const { return mLastAngularDiameter; };
+	float_t getLastPixelDiameter() const { return mLastPixelDiameter; };
 
 	virtual bool canRenderFull();
 	virtual bool isInView(Camera& inCamera);
@@ -47,7 +50,10 @@ protected:
 	Vec3f	mLastViewerObjectVector;
 	Vec3f	mLastViewerObjectVectorNormalized;
 	float_t	mLastViewerDistanceAU;
+	float_t mLastAngularDiameter;
+	float_t mLastPixelDiameter;
 
+	float_t	mBoundingRadiusAU;
 
 	//
 	// Render as point

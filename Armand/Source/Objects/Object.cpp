@@ -25,7 +25,6 @@
 
 Object::Object()
 {
-	mBoundingRadiusAU = (float_t)kAuPerMetre;	// Default to 1 metre
 }
 
 Object::~Object()

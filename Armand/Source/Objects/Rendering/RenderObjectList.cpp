@@ -29,10 +29,17 @@ bool EyeDistanceComparator::operator()(const RenderObject* inItem1, const Render
 
 void RenderObjectList::addObject(Camera& inCamera, RenderObject& inObject)
 {
-	// Only add object to list if it is in view
+	// Don't add object to list if it is not in view
 	inObject.preRender(inCamera);
-	if (inObject.isInView(inCamera))
-		push_back(&inObject);
+	if (!inObject.isInView(inCamera))
+		return;
+
+	// Don't add object to list if it is to small
+//	float_t kMinPixelDiameter = 0.1f;
+//	if (inObject.getLastPixelDiameter() < kMinPixelDiameter)
+//		return;
+
+	push_back(&inObject);
 }
 
 void RenderObjectList::renderObjects(Camera& inCamera)

@@ -40,7 +40,6 @@ public:
 	void getViewerOrthoNormalBasis(Vec3f& ioViewDirection, Vec3f& ioUpDirection, Vec3f& ioLeftDirection) const;
 	float_t getAperture() const { return mAperture; };
 	float_t getFisheyeClipPlaneDistance() const { return mFisheyeClipPlaneDistance; };
-	float_t getObjectPixelDiameter(float_t inObjectDistanceAU, float_t inObjectRadiusAU) const;
 	float_t getSpeed() const { return mSpeedAUPerSecond; };
 
 	void setAperture(float_t inAperture);

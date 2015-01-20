@@ -41,10 +41,7 @@ public:
 	Quatf		getOrientation() { return mOrientation; };
 	Mat4f		getOrientationMatrix() { return mOrientation.toMatrix4(); };
 
-	void		setBoundingRadiusAU(float_t inBoundingRadiusAU) { mBoundingRadiusAU = inBoundingRadiusAU; };
-
 protected:
 	Vec3Big		mUniversalPositionAU;
 	Quatf		mOrientation;
-	float_t		mBoundingRadiusAU;
 };
