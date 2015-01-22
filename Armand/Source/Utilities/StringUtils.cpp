@@ -88,48 +88,47 @@ wstring getNiceDistanceString(float_t inSpeedInAUPerSecond, int inNumDecimalPlac
 
 	float_t distanceInMetres = inSpeedInAUPerSecond * (float_t)kMetresPerAu;
 
-	float_t factor = 1;
-	wstring unit;
+	// We use a slightly smaller value to compare against so that we don't display values
+	// like "0.01 LY". In other words, we want to retain some significant digits in the display.
+	const float_t kAboveZeroFactor = 0.9f;
+	float_t comparisonValue = distanceInMetres * kAboveZeroFactor;
 
-	if (distanceInMetres > (float_t)kMetresPerLightYear * 1e12f)
+	float_t factor = 100;
+	wstring unit = L"cm";
+	if (comparisonValue > (float_t)kMetresPerLightYear * 1e12f)
 	{
 		factor = 1 / ((float_t)kMetresPerLightYear * 1e12f);
 		unit = L"TLY";
 	}
-	else if (distanceInMetres > (float_t)kMetresPerLightYear * 1e9f)
+	else if (comparisonValue > (float_t)kMetresPerLightYear * 1e9f)
 	{
 		factor = 1 / ((float_t)kMetresPerLightYear * 1e9f);
 		unit = L"GLY";
 	}
-	else if (distanceInMetres > (float_t)kMetresPerLightYear * 1e6f)
+	else if (comparisonValue > (float_t)kMetresPerLightYear * 1e6f)
 	{
 		factor = 1 / ((float_t)kMetresPerLightYear * 1e6f);
 		unit = L"MLY";
 	}
-	else if (distanceInMetres > (float_t)kMetresPerLightYear * 0.1f)
+	else if (comparisonValue > (float_t)kMetresPerLightYear * 0.1f)
 	{
 		factor = 1 / (float_t)kMetresPerLightYear;
 		unit = L"LY";
 	}
-	else if (distanceInMetres > (float_t)kMetresPerAu * 0.01f)
+	else if (comparisonValue > (float_t)kMetresPerAu * 0.01f)
 	{
 		factor = 1 / (float_t)kMetresPerAu;
 		unit = L"AU";
 	}
-	else if (distanceInMetres > (float_t)kMetresPerKilometre)
+	else if (comparisonValue > (float_t)kMetresPerKilometre)
 	{
 		factor = 1 / (float_t)kMetresPerKilometre;
 		unit = L"km";
 	}
-	else if (distanceInMetres > 1)
+	else if (comparisonValue > 1)
 	{
 		factor = 1;
 		unit = L"m";
-	}
-	else
-	{
-		factor = 100;
-		unit = L"cm";
 	}
 
 	float_t dislayedDistance = distanceInMetres * factor;
