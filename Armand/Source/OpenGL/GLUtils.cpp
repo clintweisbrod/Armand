@@ -22,31 +22,24 @@
 #include "GLUtils.h"
 #include "Math/mathlib.h"
 
-bool glCheckForError()
+bool glIsError()
 {
-	bool result = false;
-
 #if _DEBUG
-	GLenum errorNumber = glGetError();
-
-	// if the error is GL_INVALID_OPERATION we assume that we are calling glGetError at the wrong time...
-	if (errorNumber == GL_INVALID_OPERATION)
-		return false;
-
-	result = (errorNumber != GL_NO_ERROR);
-	if (result)
+	const int kMaxIterations = 10;
+	int i = 0;
+	GLenum glErr = glGetError();
+	bool result = (glErr != GL_NO_ERROR);
+	while ((glErr != GL_NO_ERROR) && (i++ < kMaxIterations))
 	{
-		const int kMaxIterations = 10;
-		int iterations = 0;
-		while ((errorNumber != GL_NO_ERROR) && (iterations++ < kMaxIterations))
-		{
-			LOG(ERROR) << "OpenGL Error: " << errorNumber << " : " << gluErrorString(errorNumber);
-			errorNumber = glGetError();
-		}
-	}
-#endif
+		LOG(ERROR) << "OpenGL Error: " << glErr << " : " << gluErrorString(glErr);
+		glErr = glGetError();
+
+	};
 
 	return result;
+#else
+	return false;
+#endif
 }
 
 void glTexturingOn(GLuint inTextureMode, GLuint inTextureID)

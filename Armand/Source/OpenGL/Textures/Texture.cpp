@@ -647,7 +647,7 @@ bool Texture::sendBufferToGPU_Native()
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
 	// Check for any GL error conditions
-	glCheckForError();
+	glIsError();
 
 	// Specify internal format
 	if (GLEW_ARB_texture_compression && IS_FLAG_SET(kTextureFlagUseCompression))
@@ -676,7 +676,7 @@ bool Texture::sendBufferToGPU_Native()
 			glTexParameteri(enabledTextureMode, GL_GENERATE_MIPMAP, GL_TRUE);
 			glTexImage2D(enabledTextureMode, 0, mInternalformat, mDimensions.x, mDimensions.y, 0, GL_BGRA, GL_UNSIGNED_BYTE, mImageBuffer);
 
-			if (!glCheckForError())
+			if (!glIsError())
 			{
 				mipmapsLoaded = true;
 				textureLoaded = true;
@@ -710,7 +710,7 @@ bool Texture::sendBufferToGPU_Native()
 		else
 			glTexSubImage2D(enabledTextureMode, 0, 0, 0, mDimensions.x, mDimensions.y, GL_BGRA, GL_UNSIGNED_BYTE, mImageBuffer);
 
-		if (!glCheckForError())
+		if (!glIsError())
 			textureLoaded = true;
 	}
 
@@ -814,7 +814,7 @@ bool Texture::sendBufferToGPU_DDS()
 	bool result = false;
 
 	// Check for any GL error conditions
-	glCheckForError();
+	glIsError();
 
 	// Generate a texture object
 	glGenTextures(1, &mTextureID);
@@ -865,7 +865,7 @@ bool Texture::sendBufferToGPU_DDS()
 								mImageBuffer + pixelOffset);
 
 		// Check for any errors after attempting to get image up to card
-		if (glCheckForError())
+		if (glIsError())
 		{
 			textureLoaded = false;
 			break;

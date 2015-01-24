@@ -24,7 +24,7 @@
 
 #define BUFFER_OFFSET(offset) ((void*)(offset))
 
-bool glCheckForError();
+bool glIsError();
 void glTexturingOn(GLuint inTextureMode, GLuint inTextureID);
 void glTexturingOff();
 GLuint glSignedTwosCompliment(GLfloat inValue, int inBits);

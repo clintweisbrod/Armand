@@ -88,7 +88,7 @@ void RenderObject::init()
 		// Place one point in the VBO
 		glBufferData(GL_ARRAY_BUFFER, sizeof(PointStarVertex), &mPoint, GL_DYNAMIC_DRAW);
 
-		glCheckForError();
+		glIsError();
 	}
 }
 

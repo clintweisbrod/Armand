@@ -114,7 +114,7 @@ void Static3DPointSet::finalize()
 		delete[] mPointArray;
 		mPointArray = NULL;
 
-		glCheckForError();
+		glIsError();
 	}
 }
 

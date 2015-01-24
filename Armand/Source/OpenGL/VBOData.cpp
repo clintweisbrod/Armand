@@ -89,7 +89,7 @@ GLubyte* VBOData::getArray(GLuint inIndex)
 void VBOData::setupGPU()
 {
 	glBufferData(GL_ARRAY_BUFFER, mBufSize, mData, GL_STATIC_DRAW);
-	glCheckForError();
+	glIsError();
 
 	for (VBOArrayInfoMap_t::iterator it = mArrayInfo.begin(); it != mArrayInfo.end(); it++)
 	{
