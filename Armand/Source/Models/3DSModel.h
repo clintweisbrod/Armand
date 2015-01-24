@@ -569,6 +569,9 @@
 #include "Utilities/Singleton.h"
 #include "OpenGL/Textures/Texture.h"
 #include "Objects/Camera.h"
+#include "Main/Exception.h"
+
+GENERATE_EXCEPTION(T3DSModelException)
 
 #define M3D_CHUNKTYPE_VERSION			0x0002			// This gives the version of the .3ds file
 #define M3D_CHUNKTYPE_COLOR_FLOAT		0x0010

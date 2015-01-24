@@ -204,6 +204,9 @@
     <ClInclude Include="..\..\Source\Objects\Rendering\RenderObjectList.h">
       <Filter>Header Files\Objects\Rendering</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Source\Main\Exception.h">
+      <Filter>Header Files\Main</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\Main\Armand.cpp">

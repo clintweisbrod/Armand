@@ -253,10 +253,7 @@ bool T3DSModel::load(File& inModelFile, bool inLoadMetaOnly)
 
 			// Make sure this is a 3DS file
 			if (currentChunk.mID != M3D_PRIMARY)
-			{
-				LOG(ERROR) << "Unable to recognize file as 3DS format: " << inModelFile.getFullPath() << ".";
-				return false;
-			}
+				THROW(T3DSModelException, "Unable to recognize file as 3DS format: %s", inModelFile.getFullPath());
 
 			// Now we actually start reading in the data.  ProcessNextChunk() is recursive
 
@@ -299,8 +296,9 @@ bool T3DSModel::load(File& inModelFile, bool inLoadMetaOnly)
 			
 			mModelDataLoaded = true;
 		}
-		catch (...)
+		catch (exception& e)
 		{
+			LOG(ERROR) << e.what();
 			bResult = false;
 		}
 
@@ -432,7 +430,7 @@ void T3DSModel::buildArrays()
 
 	// Copy the vertex data
 	glBufferData(GL_ARRAY_BUFFER, mArrayDataUntextured.size() * sizeof(T3DSVBOInfo), mArrayDataUntextured.data(), GL_STATIC_DRAW);
-	glCheckForError();
+	glIsError();
 
 	GLuint offset = 0;
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfo), BUFFER_OFFSET(offset));	// vPosition
@@ -512,7 +510,7 @@ void T3DSModel::buildArrays()
 
 	// Copy the vertex data
 	glBufferData(GL_ARRAY_BUFFER, mArrayDataTextured.size() * sizeof(T3DSVBOInfoTextured), mArrayDataTextured.data(), GL_STATIC_DRAW);
-	glCheckForError();
+	glIsError();
 
 	offset = 0;
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfoTextured), BUFFER_OFFSET(offset));	// vPosition
@@ -789,7 +787,7 @@ void T3DSModel::processNextObjectChunk(FILE* inFileHandle, T3DSObject* ioObject,
 		ioPreviousChunk->mBytesRead += currentChunk.mBytesRead;
 
 		if (ioPreviousChunk->mBytesRead > ioPreviousChunk->mLength)
-			LOG(ERROR) << "3DS Model load: Read PAST the end of a chunk! " << mFile.getFullPath();
+			THROW(T3DSModelException, "Read PAST the end of a chunk! %s", mFile.getFullPath());
 	}
 }
 
@@ -905,7 +903,7 @@ void T3DSModel::readChunk(FILE* inFileHandle, T3DSChunk* outChunk)
 	outChunk->mBytesRead = read(inFileHandle, sizeof(outChunk->mID), 1, &outChunk->mID);
 
 	if (outChunk->mID == 0)
-		LOG(ERROR) << "This is a problem: outChunk->mID = " << outChunk->mID;
+		THROW(T3DSModelException, "outChunk->mID is zero");
 
 	// Then, we read the length of the chunk which is 4 bytes.
 	// This is how we know how much to read in, or read past.
@@ -914,10 +912,10 @@ void T3DSModel::readChunk(FILE* inFileHandle, T3DSChunk* outChunk)
 		outChunk->mLength = 0;
 
 	if ((outChunk->mLength <= 0) || (outChunk->mLength > 5000000))
-		LOG(ERROR) << "This is a problem: outChunk->mLength = " << outChunk->mLength;
+		THROW(T3DSModelException, "outChunk->mID = %d, outChunk->mLength = %d", outChunk->mID, outChunk->mLength);
 
 	if (outChunk->mLength == 65536)
-		LOG(ERROR) << "VERY Strange chunk that is exactly USHRT_MAX 65536 long outChunk->mLength" << outChunk->mLength;
+		THROW(T3DSModelException, "outChunk->mID = %d, VERY Strange chunk that is exactly USHRT_MAX 65536 long.", outChunk->mID);
 }
 
 //----------------------------------------------------------------------
@@ -940,16 +938,8 @@ size_t T3DSModel::read(FILE* inFileHandle, size_t inSize, size_t inCount)
 			mBufferSize = 0;
 		}
 
-		try
-		{
-			mBuffer = new uint32_t[inCount];
-			mBufferSize = inCount;
-		}
-		catch (bad_alloc)
-		{
-			mBuffer = NULL;
-			mBufferSize = 0;
-		}
+		mBuffer = new uint32_t[inCount];
+		mBufferSize = inCount;
 	}
 
 	// read the data
@@ -1259,28 +1249,6 @@ void T3DSModel::readVertices(FILE* inFileHandle, T3DSObject* ioObject, T3DSChunk
 				ioPreviousChunk->mBytesRead += readFloat(inFileHandle, &ioObject->mVertices[i].mVertex.y);
 				ioPreviousChunk->mBytesRead += readFloat(inFileHandle, &ioObject->mVertices[i].mVertex.z);
 			}
-
-			// Now we should have all of the vertices read in.  Because 3D Studio Max
-			// Models with the Z-Axis pointing up (strange and ugly I know!), we need
-			// to flip the y values with the z values in our vertices.  That way it
-			// will be normal, with Y pointing up.  If you prefer to work with Z pointing
-			// up, then just delete this next loop.  Also, because we swap the Y and Z
-			// we need to negate the Z to make it come out correctly.
-			/*
-			// Go through all of the vertices that we just read and swap the Y and Z values
-			for (int i = 0; i < ioObject->mNumVertices; i++)
-			{
-			// Store off the Y value
-			float fTempY = ioObject->mVertices[i].mVertex.y;
-
-			// Set the Y value to the Z value
-			ioObject->mVertices[i].mVertex.y = ioObject->mVertices[i].mVertex.z;
-
-			// Set the Z value to the Y value,
-			// but negative Z because 3D Studio max does the opposite.
-			ioObject->mVertices[i].mVertex.z = -fTempY;
-			}
-			*/
 		}
 	}
 }
@@ -1410,10 +1378,6 @@ void T3DSModel::computeBoundingRadius()
 	T3DSObjectVec_t::iterator object;
 	for (object = mObjects.begin(); object != mObjects.end(); object++)
 	{
-		// Get Steve Sanders to remove these objects from his models
-		if (object->mName == "Plane")
-			continue;
-
 		// Find maximum and minimum ordinate values.
 		for (i = 0; i < object->mNumVertices; i++)
 		{
@@ -1880,7 +1844,7 @@ bool T3DSModel::render(Camera& inCamera, Mat4f& inViewMatrix, Quatf& inOrientati
 //		glFinish();
 //		LOG(INFO) << "3DS model render time: " << gOpenGLWindow->mTimer.elapsedMicroseconds() << " us.";
 	}
-	glCheckForError();
+	glIsError();
 	glDisable(GL_CLIP_DISTANCE0);
 
 #if 0
