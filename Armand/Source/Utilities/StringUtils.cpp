@@ -93,8 +93,8 @@ wstring getNiceDistanceString(float_t inSpeedInAUPerSecond, int inNumDecimalPlac
 	const float_t kAboveZeroFactor = 0.9f;
 	float_t comparisonValue = distanceInMetres * kAboveZeroFactor;
 
-	float_t factor = 100;
-	wstring unit = L"cm";
+	float_t factor;
+	wstring unit;
 	if (comparisonValue > (float_t)kMetresPerLightYear * 1e12f)
 	{
 		factor = 1 / ((float_t)kMetresPerLightYear * 1e12f);
@@ -109,6 +109,11 @@ wstring getNiceDistanceString(float_t inSpeedInAUPerSecond, int inNumDecimalPlac
 	{
 		factor = 1 / ((float_t)kMetresPerLightYear * 1e6f);
 		unit = L"MLY";
+	}
+	else if (comparisonValue > (float_t)kMetresPerLightYear * 1e4f)
+	{
+		factor = 1 / ((float_t)kMetresPerLightYear * 1e3f);
+		unit = L"KLY";
 	}
 	else if (comparisonValue > (float_t)kMetresPerLightYear * 0.1f)
 	{
@@ -129,6 +134,16 @@ wstring getNiceDistanceString(float_t inSpeedInAUPerSecond, int inNumDecimalPlac
 	{
 		factor = 1;
 		unit = L"m";
+	}
+	else if (comparisonValue > 0.01)
+	{
+		factor = 100;
+		unit = L"cm";
+	}
+	else
+	{
+		factor = 1000;
+		unit = L"mm";
 	}
 
 	float_t dislayedDistance = distanceInMetres * factor;
