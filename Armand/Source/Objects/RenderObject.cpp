@@ -121,6 +121,9 @@ bool RenderObject::canRenderFull()
 
 bool RenderObject::isInView(Camera& inCamera)
 {
+	if (mLastViewerDistanceAU == 0)
+		return false;
+
 	// If the camera is inside the bounding radius, it's visibe.
 	if (mLastViewerDistanceAU <= mBoundingRadiusAU)
 		return true;
@@ -129,8 +132,12 @@ bool RenderObject::isInView(Camera& inCamera)
 	Vec3f viewDirection, upDirection, leftDirection;
 	inCamera.getViewerOrthoNormalBasis(viewDirection, upDirection, leftDirection);
 
-	// Compute angular radius
+	// Compute angular radius.
+	// Try to use small angle approximation when possible.
+	const float_t kSmallAngleApprox = 0.244f;	// roughly 1% error at this value	
 	float_t angularRadius = mBoundingRadiusAU / mLastViewerDistanceAU;
+	if (angularRadius > kSmallAngleApprox)
+		angularRadius = asinf(angularRadius);
 
 	// Compute angle between viewDirection and viewer-object direction
 	float_t angleBetween = acosf(viewDirection * mLastViewerObjectVectorNormalized);
@@ -156,7 +163,8 @@ void RenderObject::preRender(Camera& inCamera)
 	// Get viewer-model vector, viewer distance and cache them
 	mLastViewerObjectVector = inCamera.getCameraRelativePosition(this);
 	mLastViewerDistanceAU = mLastViewerObjectVector.length();
-	mLastViewerObjectVectorNormalized = mLastViewerObjectVector / mLastViewerDistanceAU;
+	if (mLastViewerDistanceAU > 0)
+		mLastViewerObjectVectorNormalized = mLastViewerObjectVector / mLastViewerDistanceAU;
 }
 
 bool RenderObject::render(Camera& inCamera, float inAlpha)
@@ -166,18 +174,15 @@ bool RenderObject::render(Camera& inCamera, float inAlpha)
 	if (inAlpha <= 0)
 		return false;
 
-	if (isInView(inCamera))
+	if (shouldRenderAsPoint(inCamera))
 	{
-		if (shouldRenderAsPoint(inCamera))
-		{
-			setGLStateForPoint(inAlpha);
-			result = renderAsPoint(inCamera, inAlpha);
-		}
-		else if (canRenderFull())
-		{
-			setGLStateForFullRender(inAlpha);
-			result = renderFull(inCamera, inAlpha);
-		}
+		setGLStateForPoint(inAlpha);
+		result = renderAsPoint(inCamera, inAlpha);
+	}
+	else if (canRenderFull())
+	{
+		setGLStateForFullRender(inAlpha);
+		result = renderFull(inCamera, inAlpha);
 	}
 
 	return result;
@@ -185,7 +190,7 @@ bool RenderObject::render(Camera& inCamera, float inAlpha)
 
 bool RenderObject::shouldRenderAsPoint(Camera& inCamera) const
 {
-	// Decide if model is big enough (in pixels) to warrant rendering.
+	// Decide if object is big enough (in pixels) to warrant rendering.
 	float_t kMaxPixelDiameter = 5.0f;
 	if (mLastPixelDiameter < kMaxPixelDiameter)
 		return true;

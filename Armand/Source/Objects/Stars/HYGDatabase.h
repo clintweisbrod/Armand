@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
 // Copyright (C) 2015 Clint Weisbrod. All rights reserved.
 //
-// Static3DPointSet.h
+// HYGDatabase.h
 //
-// General solution for rendering tons of data as points.
+// See: http://www.astronexus.com/hyg
 //
 // THIS SOFTWARE IS PROVIDED BY CLINT WEISBROD "AS IS" AND ANY EXPRESS OR
 // IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
@@ -19,33 +19,30 @@
 
 #pragma once
 
-#include <GL/glew.h>
+#include "Objects/Static3DPointSet.h"
 #include "Main/Exception.h"
-#include "OpenGL/VertexBufferStructs.h"
-#include "RenderObject.h"
+#include "Math/vecmath.h"
 
-GENERATE_EXCEPTION(Static3DPointSetException)
+GENERATE_EXCEPTION(HYGDatabaseException)
 
-class Static3DPointSet : public RenderObject
+struct HYGDataRecord
+{
+	string	mProperName;
+	string	mHIP;
+	Vec3f	mPosition;
+	float_t	mAbsMag;
+};
+
+typedef vector<HYGDataRecord> HYGData;
+class HYGDatabase : public Static3DPointSet
 {
 public:
-	Static3DPointSet() {};
-	Static3DPointSet(int inNumPoints);
-	virtual ~Static3DPointSet();
-
-	virtual bool shouldRenderAsPoint(Camera& inCamera) const;
-	virtual bool canRenderFull();
-	virtual bool renderFull(Camera& inCamera, float inAlpha);
-	virtual void setGLStateForFullRender(float inAlpha) const;
+	HYGDatabase();
+	virtual ~HYGDatabase();
 
 protected:
-	virtual void loadData() = 0;
-	void setNumPoints(GLsizei inNumPoints);
-	void finalize();
+	virtual void loadData();
 
-	GLuint				mPointsVAO;
-	GLuint				mPointsVBO;
-
-	GLsizei				mNumPoints;
-	PointStarVertex*	mPointArray;
+private:
+	HYGData	mData;
 };

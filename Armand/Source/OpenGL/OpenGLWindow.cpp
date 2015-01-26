@@ -30,6 +30,7 @@
 #include "Utilities/StringUtils.h"
 #include "Objects/ModelObject.h"
 #include "Objects/RandomPointsCube.h"
+#include "Objects/Stars/HYGDatabase.h"
 
 bool OpenGLWindow::sEnabledGLExtensions = false;
 
@@ -71,7 +72,7 @@ OpenGLWindow::OpenGLWindow() : mCreated(false),
 
 	// Setup camera
 	mCamera.setAperture(degToRad(180.0f));			// 180 degree fisheye
-	mCamera.setUniveralPositionMetres(Vec3d(0,0,0));	// Located at origin in our universal coordinate system
+	mCamera.setUniveralPositionKm(Vec3d(0,0,5));	// Located at origin in our universal coordinate system
 	mCamera.lookAt(Vec3f(0,0,-1), Vec3f(0,1,0));	// Looking down -z axis with +y axis up.
 
 //	mCamera.setUniveralPositionAU(Vec3d(0.0, 0.0, 1500000.0));
@@ -913,6 +914,9 @@ void OpenGLWindow::render()
 
 	static RandomPointsCube dataCube(10000);
 	mRenderList.addObject(mCamera, dataCube);
+
+	static HYGDatabase hygStars;
+	mRenderList.addObject(mCamera, hygStars);
 
 	// Render the objects in the render list
 	mRenderList.renderObjects(mCamera);

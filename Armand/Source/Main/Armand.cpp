@@ -21,10 +21,7 @@
 #include <algorithm>
 #include <random>
 #include "Main/Armand.h"
-#include "Utilities/File.h"
 #include "OpenGL/OpenGLWindow.h"
-#include "Utilities/Timer.h"
-#include "Math/vecmath.h"
 
 #define MAX_LOADSTRING 100
 
@@ -65,13 +62,7 @@ int APIENTRY _tWinMain(	_In_ HINSTANCE hInstance,
 
 	// Get the high resolution counter's accuracy
 	QueryPerformanceFrequency(&Timer::sTicksPerSecond);
-/*
-	// Test area
-	BigFix value1(1.0);
-	BigFix value2(1.0 + 1 * kAuPerMetre);
-	BigFix value3 = value2 - value1;
-	float_t diff = (float_t)((double_t)value3 * kMetrePerAu);
-*/
+
 /*
 	std::random_device rd;
 	std::mt19937 gen(rd());

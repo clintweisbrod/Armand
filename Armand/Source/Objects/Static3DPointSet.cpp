@@ -47,19 +47,16 @@ Static3DPointSet::~Static3DPointSet()
 		glDeleteBuffers(1, &mPointsVBO);
 }
 
-bool Static3DPointSet::setNumPoints(GLsizei inNumPoints)
+void Static3DPointSet::setNumPoints(GLsizei inNumPoints)
 {
 	// Allocate buffer large enough to hold the number of points specified
-	try	{
-		mPointArray = new PointStarVertex[inNumPoints];
-		mNumPoints = inNumPoints;
-	}
-	catch (bad_alloc) {
-		mPointArray = NULL;
-		mNumPoints = 0;
-	}
+	mPointArray = new PointStarVertex[inNumPoints];
+	if (!mPointArray)
+		THROW(Static3DPointSetException, "Unable to allocate %d PointStarVertex elements.", inNumPoints);
 
-	return (mPointArray != NULL);
+	mNumPoints = inNumPoints;
+
+	return;
 }
 
 void Static3DPointSet::finalize()
@@ -118,6 +115,15 @@ void Static3DPointSet::finalize()
 	}
 }
 
+bool Static3DPointSet::shouldRenderAsPoint(Camera& inCamera) const
+{
+	// If we're inside the data set, we don't render as point.
+	if (mLastViewerDistanceAU <= mBoundingRadiusAU)
+		return false;
+	else
+		return RenderObject::shouldRenderAsPoint(inCamera);
+}
+
 bool Static3DPointSet::canRenderFull()
 {
 	if (mNumPoints == 0)
@@ -132,15 +138,6 @@ bool Static3DPointSet::canRenderFull()
 void Static3DPointSet::setGLStateForFullRender(float inAlpha) const
 {
 	setGLStateForPoint(inAlpha);
-}
-
-bool Static3DPointSet::renderAsPoint(Camera& inCamera, float inAlpha)
-{
-	// Set color
-	GLubyte theColor[] = { 255, 0, 0, 255 };
-	this->setPointColor(theColor);
-
-	return RenderObject::renderAsPoint(inCamera, inAlpha);
 }
 
 bool Static3DPointSet::renderFull(Camera& inCamera, float inAlpha)

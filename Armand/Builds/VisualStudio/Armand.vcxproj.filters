@@ -67,6 +67,18 @@
     <Filter Include="Header Files\Objects\Rendering">
       <UniqueIdentifier>{1679a6c7-21e3-4188-a829-d06055e05f9b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Time">
+      <UniqueIdentifier>{ba10eedd-04bd-4365-b7ae-de0e97ae0a76}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Time">
+      <UniqueIdentifier>{2e82f334-944c-48dc-92c2-c167bfb061f9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Objects\Stars">
+      <UniqueIdentifier>{edaa6929-692d-4c61-bca7-6b0531a8e68e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Objects\Stars">
+      <UniqueIdentifier>{1433c723-2f1d-4c9c-9ac2-3c59667e218c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -207,6 +219,9 @@
     <ClInclude Include="..\..\Source\Main\Exception.h">
       <Filter>Header Files\Main</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Source\Objects\Stars\HYGDatabase.h">
+      <Filter>Header Files\Objects\Stars</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\Main\Armand.cpp">
@@ -277,6 +292,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\Objects\Rendering\RenderObjectList.cpp">
       <Filter>Source Files\Objects\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Objects\Stars\HYGDatabase.cpp">
+      <Filter>Source Files\Objects\Stars</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
