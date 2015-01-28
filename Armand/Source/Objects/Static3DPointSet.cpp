@@ -112,10 +112,13 @@ void Static3DPointSet::finalize()
 		glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, sizeof(PointStarVertex), BUFFER_OFFSET(offset));	// vaoPointSize
 		offset += (1 * sizeof(GLfloat));
 		glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(PointStarVertex), BUFFER_OFFSET(offset));	// vaoColor
+		offset += (4 * sizeof(GLubyte));
+		glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(PointStarVertex), BUFFER_OFFSET(offset));	// vaoAbsMag
 
 		glEnableVertexAttribArray(0);
 		glEnableVertexAttribArray(1);
 		glEnableVertexAttribArray(2);
+		glEnableVertexAttribArray(3);
 
 		// Copy the buffer up to the VBO
 		glBufferData(GL_ARRAY_BUFFER, mNumPoints * sizeof(PointStarVertex), mPointArray, GL_STATIC_DRAW);
