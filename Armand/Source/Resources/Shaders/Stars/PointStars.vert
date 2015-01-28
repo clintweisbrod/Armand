@@ -42,11 +42,11 @@ void main()
 
 	// Use gVertexEyeDistanceAU and vaoAbsMag to compute apparent magnitude
 	float parsecs = gVertexEyeDistanceAU * kParsecsPerAU;
-	float appMag = 5.0 * log(parsecs) / kNaturalLog10 - 5.0 + vaoAbsMag;
+	float appMag = vaoAbsMag - 5.0 + 5.0 * log(parsecs) / kNaturalLog10;
 
 	// Forward the star color along to the fragment shader
-	starColor = vec4(vaoColor, smoothstep(5.0, -1.6, appMag));
-//	starColor = vec4(vaoColor, 1.0);
+	starColor = vec4(vaoColor, smoothstep(6.0, -1.6, appMag));	// Compute actual brightness (distance attenuation)
+//	starColor = vec4(vaoColor, 1.0);							// No distance attenuation
 	
 	// Set the point size
 	gl_PointSize = vaoSize;
