@@ -61,6 +61,7 @@ template<class T> class Vector2
 {
 public:
 	inline Vector2();
+	inline Vector2(T*);
 	inline Vector2(const Vector2<T>&);
 	inline Vector2(T, T);
 
@@ -99,11 +100,11 @@ template<class T> class Vector3
 {
 public:
 	inline Vector3();
+	inline Vector3(T*);
 	inline Vector3(const Vector3<T>&);
 	inline Vector3(const T, const T, const T);
 	inline Vector3(const Polar3<T>&);
 	inline Vector3(const string&);
-	inline Vector3(T* v);
 
 	inline T operator[](size_t) const;
 	inline Vector3& operator+=(const Vector3<T>&);
@@ -140,11 +141,11 @@ template<class T> class Vector3Big
 {
 public:
 	inline Vector3Big();
+	inline Vector3Big(T*);
 	inline Vector3Big(const Vector3Big<T>&);
 	inline Vector3Big(const Vector3<double_t>&);
 	inline Vector3Big(const Vector3<float_t>&);
 	inline Vector3Big(const T, const T, const T);
-	inline Vector3Big(T* v);
 
 	operator Vector3<float_t>() const;
 
@@ -164,6 +165,7 @@ template<class T> class Vector4
 {
 public:
 	inline Vector4();
+	inline Vector4(T*);
 	inline Vector4(T, T, T, T);
 
 	inline T operator[](size_t) const;
@@ -499,6 +501,10 @@ template<class T> Vector2<T>::Vector2() : x(0), y(0)
 {
 }
 
+template<class T> Vector2<T>::Vector2(T* v) : x(v[0]), y(v[1])
+{
+}
+
 template<class T> Vector2<T>::Vector2(const Vector2<T>& v) : x(v.x), y(v.y)
 {
 }
@@ -594,16 +600,16 @@ template<class T> Vector3<T>::Vector3() : x(0), y(0), z(0)
 {
 }
 
+template<class T> Vector3<T>::Vector3(T* v) : x(v[0]), y(v[1]), z(v[2])
+{
+}
+
 template<class T> Vector3<T>::Vector3(const Vector3<T>& v) :
     x(v.x), y(v.y), z(v.z)
 {
 }
 
 template<class T> Vector3<T>::Vector3(T _x, T _y, T _z) : x(_x), y(_y), z(_z)
-{
-}
-
-template<class T> Vector3<T>::Vector3(T* v) : x(v[0]), y(v[1]), z(v[2])
 {
 }
 
@@ -913,6 +919,10 @@ template<class T> T Vector3Big<T>::lengthSquared() const
 ///////////////////////////////////////////////////////////////////////
 
 template<class T> Vector4<T>::Vector4() : x(0), y(0), z(0), w(0)
+{
+}
+
+template<class T> Vector4<T>::Vector4(T* v) : x(v[0]), y(v[1]), z(v[2], w(v[3]))
 {
 }
 
