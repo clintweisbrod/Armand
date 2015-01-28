@@ -55,4 +55,5 @@ typedef struct
 	GLfloat position[3];
 	GLfloat size;
 	GLubyte color[4];
+	GLfloat absMag;
 } PointStarVertex;

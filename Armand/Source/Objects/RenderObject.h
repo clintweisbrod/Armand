@@ -42,7 +42,7 @@ public:
 	virtual bool isInView(Camera& inCamera);
 	virtual bool shouldRenderAsPoint(Camera& inCamera) const;
 	virtual bool renderAsPoint(Camera& inCamera, float inAlpha);
-	virtual bool renderFull(Camera& inCamera, float inAlpha);
+	virtual bool renderFull(Camera& inCamera, float inAlpha) = 0;
 	virtual void setGLStateForFullRender(float inAlpha) const;
 	virtual void setGLStateForPoint(float inAlpha) const;
 
@@ -60,7 +60,7 @@ protected:
 	//
 	void	setPointSize(GLfloat inSize);
 	void	setPointColor(const GLubyte* inColor);
-	void	enableShader(Camera& inCamera, float inAlpha);
+	void	enablePointShader(Camera& inCamera, float inAlpha);
 	void	disableShader();
 
 	PointStarVertex	mPoint;

@@ -34,7 +34,7 @@ RandomPointsCube::RandomPointsCube(int inNumSamples) : Static3DPointSet(inNumSam
 	{
 		loadData();
 
-		// Compute average color of points and setup VBO
+		// Compute average color of points, bounding radius, and setup VBO
 		finalize();
 	}
 }
@@ -63,8 +63,5 @@ void RandomPointsCube::loadData()
 		mPointArray[n].color[2] = (GLubyte)(colorDis(gen) * 255.0);
 		mPointArray[n].color[3] = 255;
 	}
-
-	// Set the bounding radius of the data set
-	setBoundingRadiusAU((float_t)(kRoot3 * kCubeDimensionAU));
 }
 

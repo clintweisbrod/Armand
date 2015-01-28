@@ -5,7 +5,7 @@ layout (location = 0) out vec4 outFragColor;
 //
 // Inputs
 //
-in vec3 starColor;
+in vec4 starColor;
 
 //
 // Uniforms
@@ -14,5 +14,5 @@ uniform float uAlpha;
 
 void main()
 {
-	outFragColor = vec4(starColor, uAlpha);
+	outFragColor = vec4(starColor.rgb, starColor.a * uAlpha);
 }

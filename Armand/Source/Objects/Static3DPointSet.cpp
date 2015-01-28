@@ -63,20 +63,33 @@ void Static3DPointSet::finalize()
 {
 	uint64_t avgColor[] = { 0, 0, 0, 0 };
 
-	// Compute and set average color 
+	// Compute and set average color as well as bounding radius
+	float_t maxRadiusSquared = 0;
 	for (int n = 0; n < mNumPoints; ++n)
 	{
+		// Sum the colors
 		avgColor[0] += mPointArray[n].color[0];
 		avgColor[1] += mPointArray[n].color[1];
 		avgColor[2] += mPointArray[n].color[2];
 		avgColor[3] += mPointArray[n].color[3];
+
+		// Compute largest vec
+		Vec3f vec(mPointArray[n].position);
+		float_t radiusSquared = vec.lengthSquared();
+		if (radiusSquared > maxRadiusSquared)
+			maxRadiusSquared = radiusSquared;
 	}
+
+	// Set average color
 	GLubyte thePointColor[4];
 	thePointColor[0] = (GLubyte)(avgColor[0] / mNumPoints);
 	thePointColor[1] = (GLubyte)(avgColor[1] / mNumPoints);
 	thePointColor[2] = (GLubyte)(avgColor[2] / mNumPoints);
 	thePointColor[3] = (GLubyte)(avgColor[3] / mNumPoints);
 	setPointColor(thePointColor);
+
+	// Set the bounding radius of the data set
+	setBoundingRadiusAU(sqrtf(maxRadiusSquared));
 
 	// Setup the points VBO
 	if (mPointsVAO == 0)
@@ -144,7 +157,7 @@ bool Static3DPointSet::renderFull(Camera& inCamera, float inAlpha)
 {
 	glBindVertexArray(mPointsVAO);
 
-	enableShader(inCamera, inAlpha);
+	enablePointShader(inCamera, inAlpha);
 	glDrawArrays(GL_POINTS, 0, mNumPoints);
 	disableShader();
 

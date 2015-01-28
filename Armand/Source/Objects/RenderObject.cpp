@@ -36,6 +36,7 @@ RenderObject::RenderObject()
 	mPoint.position[2] = 0;
 	mPoint.size = 3;				// Default point size is 3
 	memset(mPoint.color, 255, 4);	// Default point color is white
+	mPoint.absMag = 0;
 
 	init();
 }
@@ -53,7 +54,7 @@ void RenderObject::init()
 	// Obtain the shader
 	if (sPointShaderHandle == 0)
 	{
-		// This is a good time load the shader program
+		// This is a good time to load the shader program
 		ShaderProgram* shaderProgram = ShaderFactory::inst()->getShaderProgram("Stars/PointStars.vert", "Stars/PointStars.frag");
 		if (shaderProgram)
 			sPointShaderHandle = shaderProgram->getHandle();
@@ -80,10 +81,13 @@ void RenderObject::init()
 		glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, sizeof(PointStarVertex), BUFFER_OFFSET(offset));	// vaoPointSize
 		offset += (1 * sizeof(GLfloat));
 		glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(PointStarVertex), BUFFER_OFFSET(offset));	// vaoColor
+		offset += (4 * sizeof(GLubyte));
+		glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(PointStarVertex), BUFFER_OFFSET(offset));	// vaoAbsMag
 
 		glEnableVertexAttribArray(0);
 		glEnableVertexAttribArray(1);
 		glEnableVertexAttribArray(2);
+		glEnableVertexAttribArray(3);
 
 		// Place one point in the VBO
 		glBufferData(GL_ARRAY_BUFFER, sizeof(PointStarVertex), &mPoint, GL_DYNAMIC_DRAW);
@@ -242,11 +246,13 @@ void RenderObject::setGLStateForPoint(float inAlpha) const
 	else
 	{
 		// Disable blend
-		glDisable(GL_BLEND);
+//		glDisable(GL_BLEND);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
 }
 
-void RenderObject::enableShader(Camera& inCamera, float inAlpha)
+void RenderObject::enablePointShader(Camera& inCamera, float inAlpha)
 {
 	// Get camera orthonormal basis
 	Vec3f viewDirection, upDirection, leftDirection;
@@ -291,7 +297,7 @@ bool RenderObject::renderAsPoint(Camera& inCamera, float inAlpha)
 
 	glBindVertexArray(sPointVAO);
 
-	enableShader(inCamera, inAlpha);
+	enablePointShader(inCamera, inAlpha);
 	glDrawArrays(GL_POINTS, 0, 1);
 	disableShader();
 
@@ -299,9 +305,4 @@ bool RenderObject::renderAsPoint(Camera& inCamera, float inAlpha)
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	return true;
-}
-
-bool RenderObject::renderFull(Camera& inCamera, float inAlpha)
-{
-	return false;
 }

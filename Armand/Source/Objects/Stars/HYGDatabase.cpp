@@ -52,7 +52,6 @@ void HYGDatabase::loadData()
 	LOG(INFO) << "Parsing HYG database...";
 
 	size_t kMaxStarsToParse = 1000;
-	float_t maxStarDistanceSquared = 0;
 	string line;
 	getline(file, line);	// First line of database is hdr describing fields
 	while (getline(file, line))
@@ -63,6 +62,12 @@ void HYGDatabase::loadData()
 		string value;
 		while (getline(lineStream, value, ','))
 			lineValues.push_back(value);
+
+		// Just show me the dipper
+//		if (!((lineValues[6] == "Alkaid") || (lineValues[6] == "Mizar") || (lineValues[6] == "Alioth") ||
+//			(lineValues[6] == "Megrez") || (lineValues[6] == "Phad") || (lineValues[6] == "Merak") ||
+//			(lineValues[6] == "Dubhe")))
+//			continue;
 
 		// Skip any records that have distance of "100000.0000". These stars have dubious parallax values.
 		if (lineValues[9] == "100000.0000")
@@ -92,10 +97,6 @@ void HYGDatabase::loadData()
 
 			mData.push_back(rec);
 
-			// We need to know the bounding radius of the data set. This is a good time to handle that.
-			float_t starDistanceSquared = rec.mPosition.lengthSquared();
-			if (starDistanceSquared > maxStarDistanceSquared)
-				maxStarDistanceSquared = starDistanceSquared;
 #if _DEBUG
 			// We limit the number to parse in debug mode because Microsoft's implementation
 			// of STL is so bloody slow!
@@ -109,9 +110,6 @@ void HYGDatabase::loadData()
 
 	// Possibly reduce storage requirements for all the data we've allocated
 	mData.shrink_to_fit();
-
-	// Set the bounding radius of the data set
-	setBoundingRadiusAU(sqrtf(maxStarDistanceSquared));
 
 	// Tell the base class how many points we have, this allocates the storage needed
 	// to render the points.
@@ -129,6 +127,7 @@ void HYGDatabase::loadData()
 		mPointArray[n].color[1] = 255;
 		mPointArray[n].color[2] = 255;
 		mPointArray[n].color[3] = 255;
+		mPointArray[n].absMag = it->mAbsMag;
 		n++;
 	}
 }

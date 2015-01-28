@@ -4,6 +4,7 @@
 // Globals
 //
 vec3 gNormalizedVertexPositionInEyeCoords;
+float gVertexEyeDistanceAU;
 
 //
 // Outputs
@@ -30,10 +31,10 @@ void setupClipPlane()
 void fisheyeProject(vec3 inVertexPositionInEyeCoordinates)
 {
 	// Sensible depth value is length of inVertexPositionInEyeCoordinates
-	float depthValue = length(inVertexPositionInEyeCoordinates);
+	gVertexEyeDistanceAU = length(inVertexPositionInEyeCoordinates);
 	
 	// Need normalized version of inVertexPositionInEyeCoordinates.
-	gNormalizedVertexPositionInEyeCoords = inVertexPositionInEyeCoordinates / depthValue;
+	gNormalizedVertexPositionInEyeCoords = inVertexPositionInEyeCoordinates / gVertexEyeDistanceAU;
 	
 	// Setup clipping for vertices that are behind the viewer
 	setupClipPlane();
@@ -57,7 +58,7 @@ void fisheyeProject(vec3 inVertexPositionInEyeCoordinates)
 		point.y = fisheyeAngleFactor * xyComponents.y;
 	}
 	
-	// Why does depthValue need to be negated???
+	// Why does gVertexEyeDistanceAU need to be negated???
 	// I think this is because m22 in ortho matrix is negated
-	gl_Position = uProjectionMatrix * vec4(point, -depthValue, 1.0);
+	gl_Position = uProjectionMatrix * vec4(point, -gVertexEyeDistanceAU, 1.0);
 }
