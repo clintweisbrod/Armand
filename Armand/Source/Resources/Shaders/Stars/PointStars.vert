@@ -6,7 +6,8 @@ const float kParsecsPerAU = 4.84813681e-6;
 const float kNaturalLog10 = 2.3025850929;
 const vec3	kWhiteLight = vec3(1.0, 1.0, 1.0);
 const float kMinPointSize = 1.0;
-const float kMaxPointSize = 8.0;
+const float kMaxPointSize = 9.0;
+const float kLimitingMagnitude = 8.0;
 
 //
 // VAO definition
@@ -53,7 +54,7 @@ void main()
 	{
 		float parsecs = gVertexEyeDistanceAU * kParsecsPerAU;
 		float appMag = vaoAbsMag - 5.0 + 5.0 * log(parsecs) / kNaturalLog10;
-		float magFactor = smoothstep(7.0, -1.6, appMag);
+		float magFactor = smoothstep(kLimitingMagnitude, -1.6, appMag);
 
 		// Forward the star color along to the fragment shader
 		starColor = vec4(unsaturatedColor, magFactor);	// Compute actual brightness (distance attenuation)

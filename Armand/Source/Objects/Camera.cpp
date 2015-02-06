@@ -120,7 +120,7 @@ void Camera::update()
 		mRotationRate.z = 0;
 
 	// Apply braking to rotation rates
-	mRotationRate -= (mRotationRate * 0.01f);
+	mRotationRate -= (mRotationRate * 0.005f);
 }
 
 void Camera::rotateLeftRight(float_t inAmount)

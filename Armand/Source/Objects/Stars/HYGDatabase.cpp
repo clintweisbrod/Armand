@@ -41,7 +41,7 @@ HYGDatabase::HYGDatabase()
 		mPointTexture->sendToGPU();
 
 	// Modest amount of saturation for stars
-	mPointSaturation = 0.5f;
+	mPointSaturation = 0.75f;
 
 	// Enable magnitude calculations is shader
 	mUseMagnitudeVertexAttribute = true;

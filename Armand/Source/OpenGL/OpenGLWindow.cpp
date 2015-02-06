@@ -897,14 +897,14 @@ void OpenGLWindow::render()
 	wstring text;
 	swprintf(infoBuffer, 256, L"Speed: %s", speedStr.c_str());
 	text = infoBuffer;
-	fontRenderer->renderSpherical(text, 15, Vec2f(degToRad(-30.0f), degToRad(-5.0f)), Vec4f(1.0f, 1.0f, 1.0f, 1.0f), true);
+	fontRenderer->renderSpherical(text, 20, Vec2f(degToRad(-30.0f), degToRad(5.0f)), Vec4f(1.0f, 1.0f, 1.0f, 1.0f), true);
 
 	Vec3f cameraPos = (Vec3f)mCamera.getUniveralPositionAU();
 	float_t cameraDistanceFromOrigin = cameraPos.length();
 	wstring distanceStr = getNiceDistanceString(cameraDistanceFromOrigin, 2);
 	swprintf(infoBuffer, 256, L"Origin: %s", distanceStr.c_str());
 	text = infoBuffer;
-	fontRenderer->renderSpherical(text, 15, Vec2f(degToRad(30.0f), degToRad(-5.0f)), Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
+	fontRenderer->renderSpherical(text, 20, Vec2f(degToRad(30.0f), degToRad(5.0f)), Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
 //*/
 
 ///*
