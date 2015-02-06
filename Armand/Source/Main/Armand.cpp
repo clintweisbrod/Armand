@@ -231,6 +231,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		case WM_KEYDOWN:							// Is a key being held down?
 		{
+			gOpenGLWindow->keyboardKeyPressed(wParam);
 			gOpenGLWindow->keyboardKeyDown(wParam);	// If so, report it
 			return 0;
 		}

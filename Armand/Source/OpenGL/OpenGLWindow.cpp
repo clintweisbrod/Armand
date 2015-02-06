@@ -635,10 +635,14 @@ void OpenGLWindow::keyboardKeyUp(WPARAM inVirtualKeyCode)
 	mKeys[inVirtualKeyCode] = false;
 }
 
-void OpenGLWindow::keyboardKeyPressed(WPARAM inCharacterCode)
+void OpenGLWindow::keyboardKeyPressed(WPARAM inVirtualKeyCode)
 {
-	if (inCharacterCode == 'q')
+	switch (inVirtualKeyCode)
+	{
+	case 'Q':
 		mCamera.negateSpeed();
+		break;
+	}
 }
 
 void OpenGLWindow::handleKeys()
@@ -652,19 +656,19 @@ void OpenGLWindow::handleKeys()
 		//
 		// Process keys here
 		//
-
+		const float_t kRotationAmount = 0.0002f;
 		if (mKeys[VK_NUMPAD4] || mKeys[VK_LEFT])
-			mCamera.rotateLeft();
+			mCamera.rotateLeftRight(kRotationAmount);
 		if (mKeys[VK_NUMPAD6] || mKeys[VK_RIGHT])
-			mCamera.rotateRight();
+			mCamera.rotateLeftRight(-kRotationAmount);
 		if (mKeys[VK_NUMPAD2] || mKeys[VK_DOWN])
-			mCamera.rotateUp();
+			mCamera.rotateUpDown(-kRotationAmount);
 		if (mKeys[VK_NUMPAD8] || mKeys[VK_UP])
-			mCamera.rotateDown();
+			mCamera.rotateUpDown(kRotationAmount);
 		if (mKeys[VK_NUMPAD7])
-			mCamera.rollLeft();
+			mCamera.rollLeftRight(-kRotationAmount);
 		if (mKeys[VK_NUMPAD9])
-			mCamera.rollRight();
+			mCamera.rollLeftRight(kRotationAmount);
 
 		if (mKeys['A'])
 			mCamera.changeSpeed(1);
@@ -805,7 +809,7 @@ void OpenGLWindow::drawScene()
 
 void OpenGLWindow::preRender()
 {
-	mCamera.updatePosition();
+	mCamera.update();
 }
 
 void OpenGLWindow::render()
@@ -912,7 +916,7 @@ void OpenGLWindow::render()
 //	T3DSModelFactory::inst()->RemoveAll();
 //*/
 
-	static RandomPointsCube dataCube(10000);
+	static RandomPointsCube dataCube(1000000);
 	mRenderList.addObject(mCamera, dataCube);
 
 	static HYGDatabase hygStars;

@@ -28,7 +28,8 @@ Vec3f Camera::sDefaultViewDirection = Vec3f(0,0,-1);
 Vec3f Camera::sDefaultUpDirection = Vec3f(0,1,0);
 Vec3f Camera::sDefaultLeftDirection = sDefaultUpDirection ^ sDefaultViewDirection;
 
-Camera::Camera() : mSpeedAUPerSecond(0)
+Camera::Camera() :	mSpeedAUPerSecond(0),
+					mSpeedSign(1)
 {
 	setAperture((float_t)kPi);
 }
@@ -71,7 +72,6 @@ void Camera::changeSpeed(int inSense)
 {
 	const float_t kMinimumNonZeroSpeed = (float_t)kAuPerMetre * 0.01f;	// 1 cm/s :-)
 	const float_t kAccelFactor = 0.05f;
-//	float_t speedDelta = mSpeedAUPerSecond * kAccelFactor * inSense;
 	float_t speedDelta = mSpeedAUPerSecond * kAccelFactor * inSense;
 	if ((speedDelta == 0) && (inSense == 1))
 		speedDelta = kMinimumNonZeroSpeed;
@@ -80,55 +80,62 @@ void Camera::changeSpeed(int inSense)
 
 void Camera::negateSpeed()
 {
-	mSpeedAUPerSecond *= -1;
+	mSpeedSign *= -1;
 }
 
-void Camera::updatePosition()
+void Camera::update()
 {
+	// Update position
 	if (mSpeedAUPerSecond > 0)
 	{
 		double_t elapsedSeconds = mTimer.elapsedSeconds();
-		float_t distanceTravelled = mSpeedAUPerSecond * (float_t)elapsedSeconds;
+		float_t distanceTravelled = mSpeedSign * mSpeedAUPerSecond * (float_t)elapsedSeconds;
 		Vec3f positionDelta = mLastViewDirection * distanceTravelled;
 		mUniversalPositionAU += positionDelta;
 	}
 	mTimer.reset();
+
+	// Update rotations
+	const float_t kEpsilon = 1e-7f;
+	if (fabsf(mRotationRate.x) > kEpsilon)
+	{
+		mOrientation.rotate(mLastUpDirection, mRotationRate.x);
+		updateOrthoNormalBasis();
+	}
+	else
+		mRotationRate.x = 0;
+	if (fabsf(mRotationRate.y) > kEpsilon)
+	{
+		mOrientation.rotate(mLastLeftDirection, mRotationRate.y);
+		updateOrthoNormalBasis();
+	}
+	else
+		mRotationRate.y = 0;
+	if (fabsf(mRotationRate.z) > kEpsilon)
+	{
+		mOrientation.rotate(mLastViewDirection, mRotationRate.z);
+		updateOrthoNormalBasis();
+	}
+	else
+		mRotationRate.z = 0;
+
+	// Apply braking to rotation rates
+	mRotationRate -= (mRotationRate * 0.01f);
 }
 
-void Camera::rotateLeft()
+void Camera::rotateLeftRight(float_t inAmount)
 {
-	mOrientation.rotate(mLastUpDirection, degToRad(1.0f));
-	updateOrthoNormalBasis();
+	mRotationRate.x += inAmount;
 }
 
-void Camera::rotateRight()
+void Camera::rotateUpDown(float_t inAmount)
 {
-	mOrientation.rotate(mLastUpDirection, degToRad(-1.0f));
-	updateOrthoNormalBasis();
+	mRotationRate.y += inAmount;
 }
 
-void Camera::rotateUp()
+void Camera::rollLeftRight(float_t inAmount)
 {
-	mOrientation.rotate(mLastLeftDirection, degToRad(-1.0f));
-	updateOrthoNormalBasis();
-}
-
-void Camera::rotateDown()
-{
-	mOrientation.rotate(mLastLeftDirection, degToRad(1.0f));
-	updateOrthoNormalBasis();
-}
-
-void Camera::rollLeft()
-{
-	mOrientation.rotate(mLastViewDirection, degToRad(-1.0f));
-	updateOrthoNormalBasis();
-}
-
-void Camera::rollRight()
-{
-	mOrientation.rotate(mLastViewDirection, degToRad(1.0f));
-	updateOrthoNormalBasis();
+	mRotationRate.z += inAmount;
 }
 
 void Camera::getViewerOrthoNormalBasis(Vec3f& ioViewDirection, Vec3f& ioUpDirection, Vec3f& ioLeftDirection) const

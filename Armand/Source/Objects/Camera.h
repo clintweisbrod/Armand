@@ -33,8 +33,7 @@ public:
 	~Camera();
 
 	void lookAt(Vec3f& inViewerDirection, Vec3f& inUpDirection);
-	void updateOrthoNormalBasis();
-	void updatePosition();
+	void update();
 
 	Vec3f getCameraRelativePosition(const Object* inObject) const;
 	void getViewerOrthoNormalBasis(Vec3f& ioViewDirection, Vec3f& ioUpDirection, Vec3f& ioLeftDirection) const;
@@ -47,20 +46,22 @@ public:
 	void changeSpeed(int inSense);
 	void negateSpeed();
 
-	void rotateLeft();
-	void rotateRight();
-	void rotateUp();
-	void rotateDown();
-	void rollLeft();
-	void rollRight();
+	void rotateLeftRight(float_t inAmount);
+	void rotateUpDown(float_t inAmount);
+	void rollLeftRight(float_t inAmount);
 
 protected:
+	void updateOrthoNormalBasis();
+
 	float_t		mAperture;
 	float_t		mSpeedAUPerSecond;
+	float_t		mSpeedSign;	// +1 for forward, -1 for reverse
 	Vec3f		mLastViewDirection;
 	Vec3f		mLastUpDirection;
 	Vec3f		mLastLeftDirection;
 	Timer		mTimer;
+
+	Vec3f		mRotationRate;
 
 private:
 	float_t		mFisheyeClipPlaneDistance;
