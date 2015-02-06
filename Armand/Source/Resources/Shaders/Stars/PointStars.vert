@@ -5,6 +5,8 @@
 const float kParsecsPerAU = 4.84813681e-6;
 const float kNaturalLog10 = 2.3025850929;
 const vec3	kWhiteLight = vec3(1.0, 1.0, 1.0);
+const float kMinPointSize = 1.0;
+const float kMaxPointSize = 8.0;
 
 //
 // VAO definition
@@ -57,7 +59,7 @@ void main()
 		starColor = vec4(unsaturatedColor, magFactor);	// Compute actual brightness (distance attenuation)
 
 		// Set the point size
-		gl_PointSize = 1 + magFactor * 8;
+		gl_PointSize = mix(kMinPointSize, kMaxPointSize, magFactor);
 	}
 	else
 	{
