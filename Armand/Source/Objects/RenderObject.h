@@ -55,18 +55,25 @@ protected:
 
 	float_t	mBoundingRadiusAU;
 
+	float_t mPointSaturation;
+	bool	mUseMagnitudeVertexAttribute;
+
 	//
 	// Render as point
 	//
 	void	setPointSize(GLfloat inSize);
 	void	setPointColor(const GLubyte* inColor);
 	void	enablePointShader(Camera& inCamera, float inAlpha);
+
+	virtual void	setPointShaderUniforms(Camera& inCamera, float inAlpha);
+
 	void	disableShader();
 
+
 	PointStarVertex	mPoint;
+	GLuint			mPointShaderHandle;
 
 	// These are static so that multiple instances of RenderObject can share
 	static GLuint	sPointVAO;
 	static GLuint	sPointVBO;
-	static GLuint	sPointShaderHandle;
 };

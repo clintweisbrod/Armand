@@ -36,6 +36,7 @@ public:
 	static string getResourcesFolder() { return "Resources"; }
 	static string getShadersFolder() { return getResourcesFolder().append("/Shaders"); }
 	static string getModelsFolder() { return getDataFolder().append("/Models"); }
+	static string getStarImagesFolder() { return getDataFolder().append("/StarImages"); }
 
 	static bool	folderExists(const char* inRelativePath);
 	static bool createFolder(const char* inRelativePath);

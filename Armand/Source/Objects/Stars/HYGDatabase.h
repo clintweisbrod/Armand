@@ -22,6 +22,7 @@
 #include "Objects/Static3DPointSet.h"
 #include "Main/Exception.h"
 #include "Math/vecmath.h"
+#include "OpenGL/Textures/Texture.h"
 
 GENERATE_EXCEPTION(HYGDatabaseException)
 
@@ -31,6 +32,7 @@ struct HYGDataRecord
 	string	mHIP;
 	Vec3f	mPosition;
 	float_t	mAbsMag;
+	float_t	mColorIndex;
 };
 
 typedef vector<HYGDataRecord> HYGData;
@@ -40,9 +42,15 @@ public:
 	HYGDatabase();
 	virtual ~HYGDatabase();
 
+	virtual void setGLStateForFullRender(float inAlpha) const;
+
 protected:
 	virtual void loadData();
+	virtual void setPointShaderUniforms(Camera& inCamera, float inAlpha);
+
+	void bv2rgb(float_t &r, float_t &g, float_t &b, float_t bv);
 
 private:
-	HYGData	mData;
+	HYGData		mData;
+	Texture*	mPointTexture;
 };

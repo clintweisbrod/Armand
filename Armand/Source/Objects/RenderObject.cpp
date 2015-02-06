@@ -25,7 +25,6 @@
 
 GLuint RenderObject::sPointVAO = 0;
 GLuint RenderObject::sPointVBO = 0;
-GLuint RenderObject::sPointShaderHandle = 0;
 
 RenderObject::RenderObject()
 {
@@ -37,6 +36,9 @@ RenderObject::RenderObject()
 	mPoint.size = 3;				// Default point size is 3
 	memset(mPoint.color, 255, 4);	// Default point color is white
 	mPoint.absMag = 0;
+
+	mPointSaturation = 1.0f;
+	mUseMagnitudeVertexAttribute = false;
 
 	init();
 }
@@ -52,13 +54,9 @@ RenderObject::~RenderObject()
 void RenderObject::init()
 {
 	// Obtain the shader
-	if (sPointShaderHandle == 0)
-	{
-		// This is a good time to load the shader program
-		ShaderProgram* shaderProgram = ShaderFactory::inst()->getShaderProgram("Stars/PointStars.vert", "Stars/PointStars.frag");
-		if (shaderProgram)
-			sPointShaderHandle = shaderProgram->getHandle();
-	}
+	ShaderProgram* shaderProgram = ShaderFactory::inst()->getShaderProgram("Stars/PointStars.vert", "Stars/PointStars.frag");
+	if (shaderProgram)
+		mPointShaderHandle = shaderProgram->getHandle();
 
 	// Setup the single point VBO
 	if (sPointVAO == 0)
@@ -226,11 +224,11 @@ void RenderObject::setGLStateForPoint(float inAlpha) const
 	// Disable surface culling
 	glDisable(GL_CULL_FACE);
 
-	// Disable texturing
-	glTexturingOff();
-
 	// Enable setting point size within vertex shader
 	glEnable(GL_PROGRAM_POINT_SIZE);
+
+	// Disable point sprites
+	glDisable(GL_POINT_SPRITE);
 
 	// Smooth shading
 	glShadeModel(GL_SMOOTH);
@@ -254,6 +252,16 @@ void RenderObject::setGLStateForPoint(float inAlpha) const
 
 void RenderObject::enablePointShader(Camera& inCamera, float inAlpha)
 {
+	glUseProgram(mPointShaderHandle);
+
+	setPointShaderUniforms(inCamera, inAlpha);
+
+	// Need this to affect clipping vertices outside of field of view
+	glEnable(GL_CLIP_DISTANCE0);
+}
+
+void RenderObject::setPointShaderUniforms(Camera& inCamera, float inAlpha)
+{
 	// Get camera orthonormal basis
 	Vec3f viewDirection, upDirection, leftDirection;
 	inCamera.getViewerOrthoNormalBasis(viewDirection, upDirection, leftDirection);
@@ -265,21 +273,17 @@ void RenderObject::enablePointShader(Camera& inCamera, float inAlpha)
 	float_t f = mLastViewerDistanceAU + depth;
 	Mat4f projectionMatrix = gOpenGLWindow->getProjectionMatrix(n, f);
 
-	// Need this to affect clipping vertices behind viewer
-	glEnable(GL_CLIP_DISTANCE0);
+	glUniform1f(glGetUniformLocation(mPointShaderHandle, "uAlpha"), inAlpha);
+	glUniform1f(glGetUniformLocation(mPointShaderHandle, "uSaturation"), mPointSaturation);
+	glUniform1i(glGetUniformLocation(mPointShaderHandle, "uUseMagnitude"), (GLint)mUseMagnitudeVertexAttribute);
+	glUniform1f(glGetUniformLocation(mPointShaderHandle, "uAperture"), inCamera.getAperture());
+	glUniform1f(glGetUniformLocation(mPointShaderHandle, "uClipPlaneDistance"), inCamera.getFisheyeClipPlaneDistance());
+	glUniform3fv(glGetUniformLocation(mPointShaderHandle, "uViewDirection"), 1, viewDirection.data);
+	glUniform3fv(glGetUniformLocation(mPointShaderHandle, "uUpDirection"), 1, upDirection.data);
+	glUniform3fv(glGetUniformLocation(mPointShaderHandle, "uLeftDirection"), 1, leftDirection.data);
 
-	glUseProgram(sPointShaderHandle);
-	{
-		glUniform1f(glGetUniformLocation(sPointShaderHandle, "uAlpha"), inAlpha);
-		glUniform1f(glGetUniformLocation(sPointShaderHandle, "uAperture"), inCamera.getAperture());
-		glUniform1f(glGetUniformLocation(sPointShaderHandle, "uClipPlaneDistance"), inCamera.getFisheyeClipPlaneDistance());
-		glUniform3fv(glGetUniformLocation(sPointShaderHandle, "uViewDirection"), 1, viewDirection.data);
-		glUniform3fv(glGetUniformLocation(sPointShaderHandle, "uUpDirection"), 1, upDirection.data);
-		glUniform3fv(glGetUniformLocation(sPointShaderHandle, "uLeftDirection"), 1, leftDirection.data);
-
-		glUniformMatrix4fv(glGetUniformLocation(sPointShaderHandle, "uModelViewMatrix"), 1, 0, modelViewMatrix.data);
-		glUniformMatrix4fv(glGetUniformLocation(sPointShaderHandle, "uProjectionMatrix"), 1, 0, projectionMatrix.data);
-	}
+	glUniformMatrix4fv(glGetUniformLocation(mPointShaderHandle, "uModelViewMatrix"), 1, 0, modelViewMatrix.data);
+	glUniformMatrix4fv(glGetUniformLocation(mPointShaderHandle, "uProjectionMatrix"), 1, 0, projectionMatrix.data);
 }
 
 void RenderObject::disableShader()

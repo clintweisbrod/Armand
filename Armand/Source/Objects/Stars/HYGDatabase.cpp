@@ -24,6 +24,8 @@
 #include "HYGDatabase.h"
 #include "Utilities/File.h"
 #include "Utilities/StringUtils.h"
+#include "Math/mathlib.h"
+#include "OpenGL/ShaderFactory.h"
 
 HYGDatabase::HYGDatabase()
 {
@@ -32,6 +34,22 @@ HYGDatabase::HYGDatabase()
 
 	// Load the data
 	loadData();
+
+	// Load point sprite texture
+	mPointTexture = new Texture(File::getStarImagesFolder().append("/TestImage.png"));
+	if (mPointTexture->getImageBufferOK())
+		mPointTexture->sendToGPU();
+
+	// Modest amount of saturation for stars
+	mPointSaturation = 0.5f;
+
+	// Enable magnitude calculations is shader
+	mUseMagnitudeVertexAttribute = true;
+
+	// Obtain the shader
+	ShaderProgram* shaderProgram = ShaderFactory::inst()->getShaderProgram("Stars/PointStars.vert", "Stars/PointSpriteStars.frag");
+	if (shaderProgram)
+		mPointShaderHandle = shaderProgram->getHandle();
 
 	// Compute average color of points and setup VBO
 	finalize();
@@ -86,6 +104,10 @@ void HYGDatabase::loadData()
 		float_t absMag;
 		bool haveAbsMag = floatFromString(lineValues[14], absMag);
 
+		// Color index
+		float_t colorIndex = 0.5f;
+		floatFromString(lineValues[16], colorIndex);
+
 		if (haveHIP && havePosition && haveAbsMag)
 		{
 			HYGDataRecord rec;
@@ -94,6 +116,7 @@ void HYGDatabase::loadData()
 			rec.mHIP = lineValues[1];
 			rec.mPosition = Vec3f(x * (float_t)kAuPerParsec, y * (float_t)kAuPerParsec, z * (float_t)kAuPerParsec);
 			rec.mAbsMag = absMag;
+			rec.mColorIndex = colorIndex;
 
 			mData.push_back(rec);
 
@@ -123,11 +146,97 @@ void HYGDatabase::loadData()
 		mPointArray[n].position[1] = it->mPosition.y;
 		mPointArray[n].position[2] = it->mPosition.z;
 		mPointArray[n].size = 1;
-		mPointArray[n].color[0] = 255;
-		mPointArray[n].color[1] = 255;
-		mPointArray[n].color[2] = 255;
+
+		float_t r, g, b;
+		bv2rgb(r, g, b, it->mColorIndex);
+		mPointArray[n].color[0] = (GLubyte)(255 * r);
+		mPointArray[n].color[1] = (GLubyte)(255 * g);
+		mPointArray[n].color[2] = (GLubyte)(255 * b);
 		mPointArray[n].color[3] = 255;
+
 		mPointArray[n].absMag = it->mAbsMag;
 		n++;
+	}
+}
+
+void HYGDatabase::setGLStateForFullRender(float inAlpha) const
+{
+	setGLStateForPoint(inAlpha);
+
+	// Enable point sprites
+	glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
+	glEnable(GL_POINT_SPRITE);
+}
+
+void HYGDatabase::setPointShaderUniforms(Camera& inCamera, float inAlpha)
+{
+	RenderObject::setPointShaderUniforms(inCamera, inAlpha);
+
+	glActiveTexture(GL_TEXTURE0 + 0);
+	glBindTexture(GL_TEXTURE_2D, mPointTexture->getTextureID());
+	glUniform1i(glGetUniformLocation(mPointShaderHandle, "uTexture"), 0);
+}
+
+//
+// See: http://tiku.io/questions/764303/star-b-v-color-index-to-apparent-rgb-color
+//
+void HYGDatabase::bv2rgb(float_t &r, float_t &g, float_t &b, float_t bv)
+{
+	// RGB <0,1> <- BV <-0.4,+2.0>
+	r = g = b = 0.0f;
+
+	Mathf::constrain(bv, -0.4f, 2.0f);
+
+	float_t t;
+	if ((bv >= -0.4f) && (bv < 0.0f))
+	{
+		t = (bv + 0.4f) / (0.0f + 0.4f);
+		r = 0.61f + (0.11f * t) + (0.1f * t * t);
+	}
+	else if ((bv >= 0.0f ) && (bv < 0.4f))
+	{
+		t = (bv - 0.0f) / (0.4f - 0.0f);
+		r = 0.83f + (0.17f * t);
+	}
+	else if ((bv >= 0.4f) && (bv < 2.1f))
+	{
+		t = (bv - 0.4f) / (2.1f - 0.4f);
+		r = 1.0f;
+	}
+	
+	if ((bv >= -0.4f) && (bv < 0.0f))
+	{
+		t = (bv + 0.4f) / (0.0f + 0.4f);
+		g = 0.7f + (0.07f * t) + (0.1f * t * t);
+	}
+	else if ((bv >= 0.0f) && (bv < 0.4f))
+	{
+		t = (bv - 0.0f) / (0.4f - 0.0f);
+		g = 0.87f + (0.11f * t);
+	}
+	else if ((bv >= 0.4f) && (bv < 1.6f))
+	{
+		t = (bv - 0.4f) / (1.6f - 0.4f);
+		g = 0.98f - (0.16f * t);
+	}
+	else if ((bv >= 1.6f) && (bv < 2.0f))
+	{
+		t = (bv - 1.6f) / (2.0f - 1.6f);
+		g = 0.82f - (0.5f * t * t);
+	}
+	if ((bv >= -0.4f) && (bv < 0.4f))
+	{
+		t = (bv + 0.4f) / (0.4f + 0.4f);
+		b = 1.0f;
+	}
+	else if ((bv >= 0.4f) && (bv < 1.5f))
+	{
+		t = (bv - 0.4f) / (1.5f - 0.4f);
+		b = 1.0f - (0.47f * t) + (0.1f * t * t);
+	}
+	else if ((bv >= 1.5f) && (bv < 1.94f))
+	{
+		t = (bv - 1.5f) / (1.94f - 1.5f);
+		b = 0.63f - (0.6f * t * t);
 	}
 }
