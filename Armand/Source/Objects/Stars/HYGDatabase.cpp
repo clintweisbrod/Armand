@@ -36,7 +36,7 @@ HYGDatabase::HYGDatabase()
 	loadData();
 
 	// Load point sprite texture
-	mPointTexture = new Texture(File::getStarImagesFolder().append("/TestImage.png"));
+	mPointTexture = new Texture(File::getStarImagesFolder().append("/Default.png"));
 	if (mPointTexture->getImageBufferOK())
 		mPointTexture->sendToGPU();
 

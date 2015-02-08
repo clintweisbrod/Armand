@@ -6,7 +6,7 @@ const float kParsecsPerAU = 4.84813681e-6;
 const float kNaturalLog10 = 2.3025850929;
 const vec3	kWhiteLight = vec3(1.0, 1.0, 1.0);
 const float kMinPointSize = 1.0;
-const float kMaxPointSize = 9.0;
+const float kMaxPointSize = 5.0;
 const float kLimitingMagnitude = 8.0;
 
 //
