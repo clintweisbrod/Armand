@@ -30,13 +30,10 @@ RandomPointsCube::RandomPointsCube(int inNumSamples) : Static3DPointSet(inNumSam
 	setUniveralPositionLY(Vec3d(0.0, 0.0, -145e12));
 
 	// Load data
-	if (mPointArray)
-	{
-		loadData();
+	loadData();
 
-		// Compute average color of points, bounding radius, and setup VBO
-		finalize();
-	}
+	// Compute average color of points, bounding radius, and setup VBO
+	finalize();
 }
 
 RandomPointsCube::~RandomPointsCube()
@@ -47,6 +44,9 @@ void RandomPointsCube::loadData()
 {
 	const double_t kCubeDimensionAU = 1000000.0;
 
+	// Allocate required buffer
+	allocatePointArray(mNumPoints, sizeof(ColorPointVertex));
+
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	std::uniform_real_distribution<> posDis(-kCubeDimensionAU, kCubeDimensionAU);
@@ -54,14 +54,16 @@ void RandomPointsCube::loadData()
 	std::uniform_real_distribution<> colorDis(0.5, 1.0);
 	for (int n = 0; n < mNumPoints; ++n)
 	{
-		mPointArray[n].position[0] = (GLfloat)posDis(gen);
-		mPointArray[n].position[1] = (GLfloat)posDis(gen);
-		mPointArray[n].position[2] = (GLfloat)posDis(gen);
-		mPointArray[n].size = (GLfloat)sizeDis(gen);
-		mPointArray[n].color[0] = (GLubyte)(colorDis(gen) * 255.0);
-		mPointArray[n].color[1] = (GLubyte)(colorDis(gen) * 255.0);
-		mPointArray[n].color[2] = (GLubyte)(colorDis(gen) * 255.0);
-		mPointArray[n].color[3] = 255;
+		ColorPointVertex* colorPointVertex = (ColorPointVertex*)getVertex(n);
+
+		colorPointVertex->position[0] = (GLfloat)posDis(gen);
+		colorPointVertex->position[1] = (GLfloat)posDis(gen);
+		colorPointVertex->position[2] = (GLfloat)posDis(gen);
+		colorPointVertex->size = (GLfloat)sizeDis(gen);
+		colorPointVertex->color[0] = (GLubyte)(colorDis(gen) * 255.0);
+		colorPointVertex->color[1] = (GLubyte)(colorDis(gen) * 255.0);
+		colorPointVertex->color[2] = (GLubyte)(colorDis(gen) * 255.0);
+		colorPointVertex->color[3] = 255;
 	}
 }
 

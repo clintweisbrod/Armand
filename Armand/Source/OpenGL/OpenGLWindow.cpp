@@ -74,9 +74,6 @@ OpenGLWindow::OpenGLWindow() : mCreated(false),
 	mCamera.setAperture(degToRad(180.0f));			// 180 degree fisheye
 	mCamera.setUniveralPositionKm(Vec3d(0,0,5));	// Located at origin in our universal coordinate system
 	mCamera.lookAt(Vec3f(0,0,-1), Vec3f(0,1,0));	// Looking down -z axis with +y axis up.
-
-//	mCamera.setUniveralPositionAU(Vec3d(0.0, 0.0, 1500000.0));
-//	mCamera.setUniveralPositionAU(Vec3d(0.0, 0.0, 0.0));
 }
 
 OpenGLWindow::~OpenGLWindow()
@@ -196,8 +193,8 @@ bool OpenGLWindow::create(HINSTANCE inInstance, WNDPROC inWndProc, WORD inMenuID
 
 			// Enable/disable VSYNC
 			if (wglSwapIntervalEXT)
-				wglSwapIntervalEXT(0);	// Disabling with zero for now so that I can see the maximum frame rate.
-//				wglSwapIntervalEXT(1);
+//				wglSwapIntervalEXT(0);	// Disabling with zero for now so that I can see the maximum frame rate.
+				wglSwapIntervalEXT(1);
 
 			// Make the window visible
 			if (!mFullscreen)
@@ -649,14 +646,14 @@ void OpenGLWindow::handleKeys()
 {
 	// Only process keys every 1/100 of a second. This eliminates response inconsistencies
 	// due to varying frame rates.
-	const double kKeyboardResponseInterval = 1.0/100.0;
+	const double kKeyboardResponseInterval = 1.0/50.0;
 	double timeSinceLastResponse = mFrameStartTime - mLastKeyboardResponseSeconds;
 	if (timeSinceLastResponse > kKeyboardResponseInterval)
 	{
 		//
 		// Process keys here
 		//
-		const float_t kRotationAmount = 0.0002f;
+		const float_t kRotationAmount = 0.002f;
 		if (mKeys[VK_NUMPAD4] || mKeys[VK_LEFT])
 			mCamera.rotateLeftRight(kRotationAmount);
 		if (mKeys[VK_NUMPAD6] || mKeys[VK_RIGHT])

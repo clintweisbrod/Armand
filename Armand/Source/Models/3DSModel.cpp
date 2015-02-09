@@ -28,7 +28,7 @@
 #include "OpenGL/GLUtils.h"
 #include "OpenGL/ShaderFactory.h"
 #include "OpenGL/OpenGLWindow.h"
-#include "OpenGL/VBOData.h"
+//#include "OpenGL/VBOData.h"
 #include "Math/mathlib.h"
 #include "Math/quaternion.h"
 

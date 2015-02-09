@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// Copyright (C) 2014 Clint Weisbrod. All rights reserved.
+// Copyright (C) 2015 Clint Weisbrod. All rights reserved.
 //
-// VBOData.h
+// VAOBuilder.h
 //
-// Helper-class for constructing tightly-packed VBO array data.
+// Helper-class for constructing VAO definitions for interleaved array data.
 //
 // NOTE: For large amounts of data, interleaved format seems to be a
 // little quicker.
@@ -29,34 +29,31 @@
 
 using namespace std;
 
-struct VBOArrayInfo
+struct VAOInfo
 {
+	string mName;	// For debug purposes only
 	GLint mSize;	// Typically, 1,2,3 or 4, but can also be GL_BGRA. We therefore can't use this for buffer size calculations.
 	GLenum mType;
 	GLboolean mNormalized;
 	GLint mBytesPerElement;
-	GLuint mBaseIndex;
 	GLint mNumElements;	// Need this because mSize can be GL_BGRA
 };
 
-typedef map<GLuint, VBOArrayInfo> VBOArrayInfoMap_t;
-class VBOData
+typedef map<GLuint, VAOInfo> VBOArrayInfoMap_t;
+class VAOBuilder
 {
 public:
-	VBOData();
-	virtual ~VBOData();
+	VAOBuilder();
+	~VAOBuilder();
 
-	void addArray(GLuint index, GLint size, GLenum type, GLboolean normalized);
-	void setNumVertices(GLuint inNumVertices);
-	GLubyte* getArray(GLuint inIndex);
-	void setupGPU();
-	GLubyte* getData() { return mData; }
+	void addArray(string name, GLuint index, GLint size, GLenum type, GLboolean normalized);
+	void setupGPU(GLuint inVBOid);
+	void bind() const { glBindVertexArray(mVAOid); };
 
 private:
 	GLint getBytesFromType(GLenum inType);
 
+	GLuint				mVAOid;
 	VBOArrayInfoMap_t	mArrayInfo;
-	GLuint				mNumVertices;
-	GLuint				mBufSize;
-	GLubyte*			mData;
+	GLsizei				mStride;
 };

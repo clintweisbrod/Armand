@@ -20,43 +20,47 @@
 #include "stdafx.h"
 
 #include "Static3DPointSet.h"
-#include "OpenGL/GLUtils.h"
 #include "OpenGL/ShaderFactory.h"
 
 Static3DPointSet::Static3DPointSet(int inNumPoints)
 {
-	mPointArray = NULL;
-	mPointsVAO = 0;
+	mPointBuffer = NULL;
 	mPointsVBO = 0;
-
-	// Allocate buffer for points
-	setNumPoints(inNumPoints);
+	mNumPoints = inNumPoints;
 }
 
 Static3DPointSet::~Static3DPointSet()
 {
-	if (mPointArray)
-	{
-		delete[] mPointArray;
-		mPointArray = NULL;
-	}
+	releasePointArray();
 
 	if (mPointsVAO)
-		glDeleteVertexArrays(1, &mPointsVAO);
+	{
+		delete mPointsVAO;
+		mPointsVAO = 0;
+	}
+
 	if (mPointsVBO)
 		glDeleteBuffers(1, &mPointsVBO);
 }
 
-void Static3DPointSet::setNumPoints(GLsizei inNumPoints)
+void Static3DPointSet::allocatePointArray(GLsizei inNumPoints, GLsizei inPointStride)
 {
-	// Allocate buffer large enough to hold the number of points specified
-	mPointArray = new PointStarVertex[inNumPoints];
-	if (!mPointArray)
-		THROW(Static3DPointSetException, "Unable to allocate %d PointStarVertex elements.", inNumPoints);
-
 	mNumPoints = inNumPoints;
+	mPointStride = inPointStride;
 
-	return;
+	// Allocate buffer large enough to hold the number of points specified
+	mPointBuffer = new uint8_t[mNumPoints * mPointStride];
+	if (!mPointBuffer)
+		THROW(Static3DPointSetException, "Unable to allocate %d PointStarVertex elements.", mNumPoints);
+}
+
+void Static3DPointSet::releasePointArray()
+{
+	if (mPointBuffer)
+	{
+		delete[] mPointBuffer;
+		mPointBuffer = NULL;
+	}
 }
 
 void Static3DPointSet::finalize()
@@ -67,14 +71,16 @@ void Static3DPointSet::finalize()
 	float_t maxRadiusSquared = 0;
 	for (int n = 0; n < mNumPoints; ++n)
 	{
+		ColorPointVertex* colorPointVertex = (ColorPointVertex*)getVertex(n);
+
 		// Sum the colors
-		avgColor[0] += mPointArray[n].color[0];
-		avgColor[1] += mPointArray[n].color[1];
-		avgColor[2] += mPointArray[n].color[2];
-		avgColor[3] += mPointArray[n].color[3];
+		avgColor[0] += colorPointVertex->color[0];
+		avgColor[1] += colorPointVertex->color[1];
+		avgColor[2] += colorPointVertex->color[2];
+		avgColor[3] += colorPointVertex->color[3];
 
 		// Compute largest vec
-		Vec3f vec(mPointArray[n].position);
+		Vec3f vec(colorPointVertex->position);
 		float_t radiusSquared = vec.lengthSquared();
 		if (radiusSquared > maxRadiusSquared)
 			maxRadiusSquared = radiusSquared;
@@ -91,44 +97,48 @@ void Static3DPointSet::finalize()
 	// Set the bounding radius of the data set
 	setBoundingRadiusAU(sqrtf(maxRadiusSquared));
 
+	// Setup VAO/VBO
+	setupVBO();
+}
+
+void* Static3DPointSet::getVertex(GLsizei index)
+{
+	void* result = mPointBuffer + (index * mPointStride);
+	return result;
+}
+
+void Static3DPointSet::setupVAO()
+{
 	// Setup the points VBO
-	if (mPointsVAO == 0)
+	if (mPointsVAO == NULL)
 	{
-		// Allocate VAOs
-		glGenVertexArrays(1, &mPointsVAO);
+		mPointsVAO = new VAOBuilder;
 
-		// Allocate VBOs
-		glGenBuffers(1, &mPointsVBO);
-
-		// Bind the VAO as the current used object
-		glBindVertexArray(mPointsVAO);
-
-		// Bind the VBO as being the active buffer and storing vertex attributes (coordinates)
-		glBindBuffer(GL_ARRAY_BUFFER, mPointsVBO);
-
-		GLuint offset = 0;
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(PointStarVertex), BUFFER_OFFSET(offset));	// vaoPosition
-		offset += (3 * sizeof(GLfloat));
-		glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, sizeof(PointStarVertex), BUFFER_OFFSET(offset));	// vaoPointSize
-		offset += (1 * sizeof(GLfloat));
-		glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(PointStarVertex), BUFFER_OFFSET(offset));	// vaoColor
-		offset += (4 * sizeof(GLubyte));
-		glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(PointStarVertex), BUFFER_OFFSET(offset));	// vaoAbsMag
-
-		glEnableVertexAttribArray(0);
-		glEnableVertexAttribArray(1);
-		glEnableVertexAttribArray(2);
-		glEnableVertexAttribArray(3);
-
-		// Copy the buffer up to the VBO
-		glBufferData(GL_ARRAY_BUFFER, mNumPoints * sizeof(PointStarVertex), mPointArray, GL_STATIC_DRAW);
-
-		// Release the buffer in CPU memory
-		delete[] mPointArray;
-		mPointArray = NULL;
-
-		glIsError();
+		// Add the arrays
+		mPointsVAO->addArray("Position", 0, 3, GL_FLOAT, GL_FALSE);
+		mPointsVAO->addArray("PointSize", 1, 1, GL_FLOAT, GL_FALSE);
+		mPointsVAO->addArray("Color", 2, 4, GL_UNSIGNED_BYTE, GL_TRUE);
 	}
+}
+
+void Static3DPointSet::setupVBO()
+{
+	// Virtual call
+	setupVAO();
+
+	// Allocate VBOs
+	glGenBuffers(1, &mPointsVBO);
+
+	// Setup the VAO
+	mPointsVAO->setupGPU(mPointsVBO);
+
+	// Copy the buffer up to the VBO
+	glBufferData(GL_ARRAY_BUFFER, mNumPoints * mPointStride, mPointBuffer, GL_STATIC_DRAW);
+
+	glIsError();
+
+	// Release the buffer in CPU memory
+	releasePointArray();
 }
 
 bool Static3DPointSet::shouldRenderAsPoint(Camera& inCamera) const
@@ -145,9 +155,6 @@ bool Static3DPointSet::canRenderFull()
 	if (mNumPoints == 0)
 		return false;
 
-	if (mPointsVAO == 0)
-		return false;
-
 	return true;
 }
 
@@ -158,7 +165,7 @@ void Static3DPointSet::setGLStateForFullRender(float inAlpha) const
 
 bool Static3DPointSet::renderFull(Camera& inCamera, float inAlpha)
 {
-	glBindVertexArray(mPointsVAO);
+	mPointsVAO->bind();
 
 	enablePointShader(inCamera, inAlpha);
 	glDrawArrays(GL_POINTS, 0, mNumPoints);

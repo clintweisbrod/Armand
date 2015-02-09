@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------
-// Copyright (C) 2014 Clint Weisbrod. All rights reserved.
+// Copyright (C) 2015 Clint Weisbrod. All rights reserved.
 //
-// VBOData.cpp
+// VAOBuilder.cpp
 //
-// Helper-class for constructing tightly-packed VBO array data.
+// Helper-class for constructing VAO definitions for interleaved array data.
 //
 // NOTE: For large amounts of data, interleaved format seems to be a
 // little quicker.
@@ -23,83 +23,55 @@
 
 #include "stdafx.h"
 
-#include "VBOData.h"
+#include "VAOBuilder.h"
 #include "GLUtils.h"
 
-VBOData::VBOData()
+VAOBuilder::VAOBuilder() : mVAOid(0)
 {
-	mNumVertices = 0;
-	mBufSize = 0;
-	mData = NULL;
+	// Allocate VAO
+	glGenVertexArrays(1, &mVAOid);
 }
 
-VBOData::~VBOData()
+VAOBuilder::~VAOBuilder()
 {
-	if (mData)
-		delete[] mData;
+	// Delete VAO
+	glDeleteVertexArrays(1, &mVAOid);
 }
 
-void VBOData::addArray(GLuint index, GLint size, GLenum type, GLboolean normalized)
+void VAOBuilder::addArray(string name, GLuint index, GLint size, GLenum type, GLboolean normalized)
 {
-	VBOArrayInfo info = {size, type, normalized, 0, 0, size};
+	VAOInfo info = { name, size, type, normalized, 0, size };
 	if (info.mNumElements == GL_BGRA)
 		info.mNumElements = 1;
 	info.mBytesPerElement = getBytesFromType(info.mType);
 	mArrayInfo[index] = info;
+
+	// Recalculate mStride
+	mStride = 0;
+	for (VBOArrayInfoMap_t::iterator it = mArrayInfo.begin(); it != mArrayInfo.end(); it++)
+		mStride += (it->second.mNumElements * it->second.mBytesPerElement);
 }
 
-void VBOData::setNumVertices(GLuint inNumVertices)
+void VAOBuilder::setupGPU(GLuint inVBOid)
 {
-	mNumVertices = inNumVertices;
+	// Bind the VAO as the current used object
+	glBindVertexArray(mVAOid);
 
-	VBOArrayInfoMap_t::iterator it;
+	// Bind the VBO as being the active buffer and storing vertex attributes
+	glBindBuffer(GL_ARRAY_BUFFER, inVBOid);
 
-	// First make sure all specified data types are valid
-	bool typesValid = true;
-	for (it = mArrayInfo.begin(); it != mArrayInfo.end(); it++)
-	{
-		if (it->second.mBytesPerElement == 0)
-		{
-			typesValid = false;
-			break;
-		}
-	}
-	if (!typesValid)
-		return;
-
-	// Allocate buffer exactly large enough for all the vertices
-	mBufSize = 0;
-	for (it = mArrayInfo.begin(); it != mArrayInfo.end(); it++)
-	{
-		it->second.mBaseIndex = mBufSize;
-		mBufSize += (it->second.mNumElements * it->second.mBytesPerElement * mNumVertices);
-	}
-	if (mBufSize > 0)
-		mData = new GLubyte[mBufSize];
-}
-
-GLubyte* VBOData::getArray(GLuint inIndex)
-{
-	if (inIndex >= mArrayInfo.size())
-		return NULL;
-
-	return mData + mArrayInfo[inIndex].mBaseIndex;
-}
-
-void VBOData::setupGPU()
-{
-	glBufferData(GL_ARRAY_BUFFER, mBufSize, mData, GL_STATIC_DRAW);
-	glIsError();
-
+	GLuint offset = 0;
 	for (VBOArrayInfoMap_t::iterator it = mArrayInfo.begin(); it != mArrayInfo.end(); it++)
 	{
 		glVertexAttribPointer(it->first, it->second.mSize, it->second.mType, it->second.mNormalized,
-							  0, BUFFER_OFFSET(it->second.mBaseIndex));
+							  mStride, BUFFER_OFFSET(offset));
+		offset += (it->second.mNumElements * it->second.mBytesPerElement);
+
 		glEnableVertexAttribArray(it->first);
 	}
 }
 
-GLint VBOData::getBytesFromType(GLenum inType)
+GLint VAOBuilder::getBytesFromType(GLenum inType)
 {
 	GLint result;
 

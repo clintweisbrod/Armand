@@ -189,9 +189,6 @@
     <ClInclude Include="..\..\Source\Models\3DSModelFactory.h">
       <Filter>Header Files\Models</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Source\OpenGL\VBOData.h">
-      <Filter>Header Files\OpenGL</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Source\Math\bigfix.h">
       <Filter>Header Files\Math</Filter>
     </ClInclude>
@@ -221,6 +218,9 @@
     </ClInclude>
     <ClInclude Include="..\..\Source\Objects\Stars\HYGDatabase.h">
       <Filter>Header Files\Objects\Stars</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\OpenGL\VAOBuilder.h">
+      <Filter>Header Files\OpenGL</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -266,9 +266,6 @@
     <ClCompile Include="..\..\Source\Models\3DSModelFactory.cpp">
       <Filter>Source Files\Models</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Source\OpenGL\VBOData.cpp">
-      <Filter>Source Files\OpenGL</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Source\Math\bigfix.cpp">
       <Filter>Source Files\Math</Filter>
     </ClCompile>
@@ -295,6 +292,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\Objects\Stars\HYGDatabase.cpp">
       <Filter>Source Files\Objects\Stars</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\OpenGL\VAOBuilder.cpp">
+      <Filter>Source Files\OpenGL</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

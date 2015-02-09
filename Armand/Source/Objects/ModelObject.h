@@ -37,6 +37,4 @@ public:
 protected:
 	T3DSModel*	mModel;
 	Vec3f		mLastScaledViewerModelVector;
-
-	PointStarVertex	mStarArray[1000000];
 };

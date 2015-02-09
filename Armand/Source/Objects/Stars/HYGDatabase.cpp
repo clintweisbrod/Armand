@@ -32,24 +32,21 @@ HYGDatabase::HYGDatabase()
 	// Position the center of the cube in Universal coordinates
 	setUniveralPositionAU(Vec3d(0, 0, 0));
 
-	// Load the data
-	loadData();
+	// Modest amount of saturation for stars
+	mPointSaturation = 0.75f;
 
 	// Load point sprite texture
 	mPointTexture = new Texture(File::getStarImagesFolder().append("/Default.png"));
 	if (mPointTexture->getImageBufferOK())
 		mPointTexture->sendToGPU();
 
-	// Modest amount of saturation for stars
-	mPointSaturation = 0.75f;
-
-	// Enable magnitude calculations is shader
-	mUseMagnitudeVertexAttribute = true;
-
 	// Obtain the shader
 	ShaderProgram* shaderProgram = ShaderFactory::inst()->getShaderProgram("Stars/PointStars.vert", "Stars/PointSpriteStars.frag");
 	if (shaderProgram)
 		mPointShaderHandle = shaderProgram->getHandle();
+
+	// Load the data
+	loadData();
 
 	// Compute average color of points and setup VBO
 	finalize();
@@ -134,47 +131,30 @@ void HYGDatabase::loadData()
 	// Possibly reduce storage requirements for all the data we've allocated
 	mData.shrink_to_fit();
 
-	// Tell the base class how many points we have, this allocates the storage needed
-	// to render the points.
-	setNumPoints((GLsizei)mData.size());
+	// Allocate required buffer
+	allocatePointArray((GLsizei)mData.size(), sizeof(StarVertex));
 
 	// Write data into render storage
 	int n = 0;
 	for (HYGData::iterator it = mData.begin(); it != mData.end(); it++)
 	{
-		mPointArray[n].position[0] = it->mPosition.x;
-		mPointArray[n].position[1] = it->mPosition.y;
-		mPointArray[n].position[2] = it->mPosition.z;
-		mPointArray[n].size = 1;
+		StarVertex* starVertex = (StarVertex*)getVertex(n);
+
+		starVertex->position[0] = it->mPosition.x;
+		starVertex->position[1] = it->mPosition.y;
+		starVertex->position[2] = it->mPosition.z;
+		starVertex->size = 1;
 
 		float_t r, g, b;
 		bv2rgb(r, g, b, it->mColorIndex);
-		mPointArray[n].color[0] = (GLubyte)(255 * r);
-		mPointArray[n].color[1] = (GLubyte)(255 * g);
-		mPointArray[n].color[2] = (GLubyte)(255 * b);
-		mPointArray[n].color[3] = 255;
+		starVertex->color[0] = (GLubyte)(255 * r);
+		starVertex->color[1] = (GLubyte)(255 * g);
+		starVertex->color[2] = (GLubyte)(255 * b);
+		starVertex->color[3] = 255;
 
-		mPointArray[n].absMag = it->mAbsMag;
+		starVertex->absMag = it->mAbsMag;
 		n++;
 	}
-}
-
-void HYGDatabase::setGLStateForFullRender(float inAlpha) const
-{
-	setGLStateForPoint(inAlpha);
-
-	// Enable point sprites
-	glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
-	glEnable(GL_POINT_SPRITE);
-}
-
-void HYGDatabase::setPointShaderUniforms(Camera& inCamera, float inAlpha)
-{
-	RenderObject::setPointShaderUniforms(inCamera, inAlpha);
-
-	glActiveTexture(GL_TEXTURE0 + 0);
-	glBindTexture(GL_TEXTURE_2D, mPointTexture->getTextureID());
-	glUniform1i(glGetUniformLocation(mPointShaderHandle, "uTexture"), 0);
 }
 
 //
@@ -239,4 +219,38 @@ void HYGDatabase::bv2rgb(float_t &r, float_t &g, float_t &b, float_t bv)
 		t = (bv - 1.5f) / (1.94f - 1.5f);
 		b = 0.63f - (0.6f * t * t);
 	}
+}
+
+void HYGDatabase::setupVAO()
+{
+	// Setup the points VBO
+	if (mPointsVAO == NULL)
+	{
+		mPointsVAO = new VAOBuilder;
+
+		// Add the arrays
+		mPointsVAO->addArray("Position", 0, 3, GL_FLOAT, GL_FALSE);
+		mPointsVAO->addArray("PointSize", 1, 1, GL_FLOAT, GL_FALSE);
+		mPointsVAO->addArray("Color", 2, 4, GL_UNSIGNED_BYTE, GL_TRUE);
+		mPointsVAO->addArray("AbsMag", 3, 1, GL_FLOAT, GL_FALSE);
+	}
+}
+
+void HYGDatabase::setGLStateForFullRender(float inAlpha) const
+{
+	setGLStateForPoint(inAlpha);
+
+	// Enable point sprites
+	glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
+	glEnable(GL_POINT_SPRITE);
+}
+
+void HYGDatabase::setPointShaderUniforms(Camera& inCamera, float inAlpha)
+{
+	RenderObject::setPointShaderUniforms(inCamera, inAlpha);
+
+	glActiveTexture(GL_TEXTURE0 + 0);
+	glBindTexture(GL_TEXTURE_2D, mPointTexture->getTextureID());
+	glUniform1i(glGetUniformLocation(mPointShaderHandle, "uTexture"), 0);
+	glUniform1f(glGetUniformLocation(mPointShaderHandle, "uSaturation"), mPointSaturation);
 }

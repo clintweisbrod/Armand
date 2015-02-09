@@ -50,10 +50,14 @@ typedef struct
 	GLfloat r, g, b, a;		// color
 } v3f_t2f_c4f;
 
-typedef struct
+struct ColorPointVertex
 {
 	GLfloat position[3];
 	GLfloat size;
 	GLubyte color[4];
+};
+
+struct StarVertex : public ColorPointVertex
+{
 	GLfloat absMag;
-} PointStarVertex;
+};

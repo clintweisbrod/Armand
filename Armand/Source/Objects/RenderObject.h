@@ -19,6 +19,7 @@
 
 #include <GL/glew.h>
 #include "Camera.h"
+#include "OpenGL/VAOBuilder.h"
 #include "OpenGL/VertexBufferStructs.h"
 
 #pragma once
@@ -29,7 +30,6 @@ public:
 	RenderObject();
 	virtual ~RenderObject();
 
-	void init();
 	void setBoundingRadiusAU(float_t inBoundingRadiusAU) { mBoundingRadiusAU = inBoundingRadiusAU; };
 	void preRender(Camera& inCamera);
 	bool render(Camera& inCamera, float inAlpha);
@@ -55,9 +55,6 @@ protected:
 
 	float_t	mBoundingRadiusAU;
 
-	float_t mPointSaturation;
-	bool	mUseMagnitudeVertexAttribute;
-
 	//
 	// Render as point
 	//
@@ -69,11 +66,10 @@ protected:
 
 	void	disableShader();
 
-
-	PointStarVertex	mPoint;
-	GLuint			mPointShaderHandle;
+	ColorPointVertex	mPoint;
+	GLuint				mPointShaderHandle;
 
 	// These are static so that multiple instances of RenderObject can share
-	static GLuint	sPointVAO;
-	static GLuint	sPointVBO;
+	static VAOBuilder*	sPointVAO;
+	static GLuint		sPointVBO;
 };

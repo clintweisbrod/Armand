@@ -23,75 +23,55 @@
 #include "OpenGL/GLUtils.h"
 #include "OpenGL/OpenGLWindow.h"
 
-GLuint RenderObject::sPointVAO = 0;
+VAOBuilder* RenderObject::sPointVAO = NULL;
 GLuint RenderObject::sPointVBO = 0;
 
 RenderObject::RenderObject()
 {
 	mBoundingRadiusAU = (float_t)kAuPerMetre;	// Default to 1 metre
 
+	// Initialize single point
 	mPoint.position[0] = 0;
 	mPoint.position[1] = 0;
 	mPoint.position[2] = 0;
 	mPoint.size = 3;				// Default point size is 3
 	memset(mPoint.color, 255, 4);	// Default point color is white
-	mPoint.absMag = 0;
 
-	mPointSaturation = 1.0f;
-	mUseMagnitudeVertexAttribute = false;
+	// Obtain the shader
+	ShaderProgram* shaderProgram = ShaderFactory::inst()->getShaderProgram("Stars/ColorPoints.vert", "Stars/ColorPoints.frag");
+	if (shaderProgram)
+		mPointShaderHandle = shaderProgram->getHandle();
 
-	init();
+	// Setup the single point VBO
+	if (sPointVAO == NULL)
+	{
+		// Allocate VAO
+		sPointVAO = new VAOBuilder;
+
+		// Add the arrays
+		sPointVAO->addArray("vaoPosition", 0, 3, GL_FLOAT, GL_FALSE);
+		sPointVAO->addArray("vaoSize", 1, 1, GL_FLOAT, GL_FALSE);
+		sPointVAO->addArray("vaoColor", 2, 4, GL_UNSIGNED_BYTE, GL_TRUE);
+
+		// Allocate VBOs
+		glGenBuffers(1, &sPointVBO);
+
+		// Setup the VAO
+		sPointVAO->setupGPU(sPointVBO);
+
+		// Place one point in the VBO
+		glBufferData(GL_ARRAY_BUFFER, sizeof(ColorPointVertex), &mPoint, GL_DYNAMIC_DRAW);
+
+		glIsError();
+	}
 }
 
 RenderObject::~RenderObject()
 {
 //	if (sPointVAO)
-//		glDeleteVertexArrays(1, &sPointVAO);
+//		delete sPointVAO;
 //	if (sPointVBO)
 //		glDeleteBuffers(1, &sPointVBO);
-}
-
-void RenderObject::init()
-{
-	// Obtain the shader
-	ShaderProgram* shaderProgram = ShaderFactory::inst()->getShaderProgram("Stars/PointStars.vert", "Stars/PointStars.frag");
-	if (shaderProgram)
-		mPointShaderHandle = shaderProgram->getHandle();
-
-	// Setup the single point VBO
-	if (sPointVAO == 0)
-	{
-		// Allocate VAOs
-		glGenVertexArrays(1, &sPointVAO);
-
-		// Allocate VBOs
-		glGenBuffers(1, &sPointVBO);
-
-		// Bind the VAO as the current used object
-		glBindVertexArray(sPointVAO);
-
-		// Bind the VBO as being the active buffer and storing vertex attributes (coordinates)
-		glBindBuffer(GL_ARRAY_BUFFER, sPointVBO);
-
-		GLuint offset = 0;
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(PointStarVertex), BUFFER_OFFSET(offset));	// vaoPosition
-		offset += (3 * sizeof(GLfloat));
-		glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, sizeof(PointStarVertex), BUFFER_OFFSET(offset));	// vaoPointSize
-		offset += (1 * sizeof(GLfloat));
-		glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(PointStarVertex), BUFFER_OFFSET(offset));	// vaoColor
-		offset += (4 * sizeof(GLubyte));
-		glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(PointStarVertex), BUFFER_OFFSET(offset));	// vaoAbsMag
-
-		glEnableVertexAttribArray(0);
-		glEnableVertexAttribArray(1);
-		glEnableVertexAttribArray(2);
-		glEnableVertexAttribArray(3);
-
-		// Place one point in the VBO
-		glBufferData(GL_ARRAY_BUFFER, sizeof(PointStarVertex), &mPoint, GL_DYNAMIC_DRAW);
-
-		glIsError();
-	}
 }
 
 void RenderObject::setPointSize(GLfloat inSize)
@@ -100,7 +80,7 @@ void RenderObject::setPointSize(GLfloat inSize)
 	{
 		mPoint.size = inSize;
 		glBindBuffer(GL_ARRAY_BUFFER, sPointVBO);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(PointStarVertex), &mPoint);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(ColorPointVertex), &mPoint);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 }
@@ -111,7 +91,7 @@ void RenderObject::setPointColor(const GLubyte* inColor)
 	{
 		memcpy(mPoint.color, inColor, 4);
 		glBindBuffer(GL_ARRAY_BUFFER, sPointVBO);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(PointStarVertex), &mPoint);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(ColorPointVertex), &mPoint);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 }
@@ -274,8 +254,6 @@ void RenderObject::setPointShaderUniforms(Camera& inCamera, float inAlpha)
 	Mat4f projectionMatrix = gOpenGLWindow->getProjectionMatrix(n, f);
 
 	glUniform1f(glGetUniformLocation(mPointShaderHandle, "uAlpha"), inAlpha);
-	glUniform1f(glGetUniformLocation(mPointShaderHandle, "uSaturation"), mPointSaturation);
-	glUniform1i(glGetUniformLocation(mPointShaderHandle, "uUseMagnitude"), (GLint)mUseMagnitudeVertexAttribute);
 	glUniform1f(glGetUniformLocation(mPointShaderHandle, "uAperture"), inCamera.getAperture());
 	glUniform1f(glGetUniformLocation(mPointShaderHandle, "uClipPlaneDistance"), inCamera.getFisheyeClipPlaneDistance());
 	glUniform3fv(glGetUniformLocation(mPointShaderHandle, "uViewDirection"), 1, viewDirection.data);
@@ -299,7 +277,7 @@ bool RenderObject::renderAsPoint(Camera& inCamera, float inAlpha)
 
 	setPointSize(max(mLastPixelDiameter, 1));
 
-	glBindVertexArray(sPointVAO);
+	sPointVAO->bind();
 
 	enablePointShader(inCamera, inAlpha);
 	glDrawArrays(GL_POINTS, 0, 1);

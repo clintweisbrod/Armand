@@ -46,6 +46,7 @@ public:
 
 protected:
 	virtual void loadData();
+	virtual void setupVAO();
 	virtual void setPointShaderUniforms(Camera& inCamera, float inAlpha);
 
 	void bv2rgb(float_t &r, float_t &g, float_t &b, float_t bv);
@@ -53,4 +54,5 @@ protected:
 private:
 	HYGData		mData;
 	Texture*	mPointTexture;
+	float_t		mPointSaturation;
 };

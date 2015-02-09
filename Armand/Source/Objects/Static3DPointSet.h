@@ -22,7 +22,9 @@
 #include <GL/glew.h>
 #include "Main/Exception.h"
 #include "OpenGL/VertexBufferStructs.h"
+#include "OpenGL/VAOBuilder.h"
 #include "RenderObject.h"
+#include "OpenGL/GLUtils.h"
 
 GENERATE_EXCEPTION(Static3DPointSetException)
 
@@ -40,12 +42,18 @@ public:
 
 protected:
 	virtual void loadData() = 0;
-	void setNumPoints(GLsizei inNumPoints);
+	void allocatePointArray(GLsizei inNumPoints, GLsizei inPointStride);
+	void releasePointArray();
 	void finalize();
 
-	GLuint				mPointsVAO;
+	virtual void setupVAO();
+	void setupVBO();
+	void* getVertex(GLsizei index);
+
+	VAOBuilder*			mPointsVAO;
 	GLuint				mPointsVBO;
 
+	GLsizei				mPointStride;
 	GLsizei				mNumPoints;
-	PointStarVertex*	mPointArray;
+	uint8_t*			mPointBuffer;
 };
