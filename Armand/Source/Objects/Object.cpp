@@ -4,7 +4,7 @@
 // Object.cpp
 //
 // Base class for all objects in Armand that have some position and orientation
-// in Universal coordinates.
+// in universal coordinates.
 //
 // THIS SOFTWARE IS PROVIDED BY CLINT WEISBROD "AS IS" AND ANY EXPRESS OR
 // IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF

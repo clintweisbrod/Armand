@@ -115,9 +115,9 @@ void Static3DPointSet::setupVAO()
 		mPointsVAO = new VAOBuilder;
 
 		// Add the arrays
-		mPointsVAO->addArray("Position", 0, 3, GL_FLOAT, GL_FALSE);
-		mPointsVAO->addArray("PointSize", 1, 1, GL_FLOAT, GL_FALSE);
-		mPointsVAO->addArray("Color", 2, 4, GL_UNSIGNED_BYTE, GL_TRUE);
+		mPointsVAO->addArray("vaoPosition", 3, GL_FLOAT, GL_FALSE);
+		mPointsVAO->addArray("vaoSize", 1, GL_FLOAT, GL_FALSE);
+		mPointsVAO->addArray("vaoColor", 4, GL_UNSIGNED_BYTE, GL_TRUE);
 	}
 }
 

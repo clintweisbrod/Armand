@@ -3,7 +3,7 @@
 //
 // Camera.cpp
 //
-// Class defining location and orientation of viewer in Universal coordinates.
+// Class defining location and orientation of viewer in universal coordinates.
 //
 // THIS SOFTWARE IS PROVIDED BY CLINT WEISBROD "AS IS" AND ANY EXPRESS OR
 // IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF

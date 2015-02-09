@@ -49,9 +49,9 @@ RenderObject::RenderObject()
 		sPointVAO = new VAOBuilder;
 
 		// Add the arrays
-		sPointVAO->addArray("vaoPosition", 0, 3, GL_FLOAT, GL_FALSE);
-		sPointVAO->addArray("vaoSize", 1, 1, GL_FLOAT, GL_FALSE);
-		sPointVAO->addArray("vaoColor", 2, 4, GL_UNSIGNED_BYTE, GL_TRUE);
+		sPointVAO->addArray("vaoPosition", 3, GL_FLOAT, GL_FALSE);
+		sPointVAO->addArray("vaoSize", 1, GL_FLOAT, GL_FALSE);
+		sPointVAO->addArray("vaoColor", 4, GL_UNSIGNED_BYTE, GL_TRUE);
 
 		// Allocate VBOs
 		glGenBuffers(1, &sPointVBO);

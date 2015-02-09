@@ -29,7 +29,7 @@
 
 HYGDatabase::HYGDatabase()
 {
-	// Position the center of the cube in Universal coordinates
+	// Position the center of the data set at the origin.
 	setUniveralPositionAU(Vec3d(0, 0, 0));
 
 	// Modest amount of saturation for stars
@@ -229,10 +229,10 @@ void HYGDatabase::setupVAO()
 		mPointsVAO = new VAOBuilder;
 
 		// Add the arrays
-		mPointsVAO->addArray("Position", 0, 3, GL_FLOAT, GL_FALSE);
-		mPointsVAO->addArray("PointSize", 1, 1, GL_FLOAT, GL_FALSE);
-		mPointsVAO->addArray("Color", 2, 4, GL_UNSIGNED_BYTE, GL_TRUE);
-		mPointsVAO->addArray("AbsMag", 3, 1, GL_FLOAT, GL_FALSE);
+		mPointsVAO->addArray("vaoPosition", 3, GL_FLOAT, GL_FALSE);
+		mPointsVAO->addArray("vaoSize", 1, GL_FLOAT, GL_FALSE);
+		mPointsVAO->addArray("vaoColor", 4, GL_UNSIGNED_BYTE, GL_TRUE);
+		mPointsVAO->addArray("vaoAbsMag", 1, GL_FLOAT, GL_FALSE);
 	}
 }
 

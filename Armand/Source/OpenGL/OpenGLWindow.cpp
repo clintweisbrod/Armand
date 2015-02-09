@@ -644,9 +644,9 @@ void OpenGLWindow::keyboardKeyPressed(WPARAM inVirtualKeyCode)
 
 void OpenGLWindow::handleKeys()
 {
-	// Only process keys every 1/100 of a second. This eliminates response inconsistencies
-	// due to varying frame rates.
-	const double kKeyboardResponseInterval = 1.0/50.0;
+	// Only process keys every 1/60 of a second. This eliminates response inconsistencies
+	// due to varying frame rates. We've chosen 1/60 so that it is
+	const double kKeyboardResponseInterval = 1.0/60.0;
 	double timeSinceLastResponse = mFrameStartTime - mLastKeyboardResponseSeconds;
 	if (timeSinceLastResponse > kKeyboardResponseInterval)
 	{

@@ -25,7 +25,7 @@
 
 #include <GL/glew.h>
 
-#include <map>
+#include <vector>
 
 using namespace std;
 
@@ -39,14 +39,14 @@ struct VAOInfo
 	GLint mNumElements;	// Need this because mSize can be GL_BGRA
 };
 
-typedef map<GLuint, VAOInfo> VBOArrayInfoMap_t;
+typedef vector<VAOInfo> VBOArrayInfoVec_t;
 class VAOBuilder
 {
 public:
 	VAOBuilder();
 	~VAOBuilder();
 
-	void addArray(string name, GLuint index, GLint size, GLenum type, GLboolean normalized);
+	void addArray(string name, GLint size, GLenum type, GLboolean normalized);
 	void setupGPU(GLuint inVBOid);
 	void bind() const { glBindVertexArray(mVAOid); };
 
@@ -54,6 +54,6 @@ private:
 	GLint getBytesFromType(GLenum inType);
 
 	GLuint				mVAOid;
-	VBOArrayInfoMap_t	mArrayInfo;
+	VBOArrayInfoVec_t	mArrayInfo;
 	GLsizei				mStride;
 };

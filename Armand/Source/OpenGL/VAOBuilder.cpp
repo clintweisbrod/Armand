@@ -35,21 +35,22 @@ VAOBuilder::VAOBuilder() : mVAOid(0)
 VAOBuilder::~VAOBuilder()
 {
 	// Delete VAO
-	glDeleteVertexArrays(1, &mVAOid);
+	if (mVAOid != 0)
+		glDeleteVertexArrays(1, &mVAOid);
 }
 
-void VAOBuilder::addArray(string name, GLuint index, GLint size, GLenum type, GLboolean normalized)
+void VAOBuilder::addArray(string name, GLint size, GLenum type, GLboolean normalized)
 {
 	VAOInfo info = { name, size, type, normalized, 0, size };
 	if (info.mNumElements == GL_BGRA)
 		info.mNumElements = 1;
 	info.mBytesPerElement = getBytesFromType(info.mType);
-	mArrayInfo[index] = info;
+	mArrayInfo.push_back(info);
 
 	// Recalculate mStride
 	mStride = 0;
-	for (VBOArrayInfoMap_t::iterator it = mArrayInfo.begin(); it != mArrayInfo.end(); it++)
-		mStride += (it->second.mNumElements * it->second.mBytesPerElement);
+	for (VBOArrayInfoVec_t::iterator it = mArrayInfo.begin(); it != mArrayInfo.end(); it++)
+		mStride += (it->mNumElements * it->mBytesPerElement);
 }
 
 void VAOBuilder::setupGPU(GLuint inVBOid)
@@ -60,14 +61,14 @@ void VAOBuilder::setupGPU(GLuint inVBOid)
 	// Bind the VBO as being the active buffer and storing vertex attributes
 	glBindBuffer(GL_ARRAY_BUFFER, inVBOid);
 
-	GLuint offset = 0;
-	for (VBOArrayInfoMap_t::iterator it = mArrayInfo.begin(); it != mArrayInfo.end(); it++)
+	GLuint i = 0, offset = 0;
+	for (VBOArrayInfoVec_t::iterator it = mArrayInfo.begin(); it != mArrayInfo.end(); it++)
 	{
-		glVertexAttribPointer(it->first, it->second.mSize, it->second.mType, it->second.mNormalized,
-							  mStride, BUFFER_OFFSET(offset));
-		offset += (it->second.mNumElements * it->second.mBytesPerElement);
+		glVertexAttribPointer(i, it->mSize, it->mType, it->mNormalized, mStride, BUFFER_OFFSET(offset));
+		offset += (it->mNumElements * it->mBytesPerElement);
 
-		glEnableVertexAttribArray(it->first);
+		glEnableVertexAttribArray(i);
+		i++;
 	}
 }
 
