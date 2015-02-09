@@ -25,6 +25,7 @@
 Static3DPointSet::Static3DPointSet(int inNumPoints)
 {
 	mPointBuffer = NULL;
+	mPointsVAO = NULL;
 	mPointsVBO = 0;
 	mNumPoints = inNumPoints;
 }
@@ -36,7 +37,7 @@ Static3DPointSet::~Static3DPointSet()
 	if (mPointsVAO)
 	{
 		delete mPointsVAO;
-		mPointsVAO = 0;
+		mPointsVAO = NULL;
 	}
 
 	if (mPointsVBO)
