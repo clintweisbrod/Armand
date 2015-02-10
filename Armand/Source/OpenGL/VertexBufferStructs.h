@@ -26,25 +26,6 @@ typedef struct
 
 typedef struct
 {
-	GLfloat x, y;		// position
-	GLfloat r, g, b, a;	// color
-} v2f_c4f;
-
-typedef struct
-{
-	GLfloat x, y, z;
-	GLfloat n1, n2, n3;
-} v3f_n3f;
-
-typedef struct
-{
-	GLfloat x, y, z;
-	GLfloat n1, n2, n3;
-	GLfloat s, t;
-} v3f_n3f_t2f;
-
-typedef struct
-{
 	GLfloat x, y, z;		// position
 	GLfloat s, t;			// texture
 	GLfloat r, g, b, a;		// color
