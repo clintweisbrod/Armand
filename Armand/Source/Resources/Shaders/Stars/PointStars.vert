@@ -13,9 +13,8 @@ const float kLimitingMagnitude = 8.0;
 // VAO definition
 //
 layout (location = 0) in vec3 vaoPosition;	// In local model coordinates
-layout (location = 1) in float vaoSize;
-layout (location = 2) in vec3 vaoColor;
-layout (location = 3) in float vaoAbsMag;
+layout (location = 1) in vec3 vaoColor;
+layout (location = 2) in float vaoAbsMag;
 
 //
 // Globals

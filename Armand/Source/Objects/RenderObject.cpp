@@ -35,7 +35,7 @@ RenderObject::RenderObject()
 	mPoint.position[1] = 0;
 	mPoint.position[2] = 0;
 	mPoint.size = 3;				// Default point size is 3
-	memset(mPoint.color, 255, 4);	// Default point color is white
+	memset(mPoint.color, 255, sizeof(mPoint.color));	// Default point color is white
 
 	// Obtain the shader
 	ShaderProgram* shaderProgram = ShaderFactory::inst()->getShaderProgram("Stars/ColorPoints.vert", "Stars/ColorPoints.frag");
@@ -50,8 +50,8 @@ RenderObject::RenderObject()
 
 		// Add the arrays
 		sPointVAO->addArray("vaoPosition", 3, GL_FLOAT, GL_FALSE);
+		sPointVAO->addArray("vaoColor", 3, GL_UNSIGNED_BYTE, GL_TRUE);
 		sPointVAO->addArray("vaoSize", 1, GL_FLOAT, GL_FALSE);
-		sPointVAO->addArray("vaoColor", 4, GL_UNSIGNED_BYTE, GL_TRUE);
 
 		// Allocate VBOs
 		glGenBuffers(1, &sPointVBO);

@@ -66,7 +66,7 @@ void Static3DPointSet::releasePointArray()
 
 void Static3DPointSet::finalize()
 {
-	uint64_t avgColor[] = { 0, 0, 0, 0 };
+	uint64_t avgColor[] = { 0, 0, 0 };
 
 	// Compute and set average color as well as bounding radius
 	float_t maxRadiusSquared = 0;
@@ -78,7 +78,6 @@ void Static3DPointSet::finalize()
 		avgColor[0] += colorPointVertex->color[0];
 		avgColor[1] += colorPointVertex->color[1];
 		avgColor[2] += colorPointVertex->color[2];
-		avgColor[3] += colorPointVertex->color[3];
 
 		// Compute largest vec
 		Vec3f vec(colorPointVertex->position);
@@ -88,11 +87,10 @@ void Static3DPointSet::finalize()
 	}
 
 	// Set average color
-	GLubyte thePointColor[4];
+	GLubyte thePointColor[3];
 	thePointColor[0] = (GLubyte)(avgColor[0] / mNumPoints);
 	thePointColor[1] = (GLubyte)(avgColor[1] / mNumPoints);
 	thePointColor[2] = (GLubyte)(avgColor[2] / mNumPoints);
-	thePointColor[3] = (GLubyte)(avgColor[3] / mNumPoints);
 	setPointColor(thePointColor);
 
 	// Set the bounding radius of the data set
@@ -117,8 +115,8 @@ void Static3DPointSet::setupVAO()
 
 		// Add the arrays
 		mPointsVAO->addArray("vaoPosition", 3, GL_FLOAT, GL_FALSE);
+		mPointsVAO->addArray("vaoColor", 3, GL_UNSIGNED_BYTE, GL_TRUE);
 		mPointsVAO->addArray("vaoSize", 1, GL_FLOAT, GL_FALSE);
-		mPointsVAO->addArray("vaoColor", 4, GL_UNSIGNED_BYTE, GL_TRUE);
 	}
 }
 

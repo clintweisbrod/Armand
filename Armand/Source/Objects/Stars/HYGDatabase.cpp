@@ -132,25 +132,23 @@ void HYGDatabase::loadData()
 	mData.shrink_to_fit();
 
 	// Allocate required buffer
-	allocatePointArray((GLsizei)mData.size(), sizeof(StarVertex));
+	allocatePointArray((GLsizei)mData.size(), sizeof(ColorPointVertex));
 
 	// Write data into render storage
 	int n = 0;
 	for (HYGData::iterator it = mData.begin(); it != mData.end(); it++)
 	{
-		StarVertex* starVertex = (StarVertex*)getVertex(n);
+		ColorPointVertex* starVertex = (ColorPointVertex*)getVertex(n);
 
 		starVertex->position[0] = it->mPosition.x;
 		starVertex->position[1] = it->mPosition.y;
 		starVertex->position[2] = it->mPosition.z;
-		starVertex->size = 1;
 
 		float_t r, g, b;
-		bv2rgb(r, g, b, it->mColorIndex);
+		bv2rgb(it->mColorIndex, r, g, b);
 		starVertex->color[0] = (GLubyte)(255 * r);
 		starVertex->color[1] = (GLubyte)(255 * g);
 		starVertex->color[2] = (GLubyte)(255 * b);
-		starVertex->color[3] = 255;
 
 		starVertex->absMag = it->mAbsMag;
 		n++;
@@ -160,7 +158,7 @@ void HYGDatabase::loadData()
 //
 // See: http://tiku.io/questions/764303/star-b-v-color-index-to-apparent-rgb-color
 //
-void HYGDatabase::bv2rgb(float_t &r, float_t &g, float_t &b, float_t bv)
+void HYGDatabase::bv2rgb(float_t bv, float_t &r, float_t &g, float_t &b)
 {
 	// RGB <0,1> <- BV <-0.4,+2.0>
 	r = g = b = 0.0f;
@@ -230,8 +228,7 @@ void HYGDatabase::setupVAO()
 
 		// Add the arrays
 		mPointsVAO->addArray("vaoPosition", 3, GL_FLOAT, GL_FALSE);
-		mPointsVAO->addArray("vaoSize", 1, GL_FLOAT, GL_FALSE);
-		mPointsVAO->addArray("vaoColor", 4, GL_UNSIGNED_BYTE, GL_TRUE);
+		mPointsVAO->addArray("vaoColor", 3, GL_UNSIGNED_BYTE, GL_TRUE);
 		mPointsVAO->addArray("vaoAbsMag", 1, GL_FLOAT, GL_FALSE);
 	}
 }

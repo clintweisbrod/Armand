@@ -50,14 +50,14 @@ typedef struct
 	GLfloat r, g, b, a;		// color
 } v3f_t2f_c4f;
 
+#pragma pack(1)
 struct ColorPointVertex
 {
 	GLfloat position[3];
-	GLfloat size;
-	GLubyte color[4];
-};
-
-struct StarVertex : public ColorPointVertex
-{
-	GLfloat absMag;
+	GLubyte color[3];
+	union
+	{
+		GLfloat size;
+		GLfloat absMag;
+	};
 };
