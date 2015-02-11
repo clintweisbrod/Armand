@@ -19,6 +19,8 @@
 
 #pragma once
 
+#pragma pack(1)	// We expect all the following structs to be tightly packed.
+
 typedef struct
 {
 	GLfloat x, y;		// position
@@ -31,7 +33,6 @@ typedef struct
 	GLfloat r, g, b, a;		// color
 } v3f_t2f_c4f;
 
-#pragma pack(1)
 struct ColorPointVertex
 {
 	GLfloat position[3];
@@ -42,3 +43,5 @@ struct ColorPointVertex
 		GLfloat absMag;
 	};
 };
+
+#pragma pack()	// Default packing
