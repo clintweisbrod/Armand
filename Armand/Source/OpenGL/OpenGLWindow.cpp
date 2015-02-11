@@ -645,7 +645,7 @@ void OpenGLWindow::keyboardKeyPressed(WPARAM inVirtualKeyCode)
 void OpenGLWindow::handleKeys()
 {
 	// Only process keys every 1/60 of a second. This eliminates response inconsistencies
-	// due to varying frame rates. We've chosen 1/60 so that it is
+	// due to varying frame rates.
 	const double kKeyboardResponseInterval = 1.0/60.0;
 	double timeSinceLastResponse = mFrameStartTime - mLastKeyboardResponseSeconds;
 	if (timeSinceLastResponse > kKeyboardResponseInterval)
@@ -759,7 +759,7 @@ void OpenGLWindow::resizeScene(Vec2i inNewSize)
 	// Compute the fisheye boundary vertices
 	for (int i = 0; i < 360; i++)
 	{
-		float_t angle = (float_t)degToRad((double_t)i);
+		float_t angle = degToRad((float_t)i);
 		mFisheyeBoundaryVertices[i].x = cosf(angle);
 		mFisheyeBoundaryVertices[i].y = sinf(angle);
 	}
