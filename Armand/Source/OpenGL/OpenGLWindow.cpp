@@ -687,8 +687,8 @@ void OpenGLWindow::handleKeys()
 void OpenGLWindow::initGL()
 {
 	// Make sure all our factory instances are created
-	FontFactory* ff = FontFactory::inst();
 	ShaderFactory* sf = ShaderFactory::inst();
+	FontFactory* ff = FontFactory::inst();
 	T3DSModelFactory* mf = T3DSModelFactory::inst();
 	if (!ff || !sf || !mf)
 		return;
@@ -759,9 +759,9 @@ void OpenGLWindow::resizeScene(Vec2i inNewSize)
 	// Compute the fisheye boundary vertices
 	for (int i = 0; i < 360; i++)
 	{
-		double_t angle = degToRad((double_t)i);
-		mFisheyeBoundaryVertices[i].x = (float)cos(angle);
-		mFisheyeBoundaryVertices[i].y = (float)sin(angle);
+		float_t angle = (float_t)degToRad((double_t)i);
+		mFisheyeBoundaryVertices[i].x = cosf(angle);
+		mFisheyeBoundaryVertices[i].y = sinf(angle);
 	}
 
 	// Notify FontFactory of scene size change
@@ -820,7 +820,7 @@ void OpenGLWindow::render()
 	glDisable(GL_TEXTURE_2D);
 
 	// Draw boundary of projection area
-	glColor3f(1.0, 1.0, 1.0);
+	glColor3f(1.0f, 1.0f, 1.0f);
 	glDisable(GL_BLEND);
 	glMatrixMode(GL_MODELVIEW);							// Select the modelview matrix
 	glLoadIdentity();
@@ -888,7 +888,6 @@ void OpenGLWindow::render()
 #endif
 
 	glEnable(GL_BLEND);
-//	fontRenderer->render(text, 15, Vec2f(100, 100), Vec4f(1.0f, 1.0f, 1.0f, 1.0f), 30);
 	wstring speedStr = getNiceSpeedString(mCamera.getSpeed(), 2);
 	wchar_t infoBuffer[256];
 	wstring text;

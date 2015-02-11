@@ -44,6 +44,10 @@ void RenderObjectList::addObject(Camera& inCamera, RenderObject& inObject)
 
 void RenderObjectList::renderObjects(Camera& inCamera)
 {
+	// If we've got nothing to render, we're done.
+	if (empty())
+		return;
+
 	// Sort in descending eye distance
 	if (size() > 1)
 		std::stable_sort(begin(), end(), mEyeDistanceComparator);
