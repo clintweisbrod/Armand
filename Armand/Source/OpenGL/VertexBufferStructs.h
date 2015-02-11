@@ -19,7 +19,7 @@
 
 #pragma once
 
-#pragma pack(1)	// We expect all the following structs to be tightly packed.
+#pragma pack(push, 1)	// We expect all the following structs to be tightly packed.
 
 typedef struct
 {
@@ -44,4 +44,4 @@ struct ColorPointVertex
 	};
 };
 
-#pragma pack()	// Default packing
+#pragma pack(pop)	// Default packing
