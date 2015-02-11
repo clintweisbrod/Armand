@@ -29,7 +29,7 @@ GENERATE_EXCEPTION(HYGDatabaseException)
 struct HYGDataRecord
 {
 	string	mProperName;
-	string	mHIP;
+	string	mIdentifier;
 	Vec3f	mPosition;
 	float_t	mAbsMag;
 	float_t	mColorIndex;

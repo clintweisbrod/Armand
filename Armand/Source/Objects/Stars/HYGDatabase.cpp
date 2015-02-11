@@ -69,6 +69,7 @@ void HYGDatabase::loadData()
 	size_t kMaxStarsToParse = 1000;
 	string line;
 	getline(file, line);	// First line of database is hdr describing fields
+	Vec3f sunPosition;
 	while (getline(file, line))
 	{
 		// Parse the CSV line into a vector of strings
@@ -88,14 +89,21 @@ void HYGDatabase::loadData()
 		if (lineValues[9] == "100000.0000")
 			continue;
 
-		// Position
-		bool havePosition = false;
-		float_t x, y, z;
-		if (floatFromString(lineValues[17], x) && floatFromString(lineValues[18], y) && floatFromString(lineValues[19], z))
-			havePosition = true;
-
-		// HIP
-		bool haveHIP = !lineValues[1].empty();
+		ostringstream s;
+		if (!lineValues[1].empty())	// Do we have a HIP id?
+			s << "HIP: " << lineValues[1];
+		else if (!lineValues[2].empty())
+			s << "HD: " << lineValues[2];
+		else if (!lineValues[3].empty())
+			s << "HR: " << lineValues[3];
+		else if (!lineValues[4].empty())
+			s << "Gliese: " << lineValues[4];
+		else if (!lineValues[5].empty())
+			s << "Bayer / Flamsteed: " << lineValues[5];
+		else if (!lineValues[6].empty())
+			s << "Proper Name: " << lineValues[6];
+		string identifier = s.str();
+		bool haveID = !identifier.empty();
 
 		// Absolute magnitude
 		float_t absMag;
@@ -105,13 +113,25 @@ void HYGDatabase::loadData()
 		float_t colorIndex = 0.5f;
 		floatFromString(lineValues[16], colorIndex);
 
-		if (haveHIP && havePosition && haveAbsMag)
+		// Position
+		Vec3f position;
+		bool havePosition = false;
+		float_t x, y, z;
+		if (floatFromString(lineValues[17], x) && floatFromString(lineValues[18], y) && floatFromString(lineValues[19], z))
+		{
+			position = Vec3f(x * (float_t)kAuPerParsec, y * (float_t)kAuPerParsec, z * (float_t)kAuPerParsec);
+			if (lineValues[0] == "0")
+				sunPosition = position;
+			havePosition = true;
+		}
+
+		if (haveID && havePosition && haveAbsMag)
 		{
 			HYGDataRecord rec;
 
 			rec.mProperName = lineValues[6];
-			rec.mHIP = lineValues[1];
-			rec.mPosition = Vec3f(x * (float_t)kAuPerParsec, y * (float_t)kAuPerParsec, z * (float_t)kAuPerParsec);
+			rec.mIdentifier = identifier;
+			rec.mPosition = position - sunPosition;
 			rec.mAbsMag = absMag;
 			rec.mColorIndex = colorIndex;
 
