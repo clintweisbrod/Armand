@@ -63,38 +63,6 @@ int APIENTRY _tWinMain(	_In_ HINSTANCE hInstance,
 	// Get the high resolution counter's accuracy
 	QueryPerformanceFrequency(&Timer::sTicksPerSecond);
 
-/*
-	std::random_device rd;
-	std::mt19937 gen(rd());
-	std::uniform_int_distribution<> xDis(0, 1000000);
-	const int kNumSamples = 10000;
-//	int randomInts[kNumSamples];
-//	Int128 randomInts[kNumSamples];
-	BigFix randomBigs[kNumSamples];
-	for (int n = 0; n < kNumSamples; ++n)
-	{
-//		randomInts[n] = xDis(gen);
-//		randomInts[n].FromInt(xDis(gen));
-		randomBigs[n] = BigFix((double_t)xDis(gen));
-	}
-
-	Timer timer;
-	float_t randomFloats[kNumSamples];
-	timer.reset();
-	for (int n = 0; n < kNumSamples; ++n)
-	{
-//		randomFloats[n] = (float_t)randomInts[n];
-//		ttmath::Big<1, 2> temp;
-//		temp.FromInt(randomInts[n]);
-//		temp.ToFloat(randomFloats[n]);
-		randomFloats[n] = (float_t)randomBigs[n];
-	}
-	double_t microSeconds = timer.elapsedMicroseconds();
-//	LOG(INFO) << "Casting " << kNumSamples << " int values to float: " << microSeconds;
-//	LOG(INFO) << "Casting " << kNumSamples << " Int128 values to float: " << microSeconds;
-	LOG(INFO) << "Casting " << kNumSamples << " BigFix values to float: " << microSeconds;
-	return 0;
-*/
  	// TODO: Place code here.
 	MSG msg;
 	HACCEL hAccelTable;
@@ -150,9 +118,6 @@ int APIENTRY _tWinMain(	_In_ HINSTANCE hInstance,
 			}
 		}
 	}
-
-	// Give OpenGLRender module a chance to cleanup
-//	applicationShutdown();
 
 	// Shutdown
 	if (gOpenGLWindow)
@@ -241,12 +206,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			gOpenGLWindow->keyboardKeyUp(wParam);	// If so, report it
 			return 0;
 		}
-
-//		case WM_CHAR:
-//		{
-//			gOpenGLWindow->keyboardKeyPressed(wParam);
-//			return 0;
-//		}
 
 		case WM_CLOSE:								// Did we receive a close message?
 		{
