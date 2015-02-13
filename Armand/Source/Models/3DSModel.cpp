@@ -1788,7 +1788,7 @@ bool T3DSModel::render(Camera& inCamera, Mat4f& inViewMatrix, Quatf& inOrientati
 	float_t eyeDistance = modelPositionEye.length3();
 	float_t n = eyeDistance - (GLfloat)mModelBoundingRadius;
 	float_t f = eyeDistance + (GLfloat)mModelBoundingRadius;
-	Mat4f projectionMatrix = gOpenGLWindow->getProjectionMatrix(n, f);
+	Mat4f projectionMatrix = gRenderer->getProjectionMatrix(n, f);
 
 	// Default ambient light to 20% of passed-in light color
 	const GLfloat kAmbientFactor = 0.2f;

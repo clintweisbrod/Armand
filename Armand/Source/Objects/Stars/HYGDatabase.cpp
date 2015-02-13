@@ -131,7 +131,7 @@ void HYGDatabase::loadData()
 
 			rec.mProperName = lineValues[6];
 			rec.mIdentifier = identifier;
-			rec.mPosition = position - sunPosition;
+			rec.mPosition = position - sunPosition;		// Translate position to Sun-centric
 			rec.mAbsMag = absMag;
 			rec.mColorIndex = colorIndex;
 

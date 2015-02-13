@@ -23,12 +23,12 @@
 #include <GL/wglew.h>
 
 #include "Math/vecmath.h"
+#include "OpenGL/Renderer.h"
 #include "OpenGL/Textures/Texture.h"
 #include "OpenGL/ShaderFactory.h"
 #include "OpenGL/VertexBufferStructs.h"
 #include "Utilities/Timer.h"
 #include "Objects/Camera.h"
-#include "Objects/Rendering/RenderObjectList.h"
 
 class OpenGLWindow
 {
@@ -45,14 +45,11 @@ class OpenGLWindow
 
 		// Informational
 		bool			getIsCreated() const { return mCreated; };
-		void			getSceneSize(Vec2i& ioSceneSize) const { ioSceneSize = mSceneSize; };
-		int				getGeometryRadius() const { return mGeometryRadius; };
 		bool			hasMultisampleBuffer() const { return mHasMultisampleBuffer; };
 
 		// OpenGL
 		void			drawScene();
 		void			resizeScene(Vec2i inNewSize);
-		Mat4f			getProjectionMatrix(float_t inNear, float_t inFar);
 		
 		// User input
 		void			mouseEvent(WORD inXPos, WORD inYPos, bool inCtrlDown, bool inShiftDown, bool inLeftDown, bool inMiddleDown, bool inRightDown);
@@ -64,12 +61,6 @@ class OpenGLWindow
 
 		// Fullscreen
 		void			setFullScreen(bool inFullScreen);
-		
-		// Viewer state
-		Camera*			getCamera() { return &mCamera; };
-
-		// For performance monitoring
-		Timer			mTimer;
 
 	protected:
 		static bool		sEnabledGLExtensions;
@@ -79,12 +70,6 @@ class OpenGLWindow
 		bool			setupOpenGLForWindow(GLuint inPixelFormat, PIXELFORMATDESCRIPTOR* inPFD);
 		GLuint			selectBestPixelFormatUsingWGL(HDC hDC);
 		void			handleKeys();
-
-		// OpenGL
-		void			initGL();
-		void			preRender();
-		void			render();
-		void			postRender();
 
 		bool			mCreated;
 		bool			mGLInitialized;
@@ -98,9 +83,7 @@ class OpenGLWindow
 
 		bool			mFullscreen;			// True when in fullscreen
 
-		Vec2i			mSceneSize;				// Current size of windows's client area
 		Vec2i			mWindowSize;			// Current size of window including frame
-		int				mGeometryRadius;
 
 		Vec2i			mLastWindowedSceneSize;	// Used when switching to and from fullscreen
 		Vec2i			mLastWindowSize;		// Size of window including frame
@@ -130,18 +113,8 @@ class OpenGLWindow
 		double			mLastMouseMoveSeconds;
 		Vec2i			mLastMousePosition;
 
-		// Temporary stuff for testing
-		Texture*		theTexture;
-		Mat4f			mProjectionMatrix;
-
-		// Fisheye projection boundary
-		v2f				mFisheyeBoundaryVertices[360];
-
-		// Viewer state
-		Camera			mCamera;
-
 		// Rendering
-		RenderObjectList	mRenderList;
+		Renderer		mRenderer;
 };
 
 extern OpenGLWindow* gOpenGLWindow;

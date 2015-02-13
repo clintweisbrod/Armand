@@ -29,6 +29,7 @@
 TCHAR szTitle[MAX_LOADSTRING];					// The title bar text
 TCHAR szWindowClass[MAX_LOADSTRING];			// the main window class name
 OpenGLWindow* gOpenGLWindow;
+Renderer* gRenderer;
 bool gActive = true;		// Window active flag set to true by default
 
 _INITIALIZE_EASYLOGGINGPP

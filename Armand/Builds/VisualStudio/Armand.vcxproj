@@ -207,6 +207,7 @@ exit 0
     <ClInclude Include="..\..\Source\OpenGL\Fonts\FontFactory.h" />
     <ClInclude Include="..\..\Source\OpenGL\GLUtils.h" />
     <ClInclude Include="..\..\Source\OpenGL\OpenGLWindow.h" />
+    <ClInclude Include="..\..\Source\OpenGL\Renderer.h" />
     <ClInclude Include="..\..\Source\OpenGL\ShaderFactory.h" />
     <ClInclude Include="..\..\Source\OpenGL\Textures\Texture.h" />
     <ClInclude Include="..\..\Source\OpenGL\Textures\TextureManager.h" />
@@ -241,6 +242,7 @@ exit 0
     <ClCompile Include="..\..\Source\OpenGL\Fonts\FontFactory.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\GLUtils.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\OpenGLWindow.cpp" />
+    <ClCompile Include="..\..\Source\OpenGL\Renderer.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\ShaderFactory.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\Textures\Texture.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\Textures\TextureManager.cpp" />

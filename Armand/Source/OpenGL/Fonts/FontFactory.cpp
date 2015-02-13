@@ -21,7 +21,7 @@
 #include "stdafx.h"
 
 #include "OpenGL/Fonts/FontFactory.h"
-#include "OpenGL/OpenGLWindow.h"
+#include "OpenGL/Renderer.h"
 #include "OpenGL/VertexBufferStructs.h"
 #include "Math/mathlib.h"
 #include "OpenGL/ShaderFactory.h"
@@ -147,7 +147,7 @@ FontRenderer::FontRenderer(string& inFontName, GLuint inShader) : mAtlas(NULL),
 	Mat4f::setIdentity(mModelMatrix);
 	Mat4f::setIdentity(mViewMatrix);
 	Vec2i sceneSize;
-	gOpenGLWindow->getSceneSize(sceneSize);
+	gRenderer->getSceneSize(sceneSize);
 	setSceneSize(sceneSize);
 }
 
@@ -351,9 +351,9 @@ size_t FontRenderer::buildLeftJustifiedSpherical(wstring& inString, Vec4f& inCol
 	float_t azimuth = inPen.x;
 	float_t altitude = inPen.y;
 	Vec2i sceneSize;
-	gOpenGLWindow->getSceneSize(sceneSize);
+	gRenderer->getSceneSize(sceneSize);
 	Point2f halfSceneSize((float_t)sceneSize.x / 2, (float_t)sceneSize.y / 2);
-	float_t geometryRadius = (float_t)gOpenGLWindow->getGeometryRadius();
+	float_t geometryRadius = (float_t)gRenderer->getGeometryRadius();
 	float_t radial = geometryRadius * (float_t)((kHalfPi - altitude) / kHalfPi);
 	float_t r = inColor.r, g = inColor.g, b = inColor.b, a = inColor.a;
 	for (size_t i = 0; i < inString.length(); ++i)
@@ -425,9 +425,9 @@ size_t FontRenderer::buildRightJustifiedSpherical(wstring& inString, Vec4f& inCo
 	float_t azimuth = inPen.x;
 	float_t altitude = inPen.y;
 	Vec2i sceneSize;
-	gOpenGLWindow->getSceneSize(sceneSize);
+	gRenderer->getSceneSize(sceneSize);
 	Point2f halfSceneSize((float_t)sceneSize.x / 2, (float_t)sceneSize.y / 2);
-	float_t geometryRadius = (float_t)gOpenGLWindow->getGeometryRadius();
+	float_t geometryRadius = (float_t)gRenderer->getGeometryRadius();
 	float_t radial = geometryRadius * (float_t)((kHalfPi - altitude) / kHalfPi);
 	float_t r = inColor.r, g = inColor.g, b = inColor.b, a = inColor.a;
 	size_t strLen = inString.length();

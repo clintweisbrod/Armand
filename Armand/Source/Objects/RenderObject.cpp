@@ -22,6 +22,7 @@
 #include "RenderObject.h"
 #include "OpenGL/GLUtils.h"
 #include "OpenGL/OpenGLWindow.h"
+#include "OpenGL/ShaderFactory.h"
 
 VAOBuilder* RenderObject::sPointVAO = NULL;
 GLuint RenderObject::sPointVBO = 0;
@@ -131,7 +132,7 @@ bool RenderObject::isInView(Camera& inCamera)
 	{
 		// Since object is in view, we will need to compute a few other values.
 		mLastAngularDiameter = angularRadius * 2;
-		mLastPixelDiameter = gOpenGLWindow->getGeometryRadius() * mLastAngularDiameter / halfAperture;
+		mLastPixelDiameter = gRenderer->getGeometryRadius() * mLastAngularDiameter / halfAperture;
 
 		return true;
 	}
@@ -251,7 +252,7 @@ void RenderObject::setPointShaderUniforms(Camera& inCamera, float inAlpha)
 	float_t depth = max(mBoundingRadiusAU, mLastViewerDistanceAU * 0.1f);
 	float_t n = mLastViewerDistanceAU - depth;
 	float_t f = mLastViewerDistanceAU + depth;
-	Mat4f projectionMatrix = gOpenGLWindow->getProjectionMatrix(n, f);
+	Mat4f projectionMatrix = gRenderer->getProjectionMatrix(n, f);
 
 	glUniform1f(glGetUniformLocation(mPointShaderHandle, "uAlpha"), inAlpha);
 	glUniform1f(glGetUniformLocation(mPointShaderHandle, "uAperture"), inCamera.getAperture());

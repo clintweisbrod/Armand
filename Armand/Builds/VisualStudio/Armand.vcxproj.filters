@@ -222,6 +222,9 @@
     <ClInclude Include="..\..\Source\OpenGL\VAOBuilder.h">
       <Filter>Header Files\OpenGL</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Source\OpenGL\Renderer.h">
+      <Filter>Header Files\OpenGL</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\Main\Armand.cpp">
@@ -294,6 +297,9 @@
       <Filter>Source Files\Objects\Stars</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Source\OpenGL\VAOBuilder.cpp">
+      <Filter>Source Files\OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\OpenGL\Renderer.cpp">
       <Filter>Source Files\OpenGL</Filter>
     </ClCompile>
   </ItemGroup>
