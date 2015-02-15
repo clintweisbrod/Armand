@@ -175,10 +175,28 @@ void Renderer::render()
 	glEnd();
 	*/
 
+
+
 	///*
+	// Testing 3DS model loading and fisheye projection shader
+	static ModelObject model("Apollo_3rdStage.3ds");
+	model.setUniveralPositionKm(Vec3d(0.0, 0.0, 10));
+	mRenderList.addObject(mCamera, model);
+
+	//	T3DSModelFactory::inst()->RemoveAll();
+	//*/
+	static RandomPointsCube dataCube(1000000);
+	mRenderList.addObject(mCamera, dataCube);
+
+	static HYGDatabase hygStars;
+	mRenderList.addObject(mCamera, hygStars);
+
+	// Render the objects in the render list
+	mRenderList.renderObjects(mCamera);
+
 	// FontFactory testing
 	string fontName("Verdana");
-	//	wstring text(L"\260 A quick brown fox jumped over the lazy dog. !@#$%^&*()-=+{}[];:'<>,.?/`~\"");
+//	wstring text(L"\260 A quick brown fox jumped over the lazy dog. !@#$%^&*()-=+{}[];:'<>,.?/`~\"");
 
 	FontRenderer* fontRenderer = FontFactory::inst()->getFontRenderer(fontName);
 
@@ -212,33 +230,25 @@ void Renderer::render()
 	wstring text;
 	swprintf(infoBuffer, 256, L"Speed: %s", speedStr.c_str());
 	text = infoBuffer;
-	fontRenderer->renderSpherical(text, 20, Vec2f(degToRad(-30.0f), degToRad(5.0f)), Vec4f(1.0f, 1.0f, 1.0f, 1.0f), true);
+	fontRenderer->renderSpherical(text, 20, Vec2f(degToRad(-40.0f), degToRad(5.0f)), Vec4f(1.0f, 1.0f, 1.0f, 1.0f), true);
 
 	Vec3f cameraPos = (Vec3f)mCamera.getUniveralPositionAU();
 	float_t cameraDistanceFromOrigin = cameraPos.length();
 	wstring distanceStr = getNiceDistanceString(cameraDistanceFromOrigin, 2);
 	swprintf(infoBuffer, 256, L"Origin: %s", distanceStr.c_str());
 	text = infoBuffer;
-	fontRenderer->renderSpherical(text, 20, Vec2f(degToRad(30.0f), degToRad(5.0f)), Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
-	//*/
+	fontRenderer->renderSpherical(text, 20, Vec2f(degToRad(40.0f), degToRad(5.0f)), Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
 
-	///*
-	// Testing 3DS model loading and fisheye projection shader
-	static ModelObject model("Apollo_3rdStage.3ds");
-	model.setUniveralPositionKm(Vec3d(0.0, 0.0, 10));
-	mRenderList.addObject(mCamera, model);
-
-	//	T3DSModelFactory::inst()->RemoveAll();
-	//*/
-
-	static RandomPointsCube dataCube(1000000);
-	mRenderList.addObject(mCamera, dataCube);
-
-	static HYGDatabase hygStars;
-	mRenderList.addObject(mCamera, hygStars);
-
-	// Render the objects in the render list
-	mRenderList.renderObjects(mCamera);
+	HYGDataVecP_t nearestStars;
+//	mTimer.reset();
+	hygStars.getNearestToPosition((Vec3f)mCamera.getUniveralPositionAU(), nearestStars);
+//	LOG(INFO) << "getNearestToPosition(): " << mTimer.elapsedMilliseconds() << " ms.";
+	if (!nearestStars.empty())
+	{
+		swprintf(infoBuffer, 256, L"Nearest Star: %s", wstringFromString(nearestStars[0]->mIdentifier).c_str());
+		text = infoBuffer;
+		fontRenderer->renderSpherical(text, 20, Vec2f(degToRad(-20.0f), degToRad(5.0f)), Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
+	}
 
 	postRender();
 }

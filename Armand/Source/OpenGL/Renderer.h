@@ -21,6 +21,7 @@
 
 #include "Objects/Camera.h"
 #include "Objects/Rendering/RenderObjectList.h"
+#include "Utilities/Timer.h"
 
 class Renderer
 {
@@ -59,6 +60,8 @@ private:
 
 	Vec2i	mSceneSize;				// Current size of windows's client area
 	int		mGeometryRadius;
+
+	Timer	mTimer;
 };
 
 extern Renderer* gRenderer;
