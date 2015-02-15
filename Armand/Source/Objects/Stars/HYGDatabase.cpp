@@ -21,13 +21,14 @@
 
 #include <fstream>
 #include <sstream>
+#include <limits>
 #include "HYGDatabase.h"
 #include "Utilities/File.h"
 #include "Utilities/StringUtils.h"
 #include "Math/mathlib.h"
 #include "OpenGL/ShaderFactory.h"
 
-HYGDatabase::HYGDatabase()
+HYGDatabase::HYGDatabase() : mChunkedData(NULL)
 {
 	// Position the center of the data set at the origin.
 	setUniveralPositionAU(Vec3d(0, 0, 0));
@@ -50,10 +51,15 @@ HYGDatabase::HYGDatabase()
 
 	// Compute average color of points and setup VBO
 	finalize();
+
+	// Break data into chunks so that we can quickly determine which star is closest to viewer
+	chunkData();
 }
 
 HYGDatabase::~HYGDatabase()
 {
+	if (mChunkedData)
+		delete[] mChunkedData;
 }
 
 void HYGDatabase::loadData()
@@ -66,7 +72,6 @@ void HYGDatabase::loadData()
 
 	LOG(INFO) << "Parsing HYG database...";
 
-	size_t kMaxStarsToParse = 1000;
 	string line;
 	getline(file, line);	// First line of database is hdr describing fields
 	Vec3f sunPosition;
@@ -90,7 +95,9 @@ void HYGDatabase::loadData()
 			continue;
 
 		ostringstream s;
-		if (!lineValues[1].empty())	// Do we have a HIP id?
+		if (!lineValues[6].empty())
+			s << lineValues[6];
+		else if (!lineValues[1].empty())	// Do we have a HIP id?
 			s << "HIP: " << lineValues[1];
 		else if (!lineValues[2].empty())
 			s << "HD: " << lineValues[2];
@@ -100,8 +107,6 @@ void HYGDatabase::loadData()
 			s << "Gliese: " << lineValues[4];
 		else if (!lineValues[5].empty())
 			s << "Bayer / Flamsteed: " << lineValues[5];
-		else if (!lineValues[6].empty())
-			s << "Proper Name: " << lineValues[6];
 		string identifier = s.str();
 		bool haveID = !identifier.empty();
 
@@ -134,12 +139,14 @@ void HYGDatabase::loadData()
 			rec.mPosition = position - sunPosition;		// Translate position to Sun-centric
 			rec.mAbsMag = absMag;
 			rec.mColorIndex = colorIndex;
+			rec.mEyeDistanceSq = -1;
 
 			mData.push_back(rec);
 
 #if _DEBUG
 			// We limit the number to parse in debug mode because Microsoft's implementation
 			// of STL is so bloody slow!
+			size_t kMaxStarsToParse = 1000;
 			if (mData.size() == kMaxStarsToParse)
 				break;
 #endif
@@ -156,7 +163,7 @@ void HYGDatabase::loadData()
 
 	// Write data into render storage
 	int n = 0;
-	for (HYGData::iterator it = mData.begin(); it != mData.end(); it++)
+	for (HYGDataVec_t::iterator it = mData.begin(); it != mData.end(); it++)
 	{
 		ColorPointVertex* starVertex = (ColorPointVertex*)getVertex(n);
 
@@ -237,6 +244,147 @@ void HYGDatabase::bv2rgb(float_t bv, float_t &r, float_t &g, float_t &b)
 		t = (bv - 1.5f) / (1.94f - 1.5f);
 		b = 0.63f - (0.6f * t * t);
 	}
+}
+
+// This method performs basic chunking of the star database. Here's the problem:
+// Relative to the camera location, we need to know which star is nearest so that we can
+// render the star as a 3D star when close enough. The star database has over a million
+// entries so it would be insane to test the distances to every one of these stars from
+// the camera per frame. Instead, we imagine the star database contained in a cube with
+// sides of 2 * mBoundingRadius. We then equally subdivide this cube into many smaller
+// cubes (or chunks) determined by fChunkDivisions. If fChunkDivisions were 3, we'd have
+// 27 chunks, like a Rubik's cube. We then place each star in it's appropriate chunk. It's
+// easy to compute which chunk the camera is in at any time. It's also easy to compute the
+// six (or less) adjacent chunks. Given these chunks, we only need to find the nearest
+// star among them, rather than the entire database. fChunkDivisions is chosen so that
+// at most, a single chunk has maybe a 100 entries.
+void HYGDatabase::chunkData()
+{
+	fChunkDivisions = 20;
+	fChunkDivisionsSq = fChunkDivisions * fChunkDivisions;
+
+	// Allocate the chunked data. Each chunk is a vector<HYGDataRecord*>, referring to
+	// the HYGDataRecord items in mData.
+	const int kNumChunks = fChunkDivisions * fChunkDivisionsSq;
+	fChunkSize = 2 * mBoundingRadiusAU / fChunkDivisions;
+	mChunkedData = new HYGDataVecP_t[kNumChunks];
+
+	// Place each star in the correct chunk
+	for (HYGDataVec_t::iterator it = mData.begin(); it != mData.end(); it++)
+	{
+		int index = getChunkIndexFromPosition(it->mPosition);
+		mChunkedData[index].push_back(&(*it));
+	}
+}
+
+int HYGDatabase::getChunkIndexFromArrayIndices(int i, int j, int k) const
+{
+	if ((i >= 0) && (i < fChunkDivisions) &&
+		(j >= 0) && (j < fChunkDivisions) &&
+		(k >= 0) && (k < fChunkDivisions))
+		return (i + fChunkDivisions * (j + fChunkDivisions * k));
+	else
+		return -1;
+}
+
+int HYGDatabase::getChunkIndexFromPosition(Vec3f& inPosition) const
+{
+	int i = (int)((inPosition.x + mBoundingRadiusAU) / fChunkSize);
+	int j = (int)((inPosition.y + mBoundingRadiusAU) / fChunkSize);
+	int k = (int)((inPosition.z + mBoundingRadiusAU) / fChunkSize);
+
+	return getChunkIndexFromArrayIndices(i, j, k);
+}
+
+// This method returns inNumStarsToReturn star records in ioNearestStars in ascending distance from inPosition.
+void HYGDatabase::getNearestToPosition(Vec3f& inPosition, HYGDataVecP_t& ioNearestStars, size_t inNumStarsToReturn) const
+{
+	ioNearestStars.clear();
+
+	// Get chunk index containing the given position
+	int index = getChunkIndexFromPosition(inPosition);
+	if (index == -1)
+		return;
+
+	// Get the chunk indices for chunks adjacent to the chunk containing the given position
+	vector<int> nearestIndices;
+	getAdjacentChunkIndices(index, nearestIndices);
+
+	// Add the chunk index containing the given position 
+	nearestIndices.push_back(index);
+
+	// Accumulate all the records contained in each chunk
+	HYGDataVecP_t nearestRecs;
+	const float_t kMaxDistance = (std::numeric_limits<float_t>::max)();
+	for (vector<int>::iterator it = nearestIndices.begin(); it != nearestIndices.end(); it++)
+	{
+		for (HYGDataVecP_t::iterator itData = mChunkedData[*it].begin(); itData != mChunkedData[*it].end(); itData++)
+		{
+			(*itData)->mEyeDistanceSq = kMaxDistance;
+			nearestRecs.push_back(*itData);
+		}
+	}
+
+	// nearestRecs now contains all data records in the chunk where inPosition is located, as well as
+	// the data records from adjacent chunks.
+	// Populate ioNearestStars with inNumStarsToReturn in ascending distance from inPosition.
+	if (!nearestRecs.empty())
+	{
+		float_t nearestDistanceSq = (std::numeric_limits<float_t>::max)();
+
+		for (HYGDataVecP_t::iterator it = nearestRecs.begin(); it != nearestRecs.end(); it++)
+		{
+			HYGDataRecord* rec = *it;
+			Vec3f diff = rec->mPosition - inPosition;
+			rec->mEyeDistanceSq = diff.lengthSquared();
+
+			if (ioNearestStars.size() == 0)
+				ioNearestStars.push_back(rec);
+			else if (ioNearestStars.size() < inNumStarsToReturn)
+			{
+				for (HYGDataVecP_t::iterator it2 = ioNearestStars.begin(); it2 != ioNearestStars.end(); it2++)
+				{
+					if (rec->mEyeDistanceSq < (*it2)->mEyeDistanceSq)
+					{
+						ioNearestStars.insert(it2, rec);
+						break;
+					}
+				}
+			}
+			else if (rec->mEyeDistanceSq < ioNearestStars[inNumStarsToReturn - 1]->mEyeDistanceSq)
+			{
+				for (HYGDataVecP_t::iterator it2 = ioNearestStars.begin(); it2 != ioNearestStars.end(); it2++)
+				{
+					if (rec->mEyeDistanceSq < (*it2)->mEyeDistanceSq)
+					{
+						ioNearestStars.insert(it2, rec);
+						break;
+					}
+				}
+				ioNearestStars.pop_back();
+			}
+		}
+	}
+}
+
+void HYGDatabase::getAdjacentChunkIndices(int inIndex, vector<int>& ioAdjacentIndices) const
+{
+	int k = inIndex / fChunkDivisionsSq;
+	int j = (inIndex - k * fChunkDivisionsSq) / fChunkDivisions;
+	int i = inIndex - k * fChunkDivisionsSq - j * fChunkDivisions;
+
+	if (i > 0)
+		ioAdjacentIndices.push_back(getChunkIndexFromArrayIndices(i - 1, j, k));
+	if (i < fChunkDivisions - 1)
+		ioAdjacentIndices.push_back(getChunkIndexFromArrayIndices(i + 1, j, k));
+	if (j > 0)
+		ioAdjacentIndices.push_back(getChunkIndexFromArrayIndices(i, j - 1, k));
+	if (j < fChunkDivisions - 1)
+		ioAdjacentIndices.push_back(getChunkIndexFromArrayIndices(i, j + 1, k));
+	if (k > 0)
+		ioAdjacentIndices.push_back(getChunkIndexFromArrayIndices(i, j, k - 1));
+	if (k < fChunkDivisions - 1)
+		ioAdjacentIndices.push_back(getChunkIndexFromArrayIndices(i, j, k + 1));
 }
 
 void HYGDatabase::setupVAO()
