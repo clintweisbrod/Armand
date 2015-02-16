@@ -125,7 +125,7 @@ bool RenderObject::isInView(Camera& inCamera)
 	// Compute angle between viewDirection and viewer-object direction
 	float_t angleBetween = acosf(viewDirection * mLastViewerObjectVectorNormalized);
 
-	GLfloat halfAperture = inCamera.getAperture() / 2;
+	GLfloat halfAperture = inCamera.getHalfAperture();
 	if (angleBetween - angularRadius > halfAperture)
 		return false;
 	else
@@ -255,7 +255,7 @@ void RenderObject::setPointShaderUniforms(Camera& inCamera, float inAlpha)
 	Mat4f projectionMatrix = gRenderer->getProjectionMatrix(n, f);
 
 	glUniform1f(glGetUniformLocation(mPointShaderHandle, "uAlpha"), inAlpha);
-	glUniform1f(glGetUniformLocation(mPointShaderHandle, "uAperture"), inCamera.getAperture());
+	glUniform1f(glGetUniformLocation(mPointShaderHandle, "uHalfAperture"), inCamera.getHalfAperture());
 	glUniform1f(glGetUniformLocation(mPointShaderHandle, "uClipPlaneDistance"), inCamera.getFisheyeClipPlaneDistance());
 	glUniform3fv(glGetUniformLocation(mPointShaderHandle, "uViewDirection"), 1, viewDirection.data);
 	glUniform3fv(glGetUniformLocation(mPointShaderHandle, "uUpDirection"), 1, upDirection.data);

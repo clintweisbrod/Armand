@@ -1804,7 +1804,7 @@ bool T3DSModel::render(Camera& inCamera, Mat4f& inViewMatrix, Quatf& inOrientati
 		// Draw the untextured vertices
 		glUniform1i(glGetUniformLocation(mShaderHandle, "uIsTexturing"), GL_FALSE);
 		glUniform1f(glGetUniformLocation(mShaderHandle, "uAlpha"), inAlpha);
-		glUniform1f(glGetUniformLocation(mShaderHandle, "uAperture"), inCamera.getAperture());
+		glUniform1f(glGetUniformLocation(mShaderHandle, "uHalfAperture"), inCamera.getHalfAperture());
 		glUniform1f(glGetUniformLocation(mShaderHandle, "uClipPlaneDistance"), inCamera.getFisheyeClipPlaneDistance());
 		glUniform3fv(glGetUniformLocation(mShaderHandle, "uViewDirection"), 1, viewDirection.data);
 		glUniform3fv(glGetUniformLocation(mShaderHandle, "uUpDirection"), 1, upDirection.data);

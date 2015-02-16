@@ -46,8 +46,10 @@ void computeLighting(vec3 inVertexPositionInEyeCoordinates);
 
 void main()
 {
-	// Do fisheye projection
+	// Transform vaoPosition from local model coordinates to eye coordinates.
 	vec3 vertexPositionInEyeCoords = (uModelViewMatrix * vec4(vaoPosition, 1.0)).xyz;
+	
+	// Do fisheye projection
 	fisheyeProject(vertexPositionInEyeCoords);
 	
 	// Perform lighting calculations

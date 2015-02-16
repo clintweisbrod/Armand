@@ -41,9 +41,10 @@ Camera::~Camera()
 void Camera::setAperture(float_t inAperture)
 {
 	mAperture = inAperture;
+	mHalfAperture = inAperture / 2;
 
 	// This is needed by Fisheye.glsl so best to cache it.
-	mFisheyeClipPlaneDistance = -cosf(mAperture / 2);
+	mFisheyeClipPlaneDistance = -cosf(mHalfAperture);
 }
 
 void Camera::updateOrthoNormalBasis()
