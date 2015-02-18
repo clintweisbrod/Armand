@@ -207,9 +207,6 @@
     <ClInclude Include="..\..\Source\Objects\RandomPointsCube.h">
       <Filter>Header Files\Objects</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Source\Objects\Static3DPointSet.h">
-      <Filter>Header Files\Objects</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Source\Objects\Rendering\RenderObjectList.h">
       <Filter>Header Files\Objects\Rendering</Filter>
     </ClInclude>
@@ -224,6 +221,12 @@
     </ClInclude>
     <ClInclude Include="..\..\Source\OpenGL\Renderer.h">
       <Filter>Header Files\OpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Math\fastapprox.h">
+      <Filter>Header Files\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Objects\3DPointSet.h">
+      <Filter>Header Files\Objects</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -287,9 +290,6 @@
     <ClCompile Include="..\..\Source\Objects\RandomPointsCube.cpp">
       <Filter>Source Files\Objects</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Source\Objects\Static3DPointSet.cpp">
-      <Filter>Source Files\Objects</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Source\Objects\Rendering\RenderObjectList.cpp">
       <Filter>Source Files\Objects\Rendering</Filter>
     </ClCompile>
@@ -301,6 +301,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\OpenGL\Renderer.cpp">
       <Filter>Source Files\OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Objects\3DPointSet.cpp">
+      <Filter>Source Files\Objects</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -184,6 +184,7 @@ exit 0
     <ClInclude Include="..\..\Source\Math\constants.h" />
     <ClInclude Include="..\..\Source\Math\distance.h" />
     <ClInclude Include="..\..\Source\Math\ellipsoid.h" />
+    <ClInclude Include="..\..\Source\Math\fastapprox.h" />
     <ClInclude Include="..\..\Source\Math\frustum.h" />
     <ClInclude Include="..\..\Source\Math\intersect.h" />
     <ClInclude Include="..\..\Source\Math\mathlib.h" />
@@ -203,7 +204,7 @@ exit 0
     <ClInclude Include="..\..\Source\Objects\Rendering\RenderObjectList.h" />
     <ClInclude Include="..\..\Source\Objects\RenderObject.h" />
     <ClInclude Include="..\..\Source\Objects\Stars\HYGDatabase.h" />
-    <ClInclude Include="..\..\Source\Objects\Static3DPointSet.h" />
+    <ClInclude Include="..\..\Source\Objects\3DPointSet.h" />
     <ClInclude Include="..\..\Source\OpenGL\Fonts\FontFactory.h" />
     <ClInclude Include="..\..\Source\OpenGL\GLUtils.h" />
     <ClInclude Include="..\..\Source\OpenGL\OpenGLWindow.h" />
@@ -238,7 +239,7 @@ exit 0
     <ClCompile Include="..\..\Source\Objects\Rendering\RenderObjectList.cpp" />
     <ClCompile Include="..\..\Source\Objects\RenderObject.cpp" />
     <ClCompile Include="..\..\Source\Objects\Stars\HYGDatabase.cpp" />
-    <ClCompile Include="..\..\Source\Objects\Static3DPointSet.cpp" />
+    <ClCompile Include="..\..\Source\Objects\3DPointSet.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\Fonts\FontFactory.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\GLUtils.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\OpenGLWindow.cpp" />
