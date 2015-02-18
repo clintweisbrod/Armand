@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "Objects/Static3DPointSet.h"
+#include "Objects/3DPointSet.h"
 #include "Main/Exception.h"
 #include "Math/vecmath.h"
 #include "OpenGL/Textures/Texture.h"
@@ -38,7 +38,7 @@ struct HYGDataRecord
 
 typedef vector<HYGDataRecord> HYGDataVec_t;
 typedef vector<HYGDataRecord*> HYGDataVecP_t;
-class HYGDatabase : public Static3DPointSet
+class HYGDatabase : public T3DPointSet
 {
 public:
 	HYGDatabase();

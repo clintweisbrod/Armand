@@ -87,10 +87,11 @@ void T3DPointSet::finalize()
 	}
 
 	// Set average color
-	GLubyte thePointColor[3];
+	GLubyte thePointColor[4];
 	thePointColor[0] = (GLubyte)(avgColor[0] / mNumPoints);
 	thePointColor[1] = (GLubyte)(avgColor[1] / mNumPoints);
 	thePointColor[2] = (GLubyte)(avgColor[2] / mNumPoints);
+	thePointColor[3] = 255;
 	setPointColor(thePointColor);
 
 	// Set the bounding radius of the data set
@@ -115,7 +116,7 @@ void T3DPointSet::setupVAO()
 
 		// Add the arrays
 		mPointsVAO->addArray("vaoPosition", 3, GL_FLOAT, GL_FALSE);
-		mPointsVAO->addArray("vaoColor", 3, GL_UNSIGNED_BYTE, GL_TRUE);
+		mPointsVAO->addArray("vaoColor", 4, GL_UNSIGNED_BYTE, GL_TRUE);
 		mPointsVAO->addArray("vaoSize", 1, GL_FLOAT, GL_FALSE);
 	}
 }

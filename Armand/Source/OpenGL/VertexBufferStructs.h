@@ -36,7 +36,7 @@ typedef struct
 struct ColorPointVertex
 {
 	GLfloat position[3];
-	GLubyte color[3];
+	GLubyte color[4];
 	union
 	{
 		GLfloat size;

@@ -6,7 +6,7 @@
 // VAO definition
 //
 layout (location = 0) in vec3 vaoPosition;	// In local model coordinates
-layout (location = 1) in vec3 vaoColor;
+layout (location = 1) in vec4 vaoColor;
 layout (location = 2) in float vaoSize;
 
 //
@@ -35,5 +35,5 @@ void main()
 	gl_PointSize = vaoSize;
 
 	// Set point color
-	starColor = vec4(vaoColor, 1.0);
+	starColor = vaoColor;
 }

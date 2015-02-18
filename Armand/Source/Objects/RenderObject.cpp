@@ -51,7 +51,7 @@ RenderObject::RenderObject()
 
 		// Add the arrays
 		sPointVAO->addArray("vaoPosition", 3, GL_FLOAT, GL_FALSE);
-		sPointVAO->addArray("vaoColor", 3, GL_UNSIGNED_BYTE, GL_TRUE);
+		sPointVAO->addArray("vaoColor", 4, GL_UNSIGNED_BYTE, GL_TRUE);
 		sPointVAO->addArray("vaoSize", 1, GL_FLOAT, GL_FALSE);
 
 		// Allocate VBOs

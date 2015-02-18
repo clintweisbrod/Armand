@@ -28,6 +28,8 @@
 #include "Math/mathlib.h"
 #include "OpenGL/ShaderFactory.h"
 
+const float_t kLimitingStarMagnitude = 7.0f;	// Will eventually be a preference
+
 HYGDatabase::HYGDatabase() : mChunkedData(NULL)
 {
 	// Position the center of the data set at the origin.
@@ -176,6 +178,7 @@ void HYGDatabase::loadData()
 		starVertex->color[0] = (GLubyte)(255 * r);
 		starVertex->color[1] = (GLubyte)(255 * g);
 		starVertex->color[2] = (GLubyte)(255 * b);
+		starVertex->color[3] = 255;
 
 		starVertex->absMag = it->mAbsMag;
 		n++;
@@ -257,7 +260,7 @@ void HYGDatabase::bv2rgb(float_t bv, float_t &r, float_t &g, float_t &b)
 // easy to compute which chunk the camera is in at any time. It's also easy to compute the
 // six (or less) adjacent chunks. Given these chunks, we only need to find the nearest
 // star among them, rather than the entire database. fChunkDivisions is chosen so that
-// at most, a single chunk has maybe a 100 entries.
+// getNearestToPosition() runtime is minimized. fChunkDivisions = 20 seems to do it.
 void HYGDatabase::chunkData()
 {
 	fChunkDivisions = 20;
@@ -396,7 +399,7 @@ void HYGDatabase::setupVAO()
 
 		// Add the arrays
 		mPointsVAO->addArray("vaoPosition", 3, GL_FLOAT, GL_FALSE);
-		mPointsVAO->addArray("vaoColor", 3, GL_UNSIGNED_BYTE, GL_TRUE);
+		mPointsVAO->addArray("vaoColor", 4, GL_UNSIGNED_BYTE, GL_TRUE);
 		mPointsVAO->addArray("vaoAbsMag", 1, GL_FLOAT, GL_FALSE);
 	}
 }
@@ -418,4 +421,5 @@ void HYGDatabase::setPointShaderUniforms(Camera& inCamera, float inAlpha)
 	glBindTexture(GL_TEXTURE_2D, mPointTexture->getTextureID());
 	glUniform1i(glGetUniformLocation(mPointShaderHandle, "uTexture"), 0);
 	glUniform1f(glGetUniformLocation(mPointShaderHandle, "uSaturation"), mPointSaturation);
+	glUniform1f(glGetUniformLocation(mPointShaderHandle, "uLimitingMagnitude"), kLimitingStarMagnitude);
 }

@@ -245,7 +245,9 @@ void Renderer::render()
 //	LOG(INFO) << "getNearestToPosition(): " << mTimer.elapsedMilliseconds() << " ms.";
 	if (!nearestStars.empty())
 	{
-		swprintf(infoBuffer, 256, L"Nearest Star: %s", wstringFromString(nearestStars[0]->mIdentifier).c_str());
+		distanceStr = getNiceDistanceString(sqrtf(nearestStars[0]->mEyeDistanceSq), 1);
+//		swprintf(infoBuffer, 256, L"Nearest Star: %s", wstringFromString(nearestStars[0]->mIdentifier).c_str());
+		swprintf(infoBuffer, 256, L"Nearest Star: %s", distanceStr.c_str());
 		text = infoBuffer;
 		fontRenderer->renderSpherical(text, 20, Vec2f(degToRad(-20.0f), degToRad(5.0f)), Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
 	}

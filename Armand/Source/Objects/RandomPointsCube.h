@@ -21,9 +21,9 @@
 
 #pragma once
 
-#include "Static3DPointSet.h"
+#include "3DPointSet.h"
 
-class RandomPointsCube : public Static3DPointSet
+class RandomPointsCube : public T3DPointSet
 {
 public:
 	RandomPointsCube(int inNumSamples);
