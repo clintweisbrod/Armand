@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // Copyright (C) 2015 Clint Weisbrod. All rights reserved.
 //
-// Static3DPointSet.h
+// 3DPointSet.h
 //
 // General solution for rendering tons of data as points.
 //
@@ -28,12 +28,12 @@
 
 GENERATE_EXCEPTION(Static3DPointSetException)
 
-class Static3DPointSet : public RenderObject
+class T3DPointSet : public RenderObject
 {
 public:
-	Static3DPointSet() {};
-	Static3DPointSet(int inNumPoints);
-	virtual ~Static3DPointSet();
+	T3DPointSet() {};
+	T3DPointSet(int inNumPoints);
+	virtual ~T3DPointSet();
 
 	virtual bool shouldRenderAsPoint(Camera& inCamera) const;
 	virtual bool canRenderFull();

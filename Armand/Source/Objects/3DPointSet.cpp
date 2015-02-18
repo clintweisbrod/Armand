@@ -19,10 +19,10 @@
 
 #include "stdafx.h"
 
-#include "Static3DPointSet.h"
+#include "3DPointSet.h"
 #include "OpenGL/ShaderFactory.h"
 
-Static3DPointSet::Static3DPointSet(int inNumPoints)
+T3DPointSet::T3DPointSet(int inNumPoints)
 {
 	mPointBuffer = NULL;
 	mPointsVAO = NULL;
@@ -30,7 +30,7 @@ Static3DPointSet::Static3DPointSet(int inNumPoints)
 	mNumPoints = inNumPoints;
 }
 
-Static3DPointSet::~Static3DPointSet()
+T3DPointSet::~T3DPointSet()
 {
 	releasePointArray();
 
@@ -44,7 +44,7 @@ Static3DPointSet::~Static3DPointSet()
 		glDeleteBuffers(1, &mPointsVBO);
 }
 
-void Static3DPointSet::allocatePointArray(GLsizei inNumPoints, GLsizei inPointStride)
+void T3DPointSet::allocatePointArray(GLsizei inNumPoints, GLsizei inPointStride)
 {
 	mNumPoints = inNumPoints;
 	mPointStride = inPointStride;
@@ -55,7 +55,7 @@ void Static3DPointSet::allocatePointArray(GLsizei inNumPoints, GLsizei inPointSt
 		THROW(Static3DPointSetException, "Unable to allocate %d PointStarVertex elements.", mNumPoints);
 }
 
-void Static3DPointSet::releasePointArray()
+void T3DPointSet::releasePointArray()
 {
 	if (mPointBuffer)
 	{
@@ -64,7 +64,7 @@ void Static3DPointSet::releasePointArray()
 	}
 }
 
-void Static3DPointSet::finalize()
+void T3DPointSet::finalize()
 {
 	uint64_t avgColor[] = { 0, 0, 0 };
 
@@ -100,13 +100,13 @@ void Static3DPointSet::finalize()
 	setupVBO();
 }
 
-void* Static3DPointSet::getVertex(GLsizei index)
+void* T3DPointSet::getVertex(GLsizei index)
 {
 	void* result = mPointBuffer + (index * mPointStride);
 	return result;
 }
 
-void Static3DPointSet::setupVAO()
+void T3DPointSet::setupVAO()
 {
 	// Setup the points VBO
 	if (mPointsVAO == NULL)
@@ -120,7 +120,7 @@ void Static3DPointSet::setupVAO()
 	}
 }
 
-void Static3DPointSet::setupVBO()
+void T3DPointSet::setupVBO()
 {
 	// Virtual call
 	setupVAO();
@@ -140,7 +140,7 @@ void Static3DPointSet::setupVBO()
 	releasePointArray();
 }
 
-bool Static3DPointSet::shouldRenderAsPoint(Camera& inCamera) const
+bool T3DPointSet::shouldRenderAsPoint(Camera& inCamera) const
 {
 	// If we're inside the data set, we don't render as point.
 	if (mLastViewerDistanceAU <= mBoundingRadiusAU)
@@ -149,7 +149,7 @@ bool Static3DPointSet::shouldRenderAsPoint(Camera& inCamera) const
 		return RenderObject::shouldRenderAsPoint(inCamera);
 }
 
-bool Static3DPointSet::canRenderFull()
+bool T3DPointSet::canRenderFull()
 {
 	if (mNumPoints == 0)
 		return false;
@@ -157,12 +157,12 @@ bool Static3DPointSet::canRenderFull()
 	return true;
 }
 
-void Static3DPointSet::setGLStateForFullRender(float inAlpha) const
+void T3DPointSet::setGLStateForFullRender(float inAlpha) const
 {
 	setGLStateForPoint(inAlpha);
 }
 
-bool Static3DPointSet::renderFull(Camera& inCamera, float inAlpha)
+bool T3DPointSet::renderFull(Camera& inCamera, float inAlpha)
 {
 	mPointsVAO->bind();
 
