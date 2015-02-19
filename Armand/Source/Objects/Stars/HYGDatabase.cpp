@@ -142,6 +142,7 @@ void HYGDatabase::loadData()
 			rec.mAbsMag = absMag;
 			rec.mColorIndex = colorIndex;
 			rec.mEyeDistanceSq = -1;
+			rec.mVBOIndex = mData.size();
 
 			mData.push_back(rec);
 
@@ -263,13 +264,13 @@ void HYGDatabase::bv2rgb(float_t bv, float_t &r, float_t &g, float_t &b)
 // getNearestToPosition() runtime is minimized. fChunkDivisions = 20 seems to do it.
 void HYGDatabase::chunkData()
 {
-	fChunkDivisions = 20;
-	fChunkDivisionsSq = fChunkDivisions * fChunkDivisions;
+	mChunkDivisions = 20;
+	mChunkDivisionsSq = mChunkDivisions * mChunkDivisions;
 
 	// Allocate the chunked data. Each chunk is a vector<HYGDataRecord*>, referring to
 	// the HYGDataRecord items in mData.
-	const int kNumChunks = fChunkDivisions * fChunkDivisionsSq;
-	fChunkSize = 2 * mBoundingRadiusAU / fChunkDivisions;
+	const int kNumChunks = mChunkDivisions * mChunkDivisionsSq;
+	mChunkSize = 2 * mBoundingRadiusAU / mChunkDivisions;
 	mChunkedData = new HYGDataVecP_t[kNumChunks];
 
 	// Place each star in the correct chunk
@@ -282,27 +283,27 @@ void HYGDatabase::chunkData()
 
 int HYGDatabase::getChunkIndexFromArrayIndices(int i, int j, int k) const
 {
-	if ((i >= 0) && (i < fChunkDivisions) &&
-		(j >= 0) && (j < fChunkDivisions) &&
-		(k >= 0) && (k < fChunkDivisions))
-		return (i + fChunkDivisions * (j + fChunkDivisions * k));
+	if ((i >= 0) && (i < mChunkDivisions) &&
+		(j >= 0) && (j < mChunkDivisions) &&
+		(k >= 0) && (k < mChunkDivisions))
+		return (i + mChunkDivisions * (j + mChunkDivisions * k));
 	else
 		return -1;
 }
 
 int HYGDatabase::getChunkIndexFromPosition(Vec3f& inPosition) const
 {
-	int i = (int)((inPosition.x + mBoundingRadiusAU) / fChunkSize);
-	int j = (int)((inPosition.y + mBoundingRadiusAU) / fChunkSize);
-	int k = (int)((inPosition.z + mBoundingRadiusAU) / fChunkSize);
+	int i = (int)((inPosition.x + mBoundingRadiusAU) / mChunkSize);
+	int j = (int)((inPosition.y + mBoundingRadiusAU) / mChunkSize);
+	int k = (int)((inPosition.z + mBoundingRadiusAU) / mChunkSize);
 
 	return getChunkIndexFromArrayIndices(i, j, k);
 }
 
 // This method returns inNumStarsToReturn star records in ioNearestStars in ascending distance from inPosition.
-void HYGDatabase::getNearestToPosition(Vec3f& inPosition, HYGDataVecP_t& ioNearestStars, size_t inNumStarsToReturn) const
+void HYGDatabase::computeNearestToPosition(Vec3f& inPosition, size_t inNumStarsToReturn)
 {
-	ioNearestStars.clear();
+	mNearestStarsToViewer.clear();
 
 	// Get chunk index containing the given position
 	int index = getChunkIndexFromPosition(inPosition);
@@ -341,30 +342,30 @@ void HYGDatabase::getNearestToPosition(Vec3f& inPosition, HYGDataVecP_t& ioNeare
 			Vec3f diff = rec->mPosition - inPosition;
 			rec->mEyeDistanceSq = diff.lengthSquared();
 
-			if (ioNearestStars.size() == 0)
-				ioNearestStars.push_back(rec);
-			else if (ioNearestStars.size() < inNumStarsToReturn)
+			if (mNearestStarsToViewer.size() == 0)
+				mNearestStarsToViewer.push_back(rec);
+			else if (mNearestStarsToViewer.size() < inNumStarsToReturn)
 			{
-				for (HYGDataVecP_t::iterator it2 = ioNearestStars.begin(); it2 != ioNearestStars.end(); it2++)
+				for (HYGDataVecP_t::iterator it2 = mNearestStarsToViewer.begin(); it2 != mNearestStarsToViewer.end(); it2++)
 				{
 					if (rec->mEyeDistanceSq < (*it2)->mEyeDistanceSq)
 					{
-						ioNearestStars.insert(it2, rec);
+						mNearestStarsToViewer.insert(it2, rec);
 						break;
 					}
 				}
 			}
-			else if (rec->mEyeDistanceSq < ioNearestStars[inNumStarsToReturn - 1]->mEyeDistanceSq)
+			else if (rec->mEyeDistanceSq < mNearestStarsToViewer[inNumStarsToReturn - 1]->mEyeDistanceSq)
 			{
-				for (HYGDataVecP_t::iterator it2 = ioNearestStars.begin(); it2 != ioNearestStars.end(); it2++)
+				for (HYGDataVecP_t::iterator it2 = mNearestStarsToViewer.begin(); it2 != mNearestStarsToViewer.end(); it2++)
 				{
 					if (rec->mEyeDistanceSq < (*it2)->mEyeDistanceSq)
 					{
-						ioNearestStars.insert(it2, rec);
+						mNearestStarsToViewer.insert(it2, rec);
 						break;
 					}
 				}
-				ioNearestStars.pop_back();
+				mNearestStarsToViewer.pop_back();
 			}
 		}
 	}
@@ -372,22 +373,32 @@ void HYGDatabase::getNearestToPosition(Vec3f& inPosition, HYGDataVecP_t& ioNeare
 
 void HYGDatabase::getAdjacentChunkIndices(int inIndex, vector<int>& ioAdjacentIndices) const
 {
-	int k = inIndex / fChunkDivisionsSq;
-	int j = (inIndex - k * fChunkDivisionsSq) / fChunkDivisions;
-	int i = inIndex - k * fChunkDivisionsSq - j * fChunkDivisions;
+	int k = inIndex / mChunkDivisionsSq;
+	int j = (inIndex - k * mChunkDivisionsSq) / mChunkDivisions;
+	int i = inIndex - k * mChunkDivisionsSq - j * mChunkDivisions;
 
 	if (i > 0)
 		ioAdjacentIndices.push_back(getChunkIndexFromArrayIndices(i - 1, j, k));
-	if (i < fChunkDivisions - 1)
+	if (i < mChunkDivisions - 1)
 		ioAdjacentIndices.push_back(getChunkIndexFromArrayIndices(i + 1, j, k));
 	if (j > 0)
 		ioAdjacentIndices.push_back(getChunkIndexFromArrayIndices(i, j - 1, k));
-	if (j < fChunkDivisions - 1)
+	if (j < mChunkDivisions - 1)
 		ioAdjacentIndices.push_back(getChunkIndexFromArrayIndices(i, j + 1, k));
 	if (k > 0)
 		ioAdjacentIndices.push_back(getChunkIndexFromArrayIndices(i, j, k - 1));
-	if (k < fChunkDivisions - 1)
+	if (k < mChunkDivisions - 1)
 		ioAdjacentIndices.push_back(getChunkIndexFromArrayIndices(i, j, k + 1));
+}
+
+HYGDataRecord* HYGDatabase::getNearestStar() const
+{
+	HYGDataRecord* result = NULL;
+
+	if (!mNearestStarsToViewer.empty())
+		result = mNearestStarsToViewer[0];
+
+	return result;
 }
 
 void HYGDatabase::setupVAO()
@@ -402,6 +413,14 @@ void HYGDatabase::setupVAO()
 		mPointsVAO->addArray("vaoColor", 4, GL_UNSIGNED_BYTE, GL_TRUE);
 		mPointsVAO->addArray("vaoAbsMag", 1, GL_FLOAT, GL_FALSE);
 	}
+}
+
+void HYGDatabase::preRender(Camera& inCamera)
+{
+	RenderObject::preRender(inCamera);
+
+	// Update list of stars nearest to camera. We have to render the nearby ones as their own RenderObject instances.
+	computeNearestToPosition((Vec3f)inCamera.getUniveralPositionAU(), 10);
 }
 
 void HYGDatabase::setGLStateForFullRender(float inAlpha) const

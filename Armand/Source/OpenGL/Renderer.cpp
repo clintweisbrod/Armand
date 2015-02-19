@@ -239,13 +239,12 @@ void Renderer::render()
 	text = infoBuffer;
 	fontRenderer->renderSpherical(text, 20, Vec2f(degToRad(40.0f), degToRad(5.0f)), Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
 
-	HYGDataVecP_t nearestStars;
 //	mTimer.reset();
-	hygStars.getNearestToPosition((Vec3f)mCamera.getUniveralPositionAU(), nearestStars);
+	HYGDataRecord* nearestStar = hygStars.getNearestStar();
 //	LOG(INFO) << "getNearestToPosition(): " << mTimer.elapsedMilliseconds() << " ms.";
-	if (!nearestStars.empty())
+	if (nearestStar != NULL)
 	{
-		distanceStr = getNiceDistanceString(sqrtf(nearestStars[0]->mEyeDistanceSq), 1);
+		distanceStr = getNiceDistanceString(sqrtf(nearestStar->mEyeDistanceSq), 1);
 //		swprintf(infoBuffer, 256, L"Nearest Star: %s", wstringFromString(nearestStars[0]->mIdentifier).c_str());
 		swprintf(infoBuffer, 256, L"Nearest Star: %s", distanceStr.c_str());
 		text = infoBuffer;

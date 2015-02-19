@@ -31,7 +31,7 @@ public:
 	virtual ~RenderObject();
 
 	void setBoundingRadiusAU(float_t inBoundingRadiusAU) { mBoundingRadiusAU = inBoundingRadiusAU; };
-	void preRender(Camera& inCamera);
+	virtual void preRender(Camera& inCamera);
 	bool render(Camera& inCamera, float inAlpha);
 
 	float_t	getLastViewerDistanceAU() const { return mLastViewerDistanceAU; };

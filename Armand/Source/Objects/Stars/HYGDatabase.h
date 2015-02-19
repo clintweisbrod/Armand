@@ -34,6 +34,7 @@ struct HYGDataRecord
 	float_t	mAbsMag;
 	float_t	mColorIndex;
 	float_t mEyeDistanceSq;
+	size_t	mVBOIndex;
 };
 
 typedef vector<HYGDataRecord> HYGDataVec_t;
@@ -45,8 +46,9 @@ public:
 	virtual ~HYGDatabase();
 
 	virtual void setGLStateForFullRender(float inAlpha) const;
+	virtual void preRender(Camera& inCamera);
 
-	void getNearestToPosition(Vec3f& inPosition, HYGDataVecP_t& ioNearestStars, size_t inNumStarsToReturn = 1) const;
+	HYGDataRecord* getNearestStar() const;
 
 protected:
 	virtual void loadData();
@@ -60,6 +62,7 @@ protected:
 	int getChunkIndexFromArrayIndices(int i, int j, int k) const;
 	int getChunkIndexFromPosition(Vec3f& inPosition) const;
 	void getAdjacentChunkIndices(int inIndex, vector<int>& ioAdjacentIndices) const;
+	void computeNearestToPosition(Vec3f& inPosition, size_t inNumStarsToReturn = 1);
 
 private:
 	HYGDataVec_t		mData;
@@ -67,7 +70,9 @@ private:
 	Texture*			mPointTexture;
 	float_t				mPointSaturation;
 
-	int					fChunkDivisions;
-	int					fChunkDivisionsSq;
-	float_t				fChunkSize;
+	int					mChunkDivisions;
+	int					mChunkDivisionsSq;
+	float_t				mChunkSize;
+
+	HYGDataVecP_t		mNearestStarsToViewer;
 };
