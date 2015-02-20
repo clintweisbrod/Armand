@@ -173,8 +173,8 @@ bool OpenGLWindow::create(HINSTANCE inInstance, WNDPROC inWndProc, WORD inMenuID
 
 			// Enable/disable VSYNC
 			if (wglSwapIntervalEXT)
-//				wglSwapIntervalEXT(0);	// Disabling with zero for now so that I can see the maximum frame rate.
-				wglSwapIntervalEXT(1);
+				wglSwapIntervalEXT(0);	// Disabling with zero for now so that I can see the maximum frame rate.
+//				wglSwapIntervalEXT(1);
 
 			// Make the window visible
 			if (!mFullscreen)

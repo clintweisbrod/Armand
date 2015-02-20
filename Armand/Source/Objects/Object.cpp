@@ -36,22 +36,22 @@ void Object::setUniveralPositionAU(const Vec3Big& inPositionAU)
 	mUniversalPositionAU = inPositionAU;
 }
 
-void Object::setUniveralPositionLY(const Vec3d& inPositionLY)
+void Object::setUniveralPositionLY(const Vec3f& inPositionLY)
 {
-	mUniversalPositionAU = Vec3Big(inPositionLY * kAuPerLightYear);
+	mUniversalPositionAU = Vec3Big(inPositionLY * (float_t)kAuPerLightYear);
 }
 
-void Object::setUniveralPositionAU(const Vec3d& inPositionAU)
+void Object::setUniveralPositionAU(const Vec3f& inPositionAU)
 {
 	mUniversalPositionAU = Vec3Big(inPositionAU);
 }
 
-void Object::setUniveralPositionKm(const Vec3d& inPositionKm)
+void Object::setUniveralPositionKm(const Vec3f& inPositionKm)
 {
-	mUniversalPositionAU = Vec3Big(inPositionKm * kAuPerKilometer);
+	mUniversalPositionAU = Vec3Big(inPositionKm * (float_t)kAuPerKilometer);
 }
 
-void Object::setUniveralPositionMetres(const Vec3d& inPositionMetres)
+void Object::setUniveralPositionMetres(const Vec3f& inPositionMetres)
 {
-	mUniversalPositionAU = Vec3Big(inPositionMetres * kAuPerMetre);
+	mUniversalPositionAU = Vec3Big(inPositionMetres * (float_t)kAuPerMetre);
 }

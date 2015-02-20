@@ -24,6 +24,8 @@
 
 #pragma once
 
+class RenderObjectList;
+
 class RenderObject : public Object
 {
 public:
@@ -31,8 +33,9 @@ public:
 	virtual ~RenderObject();
 
 	void setBoundingRadiusAU(float_t inBoundingRadiusAU) { mBoundingRadiusAU = inBoundingRadiusAU; };
-	virtual void preRender(Camera& inCamera);
+	virtual void preRender(Camera& inCamera, RenderObjectList& ioRenderList);
 	bool render(Camera& inCamera, float inAlpha);
+	virtual void postRender();
 
 	float_t	getLastViewerDistanceAU() const { return mLastViewerDistanceAU; };
 	float_t getLastAngularDiameter() const { return mLastAngularDiameter; };

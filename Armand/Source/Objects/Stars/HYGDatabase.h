@@ -23,6 +23,7 @@
 #include "Main/Exception.h"
 #include "Math/vecmath.h"
 #include "OpenGL/Textures/Texture.h"
+#include "Objects/Rendering/RenderObjectList.h"
 
 GENERATE_EXCEPTION(HYGDatabaseException)
 
@@ -46,7 +47,8 @@ public:
 	virtual ~HYGDatabase();
 
 	virtual void setGLStateForFullRender(float inAlpha) const;
-	virtual void preRender(Camera& inCamera);
+	virtual void preRender(Camera& inCamera, RenderObjectList& ioRenderList);
+	virtual void postRender();
 
 	HYGDataRecord* getNearestStar() const;
 
@@ -62,7 +64,7 @@ protected:
 	int getChunkIndexFromArrayIndices(int i, int j, int k) const;
 	int getChunkIndexFromPosition(Vec3f& inPosition) const;
 	void getAdjacentChunkIndices(int inIndex, vector<int>& ioAdjacentIndices) const;
-	void computeNearestToPosition(Vec3f& inPosition, size_t inNumStarsToReturn = 1);
+	void computeNearest(Camera& inCamera, size_t inNumStarsToReturn = 1);
 
 private:
 	HYGDataVec_t		mData;
@@ -75,4 +77,5 @@ private:
 	float_t				mChunkSize;
 
 	HYGDataVecP_t		mNearestStarsToViewer;
+	RenderObjectVecP_t	mNearest3DStars;
 };

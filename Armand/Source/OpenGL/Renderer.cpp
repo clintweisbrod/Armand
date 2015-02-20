@@ -54,7 +54,7 @@ void Renderer::init(HDC inDC, HGLRC inRC)
 
 	// Setup camera
 	mCamera.setAperture(degToRad(180.0f));			// 180 degree fisheye
-	mCamera.setUniveralPositionKm(Vec3d(0, 0, 5));	// Located at origin in our universal coordinate system
+	mCamera.setUniveralPositionKm(Vec3f(0, 0, 5));	// Located at origin in our universal coordinate system
 	mCamera.lookAt(Vec3f(0, 0, -1), Vec3f(0, 1, 0));	// Looking down -z axis with +y axis up.
 
 	// Make sure all our factory instances are created
@@ -180,16 +180,16 @@ void Renderer::render()
 	///*
 	// Testing 3DS model loading and fisheye projection shader
 	static ModelObject model("Apollo_3rdStage.3ds");
-	model.setUniveralPositionKm(Vec3d(0.0, 0.0, 10));
-	mRenderList.addObject(mCamera, model);
+	model.setUniveralPositionKm(Vec3f(0.0f, 0.0f, 10));
+	mRenderList.addObject(mCamera, &model);
 
 	//	T3DSModelFactory::inst()->RemoveAll();
 	//*/
 	static RandomPointsCube dataCube(1000000);
-	mRenderList.addObject(mCamera, dataCube);
+	mRenderList.addObject(mCamera, &dataCube);
 
 	static HYGDatabase hygStars;
-	mRenderList.addObject(mCamera, hygStars);
+	mRenderList.addObject(mCamera, &hygStars);
 
 	// Render the objects in the render list
 	mRenderList.renderObjects(mCamera);
@@ -257,4 +257,6 @@ void Renderer::render()
 void Renderer::postRender()
 {
 	SwapBuffers(mDC);	// Swap buffers (double buffering)
+
+	mRenderList.postRender();
 }

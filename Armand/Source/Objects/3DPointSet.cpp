@@ -22,12 +22,22 @@
 #include "3DPointSet.h"
 #include "OpenGL/ShaderFactory.h"
 
-T3DPointSet::T3DPointSet(int inNumPoints)
+T3DPointSet::T3DPointSet() :	mPointsVAO(NULL),
+								mPointsVBO(0),
+								mVBOUsage(GL_STATIC_DRAW),
+								mPointStride(0),
+								mNumPoints(0),
+								mPointBuffer(NULL)
 {
-	mPointBuffer = NULL;
-	mPointsVAO = NULL;
-	mPointsVBO = 0;
-	mNumPoints = inNumPoints;
+}
+
+T3DPointSet::T3DPointSet(int inNumPoints, GLenum inVBOUsage) :	mPointsVAO(NULL),
+																mPointsVBO(0),
+																mVBOUsage(inVBOUsage),
+																mPointStride(0),
+																mNumPoints(inNumPoints),
+																mPointBuffer(NULL)
+{
 }
 
 T3DPointSet::~T3DPointSet()
@@ -103,7 +113,7 @@ void T3DPointSet::finalize()
 
 void* T3DPointSet::getVertex(GLsizei index)
 {
-	void* result = mPointBuffer + (index * mPointStride);
+	void* result = mPointBuffer + index * mPointStride;
 	return result;
 }
 
@@ -133,7 +143,7 @@ void T3DPointSet::setupVBO()
 	mPointsVAO->setupGPU(mPointsVBO);
 
 	// Copy the buffer up to the VBO
-	glBufferData(GL_ARRAY_BUFFER, mNumPoints * mPointStride, mPointBuffer, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, mNumPoints * mPointStride, mPointBuffer, mVBOUsage);
 
 	glIsError();
 

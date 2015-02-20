@@ -27,11 +27,11 @@ bool EyeDistanceComparator::operator()(const RenderObject* inItem1, const Render
 	return (inItem1->getLastViewerDistanceAU() > inItem2->getLastViewerDistanceAU());
 }
 
-void RenderObjectList::addObject(Camera& inCamera, RenderObject& inObject)
+void RenderObjectList::addObject(Camera& inCamera, RenderObject* inObject)
 {
 	// Don't add object to list if it is not in view
-	inObject.preRender(inCamera);
-	if (!inObject.isInView(inCamera))
+	inObject->preRender(inCamera, *this);
+	if (!inObject->isInView(inCamera))
 		return;
 
 	// Don't add object to list if it is to small
@@ -39,7 +39,7 @@ void RenderObjectList::addObject(Camera& inCamera, RenderObject& inObject)
 //	if (inObject.getLastPixelDiameter() < kMinPixelDiameter)
 //		return;
 
-	push_back(&inObject);
+	push_back(inObject);
 }
 
 void RenderObjectList::renderObjects(Camera& inCamera)
@@ -55,4 +55,11 @@ void RenderObjectList::renderObjects(Camera& inCamera)
 	// Render each object
 	for (iterator it = begin(); it != end(); it++)
 		(*it)->render(inCamera, 1.0f);
+}
+
+void RenderObjectList::postRender()
+{
+	// Allow each object to perform post-frame cleanup.
+	for (iterator it = begin(); it != end(); it++)
+		(*it)->postRender();
 }

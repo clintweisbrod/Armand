@@ -32,11 +32,14 @@ public:
 	bool operator()(const RenderObject* inItem1, const RenderObject* inItem2) const;
 };
 
-class RenderObjectList : public vector<RenderObject*>
+typedef vector<RenderObject*> RenderObjectVecP_t;
+
+class RenderObjectList : public RenderObjectVecP_t
 {
 public:
 	void renderObjects(Camera& inCamera);
-	void addObject(Camera& inCamera, RenderObject& inObject);
+	void addObject(Camera& inCamera, RenderObject* inObject);
+	void postRender();
 
 private:
 	EyeDistanceComparator	mEyeDistanceComparator;

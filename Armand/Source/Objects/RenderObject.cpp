@@ -141,7 +141,7 @@ bool RenderObject::isInView(Camera& inCamera)
 //
 // This is called per-frame by RenderObjectList::renderObjects()
 //
-void RenderObject::preRender(Camera& inCamera)
+void RenderObject::preRender(Camera& inCamera, RenderObjectList& ioRenderList)
 {
 	// Get viewer-model vector, viewer distance and cache them
 	mLastViewerObjectVector = inCamera.getCameraRelativePosition(this);
@@ -169,6 +169,10 @@ bool RenderObject::render(Camera& inCamera, float inAlpha)
 	}
 
 	return result;
+}
+
+void RenderObject::postRender()
+{
 }
 
 bool RenderObject::shouldRenderAsPoint(Camera& inCamera) const

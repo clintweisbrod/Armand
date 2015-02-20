@@ -36,6 +36,7 @@ public:
 	void update();
 
 	Vec3f getCameraRelativePosition(const Object* inObject) const;
+	Vec3f getCameraRelativePosition(const Vec3f& inObjectPositionAU) const;
 	void getViewerOrthoNormalBasis(Vec3f& ioViewDirection, Vec3f& ioUpDirection, Vec3f& ioLeftDirection) const;
 //	float_t getAperture() const { return mAperture; };
 	float_t getHalfAperture() const { return mHalfAperture; };

@@ -150,3 +150,8 @@ Vec3f Camera::getCameraRelativePosition(const Object* inObject) const
 {
 	return (Vec3f)(inObject->getUniveralPositionAU() - mUniversalPositionAU);
 }
+
+Vec3f Camera::getCameraRelativePosition(const Vec3f& inObjectPositionAU) const
+{
+	return (Vec3f)((Vec3Big)inObjectPositionAU - mUniversalPositionAU);
+}

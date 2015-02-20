@@ -31,8 +31,8 @@ GENERATE_EXCEPTION(Static3DPointSetException)
 class T3DPointSet : public RenderObject
 {
 public:
-	T3DPointSet() {};
-	T3DPointSet(int inNumPoints);
+	T3DPointSet();
+	T3DPointSet(int inNumPoints, GLenum inVBOUsage = GL_STATIC_DRAW);
 	virtual ~T3DPointSet();
 
 	virtual bool shouldRenderAsPoint(Camera& inCamera) const;
@@ -52,6 +52,7 @@ protected:
 
 	VAOBuilder*			mPointsVAO;
 	GLuint				mPointsVBO;
+	GLenum				mVBOUsage;
 
 	GLsizei				mPointStride;
 	GLsizei				mNumPoints;

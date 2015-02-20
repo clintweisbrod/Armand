@@ -1,10 +1,9 @@
 // ----------------------------------------------------------------------------
 // Copyright (C) 2015 Clint Weisbrod. All rights reserved.
 //
-// Object.h
+// 3DStar.cpp
 //
-// Base class for all objects in Armand that have some position and orientation
-// in universal coordinates.
+// Responsible for rendering 3D stars.
 //
 // THIS SOFTWARE IS PROVIDED BY CLINT WEISBROD "AS IS" AND ANY EXPRESS OR
 // IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
@@ -18,30 +17,18 @@
 // THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "stdafx.h"
+#include "3DStar.h"
 
-#include "Math/quaternion.h"
-#include "Math/vecmath.h"
-
-
-class Object
+T3DStar::T3DStar()
 {
-public:
-	Object();
-	virtual ~Object();
+}
 
-	Vec3Big		getUniveralPositionAU() const { return mUniversalPositionAU; };
-	void		setUniveralPositionAU(const Vec3Big& inPosition);
+T3DStar::~T3DStar()
+{
+}
 
-	void		setUniveralPositionLY(const Vec3f& inPosition);
-	void		setUniveralPositionAU(const Vec3f& inPosition);
-	void		setUniveralPositionKm(const Vec3f& inPosition);
-	void		setUniveralPositionMetres(const Vec3f& inPosition);
-
-	Quatf		getOrientation() { return mOrientation; };
-	Mat4f		getOrientationMatrix() { return mOrientation.toMatrix4(); };
-
-protected:
-	Vec3Big		mUniversalPositionAU;
-	Quatf		mOrientation;
-};
+bool T3DStar::renderFull(Camera& inCamera, float inAlpha)
+{
+	return false;
+}

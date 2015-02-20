@@ -27,7 +27,7 @@
 RandomPointsCube::RandomPointsCube(int inNumSamples) : T3DPointSet(inNumSamples)
 {
 	// Position the center of the cube in universal coordinates
-	setUniveralPositionLY(Vec3d(0.0, 0.0, -145e12));
+	setUniveralPositionLY(Vec3f(0.0f, 0.0f, -145e12f));
 
 	// Load data
 	loadData();

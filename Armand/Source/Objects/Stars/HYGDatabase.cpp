@@ -23,6 +23,7 @@
 #include <sstream>
 #include <limits>
 #include "HYGDatabase.h"
+#include "3DStar.h"
 #include "Utilities/File.h"
 #include "Utilities/StringUtils.h"
 #include "Math/mathlib.h"
@@ -32,8 +33,10 @@ const float_t kLimitingStarMagnitude = 7.0f;	// Will eventually be a preference
 
 HYGDatabase::HYGDatabase() : mChunkedData(NULL)
 {
+	mVBOUsage = GL_DYNAMIC_DRAW;
+
 	// Position the center of the data set at the origin.
-	setUniveralPositionAU(Vec3d(0, 0, 0));
+	setUniveralPositionAU(Vec3f(0, 0, 0));
 
 	// Modest amount of saturation for stars
 	mPointSaturation = 0.75f;
@@ -301,12 +304,12 @@ int HYGDatabase::getChunkIndexFromPosition(Vec3f& inPosition) const
 }
 
 // This method returns inNumStarsToReturn star records in ioNearestStars in ascending distance from inPosition.
-void HYGDatabase::computeNearestToPosition(Vec3f& inPosition, size_t inNumStarsToReturn)
+void HYGDatabase::computeNearest(Camera& inCamera, size_t inNumStarsToReturn)
 {
 	mNearestStarsToViewer.clear();
 
 	// Get chunk index containing the given position
-	int index = getChunkIndexFromPosition(inPosition);
+	int index = getChunkIndexFromPosition((Vec3f)inCamera.getUniveralPositionAU());
 	if (index == -1)
 		return;
 
@@ -336,10 +339,21 @@ void HYGDatabase::computeNearestToPosition(Vec3f& inPosition, size_t inNumStarsT
 	{
 		float_t nearestDistanceSq = (std::numeric_limits<float_t>::max)();
 
+		Vec3f cameraPos = (Vec3f)inCamera.getUniveralPositionAU();
 		for (HYGDataVecP_t::iterator it = nearestRecs.begin(); it != nearestRecs.end(); it++)
 		{
 			HYGDataRecord* rec = *it;
-			Vec3f diff = rec->mPosition - inPosition;
+
+			// The inCamera.getCameraRelativePosition() calculation of diff is EXPENSIVE
+			// but maybe unnecessary. As we get further from the origin of the dataset,
+			// in order to compute the distance between the camera and the candidate star,
+			// we must compute the difference between two nearly identical vectors. Unless,
+			// we store the vectors as Vec3Big instances, we will run into precision
+			// problems. However, we're only concerned with finding the closest star(s)
+			// and not with exactly how far away they are, so it may be fine to leave
+			// this calculation in Vec3f space.
+//			Vec3f diff = inCamera.getCameraRelativePosition(rec->mPosition);
+			Vec3f diff = rec->mPosition - cameraPos;
 			rec->mEyeDistanceSq = diff.lengthSquared();
 
 			if (mNearestStarsToViewer.size() == 0)
@@ -415,12 +429,70 @@ void HYGDatabase::setupVAO()
 	}
 }
 
-void HYGDatabase::preRender(Camera& inCamera)
+void HYGDatabase::preRender(Camera& inCamera, RenderObjectList& ioRenderList)
 {
-	RenderObject::preRender(inCamera);
+	RenderObject::preRender(inCamera, ioRenderList);
 
-	// Update list of stars nearest to camera. We have to render the nearby ones as their own RenderObject instances.
-	computeNearestToPosition((Vec3f)inCamera.getUniveralPositionAU(), 10);
+	// Deallocate any 3D star's we allocated from last frame 
+	for (RenderObjectVecP_t::iterator it = mNearest3DStars.begin(); it != mNearest3DStars.end(); it++)
+		delete *it;
+	mNearest3DStars.clear();
+
+	// Update list of stars nearest to camera.
+	// We have to render the nearby ones as their own RenderObject instances.
+	computeNearest(inCamera, 3);
+
+	// Turn-off the nearby stars by setting their alpha value to zero
+	if (!mNearestStarsToViewer.empty())
+	{
+		// Use the mVBOIndex member of each item in mNearestStarsToViewer to
+		// modify the VBO data so that the star has a alpha value of zero.
+		glBindBuffer(GL_ARRAY_BUFFER, mPointsVBO);
+		void* gpuBuf = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+		if (gpuBuf)
+		{
+			for (HYGDataVecP_t::iterator it = mNearestStarsToViewer.begin(); it != mNearestStarsToViewer.end(); it++)
+			{
+				ColorPointVertex* vertex = (ColorPointVertex*)gpuBuf + (*it)->mVBOIndex;
+				vertex->color[3] = 0;
+			}
+			glUnmapBuffer(GL_ARRAY_BUFFER);
+		}
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+	}
+
+	// Add 3D stars to ioRenderList
+	for (HYGDataVecP_t::iterator it = mNearestStarsToViewer.begin(); it != mNearestStarsToViewer.end(); it++)
+	{
+		RenderObject* new3DStar = new T3DStar;
+		if (new3DStar)
+		{
+			new3DStar->setUniveralPositionAU((*it)->mPosition);
+
+			ioRenderList.addObject(inCamera, new3DStar);
+			mNearest3DStars.push_back(new3DStar);
+		}
+	}
+}
+
+void HYGDatabase::postRender()
+{
+	// Restore alpha of each item in mNearestStarsToViewer
+	if (!mNearestStarsToViewer.empty())
+	{
+		glBindBuffer(GL_ARRAY_BUFFER, mPointsVBO);
+		void* gpuBuf = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+		if (gpuBuf)
+		{
+			for (HYGDataVecP_t::iterator it = mNearestStarsToViewer.begin(); it != mNearestStarsToViewer.end(); it++)
+			{
+				ColorPointVertex* vertex = (ColorPointVertex*)gpuBuf + (*it)->mVBOIndex;
+				vertex->color[3] = 255;
+			}
+			glUnmapBuffer(GL_ARRAY_BUFFER);
+		}
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+	}
 }
 
 void HYGDatabase::setGLStateForFullRender(float inAlpha) const
