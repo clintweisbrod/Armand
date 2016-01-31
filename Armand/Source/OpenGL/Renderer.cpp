@@ -141,13 +141,13 @@ void Renderer::render()
 	// Draw boundary of projection area
 	glColor3f(1.0f, 1.0f, 1.0f);
 	glDisable(GL_BLEND);
-	glMatrixMode(GL_MODELVIEW);							// Select the modelview matrix
+	glMatrixMode(GL_MODELVIEW);					// Select the modelview matrix
 	glLoadIdentity();
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glVertexPointer(2,							// number of coordinates per vertex (x,y)
-		GL_FLOAT,					// they are floats
-		sizeof(v2f),				// stride
-		mFisheyeBoundaryVertices);	// the array pointer
+					GL_FLOAT,					// they are floats
+					sizeof(v2f),				// stride
+					mFisheyeBoundaryVertices);	// the array pointer
 	glDrawArrays(GL_LINE_LOOP, 0, 360);
 	glDisableClientState(GL_VERTEX_ARRAY);
 
@@ -244,9 +244,9 @@ void Renderer::render()
 //	LOG(INFO) << "getNearestToPosition(): " << mTimer.elapsedMilliseconds() << " ms.";
 	if (nearestStar != NULL)
 	{
-		distanceStr = getNiceDistanceString(sqrtf(nearestStar->mEyeDistanceSq), 1);
-//		swprintf(infoBuffer, 256, L"Nearest Star: %s", wstringFromString(nearestStars[0]->mIdentifier).c_str());
-		swprintf(infoBuffer, 256, L"Nearest Star: %s", distanceStr.c_str());
+//		distanceStr = getNiceDistanceString(sqrtf(nearestStar->mEyeDistanceSq), 1);
+//		swprintf(infoBuffer, 256, L"Nearest Star: %s", distanceStr.c_str());
+		swprintf(infoBuffer, 256, L"Nearest Star: %s", wstringFromString(nearestStar->mIdentifier).c_str());
 		text = infoBuffer;
 		fontRenderer->renderSpherical(text, 20, Vec2f(degToRad(-20.0f), degToRad(5.0f)), Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
 	}
