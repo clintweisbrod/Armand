@@ -25,7 +25,7 @@ out vec3 lightIntensity;
 uniform float 	uAlpha;
 uniform mat3	uNormalMatrix;	// Transforms vertex notmals to eye coordinates.
 struct LightInfo
- {
+{
 	vec3 position;	// Light position in eye coordinates.
 	vec3 ambient;	// Ambient light intensity
 	vec3 diffuse;	// Diffuse light intensity
