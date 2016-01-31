@@ -356,10 +356,17 @@ void HYGDatabase::computeNearest(Camera& inCamera, size_t inNumStarsToReturn)
 			Vec3f diff = rec->mPosition - cameraPos;
 			rec->mEyeDistanceSq = diff.lengthSquared();
 
+			// Insert the HYGDataRecord instance in the correct spot within mNearestStarsToViewer so that
+			// the inserted records are in order of ascending distance.
+
 			if (mNearestStarsToViewer.size() == 0)
+			{
+				// If we haven't inserted any records yet, just push this record to the back.
 				mNearestStarsToViewer.push_back(rec);
+			}
 			else if (mNearestStarsToViewer.size() < inNumStarsToReturn)
 			{
+				// If we have less than inNumStarsToReturn, insert record in correct position.
 				for (HYGDataVecP_t::iterator it2 = mNearestStarsToViewer.begin(); it2 != mNearestStarsToViewer.end(); it2++)
 				{
 					if (rec->mEyeDistanceSq < (*it2)->mEyeDistanceSq)
@@ -371,6 +378,9 @@ void HYGDatabase::computeNearest(Camera& inCamera, size_t inNumStarsToReturn)
 			}
 			else if (rec->mEyeDistanceSq < mNearestStarsToViewer[inNumStarsToReturn - 1]->mEyeDistanceSq)
 			{
+				// When we already have inNumStarsToReturn in the list and this record has a distance
+				// smaller than the last record in the list, insert the record in the correct place
+				// and remove the last record in the list.
 				for (HYGDataVecP_t::iterator it2 = mNearestStarsToViewer.begin(); it2 != mNearestStarsToViewer.end(); it2++)
 				{
 					if (rec->mEyeDistanceSq < (*it2)->mEyeDistanceSq)
@@ -438,7 +448,8 @@ void HYGDatabase::preRender(Camera& inCamera, RenderObjectList& ioRenderList)
 		delete *it;
 	mNearest3DStars.clear();
 
-	// Update list of stars nearest to camera.
+	// Update list of stars nearest to camera. The second parameter specifies
+	// the number of stars we will rank as "near".
 	// We have to render the nearby ones as their own RenderObject instances.
 	computeNearest(inCamera, 3);
 
@@ -468,6 +479,7 @@ void HYGDatabase::preRender(Camera& inCamera, RenderObjectList& ioRenderList)
 		if (new3DStar)
 		{
 			new3DStar->setUniveralPositionAU((*it)->mPosition);
+			new3DStar->setBoundingRadiusAU((float_t)kSunRadius);	// Need real radii
 
 			ioRenderList.addObject(inCamera, new3DStar);
 			mNearest3DStars.push_back(new3DStar);
