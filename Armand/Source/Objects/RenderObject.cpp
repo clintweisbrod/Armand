@@ -178,7 +178,7 @@ void RenderObject::postRender()
 bool RenderObject::shouldRenderAsPoint(Camera& inCamera) const
 {
 	// Decide if object is big enough (in pixels) to warrant rendering.
-	float_t kMaxPixelDiameter = 5.0f;
+	const float_t kMaxPixelDiameter = 5.0f;
 	if (mLastPixelDiameter < kMaxPixelDiameter)
 		return true;
 	else
