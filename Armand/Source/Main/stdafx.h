@@ -32,6 +32,7 @@
 #define _ELPP_THREAD_SAFE
 #define _ELPP_DEFAULT_LOG_FILE "logs/Armand.log"
 #define _ALWAYS_CLEAN_LOGS
+#define ELPP_FRESH_LOG_FILE
 #include "Utilities/easylogging++.h"
 
 using namespace std;		// Use the STL namespace; std

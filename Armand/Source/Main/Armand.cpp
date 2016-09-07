@@ -32,7 +32,7 @@ OpenGLWindow* gOpenGLWindow;
 Renderer* gRenderer;
 bool gActive = true;		// Window active flag set to true by default
 
-_INITIALIZE_EASYLOGGINGPP
+INITIALIZE_EASYLOGGINGPP
 
 // Forward declarations of functions included in this code module:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
