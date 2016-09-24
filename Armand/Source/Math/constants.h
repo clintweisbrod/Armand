@@ -32,6 +32,7 @@ const double	kRadPerDegree = PI / 180.0;
 const double	kDegPerRadian = 180.0 / PI;
 const double	kRoot2 = 1.414213562373095;
 const double	kRoot3 = 1.732050807568877;
+const double	kNaturalLog10 = 2.3025850929;
 const double	kRadiansPerArcMinute	= kRadPerDegree/60.0;
 const double	kArcMinutesPerRadian	= 60.0*kDegPerRadian;
 const double	kRadiansPerArcSecond	= 4.8481368110953599359e-6;		// number of radians in arc second
