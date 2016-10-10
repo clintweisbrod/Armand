@@ -48,6 +48,9 @@ int APIENTRY _tWinMain(	_In_ HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
+	*DebugStream::inst() << "Hello " << "World\n";
+	*DebugStream::inst() << "It's " << "working!\n";
+
 	// Determine the application folder
 	File::initAppFolder();
 
