@@ -47,10 +47,21 @@ int APIENTRY _tWinMain(	_In_ HINSTANCE hInstance,
 {
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
+/*
+	*DebugStream::inst() << 'a' << 'b' << 'c' << endl;
 
-	*DebugStream::inst() << "Hello " << "World\n";
-	*DebugStream::inst() << "It's " << "working!\n";
+	string strVal1("A String ");
+	string strVal2("Another String");
+	*DebugStream::inst() << strVal1 << strVal2 << endl;
 
+	*DebugStream::inst() << "Hello " << "World" << endl;
+	*DebugStream::inst() << "It's " << "working!" << endl;
+	int intVar = 5;
+	*DebugStream::inst() << intVar << intVar << endl;
+
+	double dblVal = 2.133;
+	*DebugStream::inst() << dblVal << dblVal << endl;
+*/
 	// Determine the application folder
 	File::initAppFolder();
 

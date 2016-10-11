@@ -32,6 +32,14 @@ class DebugStream : public wostringstream, public Singleton<DebugStream>
 	friend class Singleton<DebugStream>;
 
 	public:
-		friend wostream& operator<<(wostream& lhs, const char* rhs);
-		friend wostream& operator<<(wostream& lhs, const wchar_t* rhs);
+		DebugStream& operator<<(const char rhs);
+		DebugStream& operator<<(const wchar_t rhs);
+		DebugStream& operator<<(const char* rhs);
+		DebugStream& operator<<(const wchar_t* rhs);
+		DebugStream& operator<<(string rhs);
+		DebugStream& operator<<(wstring rhs);
+		DebugStream& operator<<(std::ostream& (*manip)(std::ostream&));	// For handling output manipulators like endl
+		DebugStream& operator<<(const int rhs);
+		DebugStream& operator<<(const float_t rhs);
+		DebugStream& operator<<(const double_t rhs);
 };

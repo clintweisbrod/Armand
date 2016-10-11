@@ -20,14 +20,76 @@
 
 #include "stdafx.h"
 
-wostream& operator<<(wostream& lhs, const char* rhs)
+DebugStream& DebugStream::operator<<(const char rhs)
 {
-	OutputDebugStringA(rhs);
-	return lhs;
+	char buf[2];
+	buf[0] = rhs;
+	buf[1] = 0;
+	OutputDebugStringA(buf);
+	return *this;
 }
 
-wostream& operator<<(wostream& lhs, const wchar_t* rhs)
+DebugStream& DebugStream::operator<<(const wchar_t rhs)
+{
+	wchar_t buf[2];
+	buf[0] = rhs;
+	buf[1] = 0;
+	OutputDebugStringW(buf);
+	return *this;
+}
+
+DebugStream& DebugStream::operator<<(const char* rhs)
+{
+	OutputDebugStringA(rhs);
+	return *this;
+}
+
+DebugStream& DebugStream::operator<<(const wchar_t* rhs)
 {
 	OutputDebugStringW(rhs);
-	return lhs;
+	return *this;
 }
+
+DebugStream& DebugStream::operator<<(string rhs)
+{
+	OutputDebugStringA(rhs.c_str());
+	return *this;
+}
+
+DebugStream& DebugStream::operator<<(wstring rhs)
+{
+	OutputDebugStringW(rhs.c_str());
+	return *this;
+}
+
+DebugStream& DebugStream::operator<<(std::ostream& (*manip)(std::ostream&))
+{
+	ostringstream os;
+	manip(os);
+	OutputDebugStringA(os.str().c_str());
+	return *this;
+}
+
+DebugStream& DebugStream::operator<<(const int rhs)
+{
+	char buf[64];
+	OutputDebugStringA(_itoa(rhs, buf, 10));
+	return *this;
+}
+
+DebugStream& DebugStream::operator<<(const float_t rhs)
+{
+	char buf[64];
+	sprintf(buf, "%f", rhs);
+	OutputDebugStringA(buf);
+	return *this;
+}
+
+DebugStream& DebugStream::operator<<(const double_t rhs)
+{
+	char buf[64];
+	sprintf(buf, "%f", rhs);
+	OutputDebugStringA(buf);
+	return *this;
+}
+
