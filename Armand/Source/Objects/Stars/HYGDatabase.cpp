@@ -177,12 +177,7 @@ void HYGDatabase::loadData()
 		starVertex->position[1] = it->mPosition.y;
 		starVertex->position[2] = it->mPosition.z;
 
-		float_t r, g, b;
-		bv2rgb(it->mColorIndex, r, g, b);
-		starVertex->color[0] = (GLubyte)(255 * r);
-		starVertex->color[1] = (GLubyte)(255 * g);
-		starVertex->color[2] = (GLubyte)(255 * b);
-		starVertex->color[3] = 255;
+		bv2rgba(it->mColorIndex, starVertex->color);
 
 		starVertex->absMag = it->mAbsMag;
 		n++;
@@ -192,9 +187,10 @@ void HYGDatabase::loadData()
 //
 // See: http://tiku.io/questions/764303/star-b-v-color-index-to-apparent-rgb-color
 //
-void HYGDatabase::bv2rgb(float_t bv, float_t &r, float_t &g, float_t &b)
+void HYGDatabase::bv2rgba(float_t bv, GLubyte* inColor)
 {
 	// RGB <0,1> <- BV <-0.4,+2.0>
+	float_t r, g, b;
 	r = g = b = 0.0f;
 
 	Mathf::constrain(bv, -0.4f, 2.0f);
@@ -251,6 +247,11 @@ void HYGDatabase::bv2rgb(float_t bv, float_t &r, float_t &g, float_t &b)
 		t = (bv - 1.5f) / (1.94f - 1.5f);
 		b = 0.63f - (0.6f * t * t);
 	}
+
+	inColor[0] = (GLubyte)(255 * r);
+	inColor[1] = (GLubyte)(255 * g);
+	inColor[2] = (GLubyte)(255 * b);
+	inColor[3] = 255;
 }
 
 // This method performs basic chunking of the star database. Here's the problem:
@@ -268,6 +269,7 @@ void HYGDatabase::bv2rgb(float_t bv, float_t &r, float_t &g, float_t &b)
 void HYGDatabase::chunkData()
 {
 	mChunkDivisions = 20;
+//	mChunkDivisions = 5;
 	mChunkDivisionsSq = mChunkDivisions * mChunkDivisions;
 
 	// Allocate the chunked data. Each chunk is a vector<HYGDataRecord*>, referring to
@@ -303,7 +305,7 @@ int HYGDatabase::getChunkIndexFromPosition(Vec3f& inPosition) const
 	return getChunkIndexFromArrayIndices(i, j, k);
 }
 
-// This method returns inNumStarsToReturn star records in ioNearestStars in ascending distance from inPosition.
+// This method returns inNumStarsToReturn star records in mNearestStarsToViewer in ascending distance from inPosition.
 void HYGDatabase::computeNearest(Camera& inCamera, size_t inNumStarsToReturn)
 {
 	mNearestStarsToViewer.clear();
@@ -334,7 +336,7 @@ void HYGDatabase::computeNearest(Camera& inCamera, size_t inNumStarsToReturn)
 
 	// nearestRecs now contains all data records in the chunk where inPosition is located, as well as
 	// the data records from adjacent chunks.
-	// Populate ioNearestStars with inNumStarsToReturn in ascending distance from inPosition.
+	// Populate mNearestStarsToViewer with inNumStarsToReturn in ascending distance from inPosition.
 	if (!nearestRecs.empty())
 	{
 		float_t nearestDistanceSq = (std::numeric_limits<float_t>::max)();
@@ -452,7 +454,7 @@ void HYGDatabase::preRender(Camera& inCamera, RenderObjectList& ioRenderList)
 	// the number of stars we will rank as "near".
 	// We have to render the nearby ones as their own RenderObject instances.
 	computeNearest(inCamera, 3);
-
+/*
 	// Turn-off the nearby stars by setting their alpha value to zero
 	if (!mNearestStarsToViewer.empty())
 	{
@@ -464,6 +466,7 @@ void HYGDatabase::preRender(Camera& inCamera, RenderObjectList& ioRenderList)
 		{
 			for (HYGDataVecP_t::iterator it = mNearestStarsToViewer.begin(); it != mNearestStarsToViewer.end(); it++)
 			{
+				// Set alpha value of star to zero
 				ColorPointVertex* vertex = (ColorPointVertex*)gpuBuf + (*it)->mVBOIndex;
 				vertex->color[3] = 0;
 			}
@@ -471,15 +474,27 @@ void HYGDatabase::preRender(Camera& inCamera, RenderObjectList& ioRenderList)
 		}
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
-
-	// Add 3D stars to ioRenderList
+*/
+	// Add 3D star to ioRenderList
 	for (HYGDataVecP_t::iterator it = mNearestStarsToViewer.begin(); it != mNearestStarsToViewer.end(); it++)
 	{
-		RenderObject* new3DStar = new T3DStar;
+		T3DStar* new3DStar = new T3DStar;
 		if (new3DStar)
 		{
 			new3DStar->setUniveralPositionAU((*it)->mPosition);
 			new3DStar->setBoundingRadiusAU((float_t)kSunRadius);	// Need real radii
+			new3DStar->setAbsoluteMagnitude((*it)->mAbsMag);
+
+			// Get the point color, including saturation
+			GLubyte color[4];
+			bv2rgba((*it)->mColorIndex, color);
+			float_t c = color[0];
+			color[0] = (GLubyte)mix(c, 255.0f, 1 - mPointSaturation);
+			c = color[1];
+			color[1] = (GLubyte)mix(c, 255.0f, 1 - mPointSaturation);
+			c = color[2];
+			color[2] = (GLubyte)mix(c, 255.0f, 1 - mPointSaturation);
+			new3DStar->setPointColor(color);
 
 			ioRenderList.addObject(inCamera, new3DStar);
 			mNearest3DStars.push_back(new3DStar);

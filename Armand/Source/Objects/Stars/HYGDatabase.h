@@ -57,7 +57,7 @@ protected:
 	virtual void setupVAO();
 	virtual void setPointShaderUniforms(Camera& inCamera, float inAlpha);
 
-	void bv2rgb(float_t bv, float_t &r, float_t &g, float_t &b);
+	void bv2rgba(float_t bv, GLubyte* inColor);
 
 	// Chunker
 	void chunkData();

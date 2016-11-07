@@ -33,8 +33,9 @@ public:
 	virtual ~RenderObject();
 
 	void setBoundingRadiusAU(float_t inBoundingRadiusAU) { mBoundingRadiusAU = inBoundingRadiusAU; };
+	void setPointColor(const GLubyte* inColor);
 	virtual void preRender(Camera& inCamera, RenderObjectList& ioRenderList);
-	bool render(Camera& inCamera, float inAlpha);
+	virtual bool render(Camera& inCamera, float inAlpha);
 	virtual void postRender();
 
 	float_t	getLastViewerDistanceAU() const { return mLastViewerDistanceAU; };
@@ -48,6 +49,7 @@ public:
 	virtual bool renderFull(Camera& inCamera, float inAlpha) = 0;
 	virtual void setGLStateForFullRender(float inAlpha) const;
 	virtual void setGLStateForPoint(float inAlpha) const;
+	virtual bool isSelfIlluminating() const { return false; };
 
 protected:
 	Vec3f	mLastViewerObjectVector;
@@ -62,7 +64,6 @@ protected:
 	// Render as point
 	//
 	void	setPointSize(GLfloat inSize);
-	void	setPointColor(const GLubyte* inColor);
 	void	enablePointShader(Camera& inCamera, float inAlpha);
 
 	virtual void	setPointShaderUniforms(Camera& inCamera, float inAlpha);

@@ -28,4 +28,11 @@ public:
 	virtual ~T3DStar();
 
 	virtual bool renderFull(Camera& inCamera, float inAlpha);
+	virtual bool isSelfIlluminating() const { return true; };
+	virtual bool canRenderFull() { return true; };
+
+	void setAbsoluteMagnitude(float_t inAbsoluteMagnitude) { mAbsoluteMagnitude = inAbsoluteMagnitude; };
+
+protected:
+	float_t	mAbsoluteMagnitude;
 };

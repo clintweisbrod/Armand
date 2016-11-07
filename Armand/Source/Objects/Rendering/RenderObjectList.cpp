@@ -34,10 +34,13 @@ void RenderObjectList::addObject(Camera& inCamera, RenderObject* inObject)
 	if (!inObject->isInView(inCamera))
 		return;
 
-	// Don't add object to list if it is to small
-//	float_t kMinPixelDiameter = 0.1f;
-//	if (inObject.getLastPixelDiameter() < kMinPixelDiameter)
-//		return;
+	// Don't add object to list if it is too small, unless it is self-illuminating OR
+	// If the object's pixel diameter is less than zero, it means no calculations have been done to determin
+	// if the object should be draw. In this case, we add it to the list.
+	float_t kMinPixelDiameter = 0.1f;
+	float_t lastPixelDiameter = inObject->getLastPixelDiameter();
+	if ((lastPixelDiameter > 0) && (lastPixelDiameter < kMinPixelDiameter) && !inObject->isSelfIlluminating())
+		return;
 
 	push_back(inObject);
 }

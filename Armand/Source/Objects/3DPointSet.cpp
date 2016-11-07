@@ -105,7 +105,7 @@ void T3DPointSet::finalize()
 	setPointColor(thePointColor);
 
 	// Set the bounding radius of the data set
-	setBoundingRadiusAU(sqrtf(maxRadiusSquared));
+	setBoundingRadiusAU(sqrtT(maxRadiusSquared));
 
 	// Setup VAO/VBO
 	setupVBO();

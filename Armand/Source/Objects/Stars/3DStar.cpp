@@ -30,5 +30,7 @@ T3DStar::~T3DStar()
 
 bool T3DStar::renderFull(Camera& inCamera, float inAlpha)
 {
+	// Render a textured sphere
+
 	return false;
 }

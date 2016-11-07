@@ -29,6 +29,9 @@ public:
 	RandomPointsCube(int inNumSamples);
 	virtual ~RandomPointsCube();
 
+	// This is necessary if we want to see the cube rendered as a point from across the Universe.
+	virtual bool isSelfIlluminating() const { return true; };
+
 protected:
 	virtual void loadData();
 };

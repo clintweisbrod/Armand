@@ -30,6 +30,7 @@ GLuint RenderObject::sPointVBO = 0;
 RenderObject::RenderObject()
 {
 	mBoundingRadiusAU = (float_t)kAuPerMetre;	// Default to 1 metre
+	mLastPixelDiameter = -1;					// Less than zero signifies not yet calculated
 
 	// Initialize single point
 	mPoint.position[0] = 0;
@@ -108,7 +109,7 @@ bool RenderObject::isInView(Camera& inCamera)
 		return false;
 
 	// If the camera is inside the bounding radius, it's visibe.
-	if (mLastViewerDistanceAU <= mBoundingRadiusAU)
+	if ((mLastViewerDistanceAU <= mBoundingRadiusAU) && (mLastPixelDiameter > 0))
 		return true;
 
 	// Get camera direction
@@ -120,7 +121,7 @@ bool RenderObject::isInView(Camera& inCamera)
 	const float_t kSmallAngleApprox = 0.244f;	// roughly 1% error at this value	
 	float_t angularRadius = mBoundingRadiusAU / mLastViewerDistanceAU;
 	if (angularRadius > kSmallAngleApprox)
-		angularRadius = asinf(angularRadius);
+		angularRadius = atanT(angularRadius);
 
 	// Compute angle between viewDirection and viewer-object direction
 	float_t angleBetween = acosf(viewDirection * mLastViewerObjectVectorNormalized);
@@ -179,7 +180,7 @@ bool RenderObject::shouldRenderAsPoint(Camera& inCamera) const
 {
 	// Decide if object is big enough (in pixels) to warrant rendering.
 	const float_t kMaxPixelDiameter = 5.0f;
-	if (mLastPixelDiameter < kMaxPixelDiameter)
+	if (mLastPixelDiameter <= kMaxPixelDiameter)
 		return true;
 	else
 		return false;
@@ -280,7 +281,8 @@ bool RenderObject::renderAsPoint(Camera& inCamera, float inAlpha)
 	if (sPointVAO == 0)
 		return false;
 
-	setPointSize(max(mLastPixelDiameter, 1));
+//	setPointSize(max(mLastPixelDiameter, 0.001f));
+	setPointSize(max(mLastPixelDiameter, 1.0f));
 
 	sPointVAO->bind();
 
