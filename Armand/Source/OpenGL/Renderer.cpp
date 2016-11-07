@@ -180,7 +180,7 @@ void Renderer::render()
 	///*
 	// Testing 3DS model loading and fisheye projection shader
 	static ModelObject model("Apollo_3rdStage.3ds");
-	model.setUniveralPositionKm(Vec3f(0.0f, 0.0f, 10));
+	model.setUniveralPositionKm(Vec3f(0.0f, 0.0f, 10.0f));
 	mRenderList.addObject(mCamera, &model);
 
 	//	T3DSModelFactory::inst()->RemoveAll();
@@ -224,6 +224,7 @@ void Renderer::render()
 	}
 #endif
 
+	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	wstring speedStr = getNiceSpeedString(mCamera.getSpeed(), 2);
 	wchar_t infoBuffer[256];
@@ -240,11 +241,12 @@ void Renderer::render()
 	fontRenderer->renderSpherical(text, 20, Vec2f(degToRad(40.0f), degToRad(5.0f)), Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
 
 //	mTimer.reset();
+
 	HYGDataRecord* nearestStar = hygStars.getNearestStar();
 //	LOG(INFO) << "getNearestToPosition(): " << mTimer.elapsedMilliseconds() << " ms.";
 	if (nearestStar != NULL)
 	{
-//		distanceStr = getNiceDistanceString(sqrtf(nearestStar->mEyeDistanceSq), 1);
+//		distanceStr = getNiceDistanceString(sqrtT(nearestStar->mEyeDistanceSq), 1);
 //		swprintf(infoBuffer, 256, L"Nearest Star: %s", distanceStr.c_str());
 		swprintf(infoBuffer, 256, L"Nearest Star: %s", wstringFromString(nearestStar->mIdentifier).c_str());
 		text = infoBuffer;
