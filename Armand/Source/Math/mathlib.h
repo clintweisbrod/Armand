@@ -102,6 +102,14 @@ inline float_t acosT(float_t x)
 {
 	return acosf(x);
 }
+inline double_t atanT(double_t x)
+{
+	return atan(x);
+}
+inline float_t atanT(float_t x)
+{
+	return atanf(x);
+}
 inline double_t atan2T(double_t x, double_t y)
 {
 	return atan2(x, y);
@@ -187,6 +195,17 @@ template<class T> T sign(T x)
         return 1;
     else
         return 0;
+}
+
+template<class T> T smoothStep(T e0, T e1, T x)
+{
+	T t = clamp((x - e0) / (e1 - e0));
+	return t * t * (3 - 2 * t);
+}
+
+template<class T> T mix(T x, T y, T a)
+{
+	return x * (1 - a) + y * a;
 }
 
 // This function is like fmod except that it always returns
