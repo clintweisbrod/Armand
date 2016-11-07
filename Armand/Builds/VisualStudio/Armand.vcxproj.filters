@@ -231,6 +231,9 @@
     <ClInclude Include="..\..\Source\Objects\Stars\3DStar.h">
       <Filter>Header Files\Objects\Stars</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Source\Utilities\DebugStream.h">
+      <Filter>Header Files\Utilities</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\Main\Armand.cpp">
@@ -310,6 +313,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\Objects\Stars\3DStar.cpp">
       <Filter>Source Files\Objects\Stars</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\Utilities\DebugStream.cpp">
+      <Filter>Source Files\Utilities</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

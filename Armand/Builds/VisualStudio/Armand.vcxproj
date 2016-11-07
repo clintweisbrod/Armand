@@ -217,6 +217,7 @@ exit 0
     <ClInclude Include="..\..\Source\OpenGL\VAOBuilder.h" />
     <ClInclude Include="..\..\Source\OpenGL\VertexBufferStructs.h" />
     <ClInclude Include="..\..\Source\Utilities\ConfigReader.h" />
+    <ClInclude Include="..\..\Source\Utilities\DebugStream.h" />
     <ClInclude Include="..\..\Source\Utilities\easylogging++.h" />
     <ClInclude Include="..\..\Source\Utilities\File.h" />
     <ClInclude Include="..\..\Source\Utilities\Singleton.h" />
@@ -251,6 +252,7 @@ exit 0
     <ClCompile Include="..\..\Source\OpenGL\Textures\TextureManager.cpp" />
     <ClCompile Include="..\..\Source\OpenGL\VAOBuilder.cpp" />
     <ClCompile Include="..\..\Source\Utilities\ConfigReader.cpp" />
+    <ClCompile Include="..\..\Source\Utilities\DebugStream.cpp" />
     <ClCompile Include="..\..\Source\Utilities\File.cpp" />
     <ClCompile Include="..\..\Source\Utilities\StringUtils.cpp" />
     <ClCompile Include="..\..\Source\Utilities\Timer.cpp" />
