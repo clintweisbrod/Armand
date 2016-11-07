@@ -35,4 +35,7 @@
 #define ELPP_FRESH_LOG_FILE
 #include "Utilities/easylogging++.h"
 
+// Logging to debug console
+#include "Utilities/DebugStream.h"
+
 using namespace std;		// Use the STL namespace; std
