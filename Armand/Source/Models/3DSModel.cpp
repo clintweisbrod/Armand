@@ -1420,7 +1420,7 @@ void T3DSModel::computeBoundingRadius()
 		}
 	}
 
-	mModelBoundingRadius = sqrt(maxLengthSquared);
+	mModelBoundingRadius = sqrtT(maxLengthSquared);
 }
 
 //----------------------------------------------------------------------
@@ -1856,7 +1856,7 @@ bool T3DSModel::render(Camera& inCamera, Mat4f& inViewMatrix, Quatf& inOrientati
 	vPositionEyeNorm.normalize();
 
 	Vec2f point;
-	GLfloat eyePointViewDirectionAngle = acos(viewDirection * vPositionEyeNorm);
+	GLfloat eyePointViewDirectionAngle = acosT(viewDirection * vPositionEyeNorm);
 	if (eyePointViewDirectionAngle > 0)
 	{
 		Vec2f xyComponents(vPositionEyeNorm * leftDirection, vPositionEyeNorm * upDirection);

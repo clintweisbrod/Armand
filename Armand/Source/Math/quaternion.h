@@ -310,7 +310,7 @@ template<class T> Quaternion<T> log(Quaternion<T> q)
     {
 		T l = Math<T>::sqrt(q.x * q.x + q.y * q.y + q.z * q.z);
 		T r = Math<T>::sqrt(l * l + q.w * q.w);
-        T theta = (T) atan2(l, q.w);
+		T theta = Math<T>::atan2(l, q.w);
         T t = theta / l;
 		return Quaternion<T>(Math<T>::log(r), t * q.x, t * q.y, t * q.z);
     }

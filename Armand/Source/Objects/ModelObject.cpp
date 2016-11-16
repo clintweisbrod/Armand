@@ -132,7 +132,7 @@ bool ModelObject::renderFull(Camera& inCamera, float inAlpha)
 	vPositionEyeNorm.normalize();
 
 	Vec2f point;
-	GLfloat eyePointViewDirectionAngle = acos(viewDirection * vPositionEyeNorm);
+	GLfloat eyePointViewDirectionAngle = acosT(viewDirection * vPositionEyeNorm);
 	if (eyePointViewDirectionAngle > 0)
 	{
 		Vec2f xyComponents(vPositionEyeNorm * leftDirection, vPositionEyeNorm * upDirection);
