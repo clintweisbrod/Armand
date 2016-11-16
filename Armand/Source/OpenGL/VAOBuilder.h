@@ -37,6 +37,9 @@ struct VAOInfo
 	GLboolean mNormalized;
 	GLint mBytesPerElement;
 	GLint mNumElements;	// Need this because mSize can be GL_BGRA
+
+	// Return the number of bytes this VAO requires
+	GLint sizeOf() const { return mBytesPerElement * mNumElements; };
 };
 
 typedef vector<VAOInfo> VBOArrayInfoVec_t;

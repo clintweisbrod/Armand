@@ -50,7 +50,7 @@ void VAOBuilder::addArray(string name, GLint size, GLenum type, GLboolean normal
 	// Recalculate mStride
 	mStride = 0;
 	for (VBOArrayInfoVec_t::iterator it = mArrayInfo.begin(); it != mArrayInfo.end(); it++)
-		mStride += (it->mNumElements * it->mBytesPerElement);
+		mStride += it->sizeOf();
 }
 
 void VAOBuilder::setupGPU(GLuint inVBOid)
@@ -65,10 +65,9 @@ void VAOBuilder::setupGPU(GLuint inVBOid)
 	for (VBOArrayInfoVec_t::iterator it = mArrayInfo.begin(); it != mArrayInfo.end(); it++)
 	{
 		glVertexAttribPointer(i, it->mSize, it->mType, it->mNormalized, mStride, BUFFER_OFFSET(offset));
-		offset += (it->mNumElements * it->mBytesPerElement);
+		offset += it->sizeOf();
 
-		glEnableVertexAttribArray(i);
-		i++;
+		glEnableVertexAttribArray(i++);
 	}
 }
 
