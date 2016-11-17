@@ -51,11 +51,18 @@ ShaderFactory::~ShaderFactory()
 	mPrograms.clear();
 }
 
-ShaderProgram* ShaderFactory::getShaderProgram(const char* inVertexShader, const char* inFragmentShader)
+ShaderProgram* ShaderFactory::getShaderProgram(const char* inVertexShader, const char* inFragmentShader,
+											   const char* inTessControlShader, const char* inTessEvalShader,
+											   const char* inGeometryShader)
 {
+	// We must at least have vertex and fragment shader code.
+	if ((inVertexShader == NULL) || (inFragmentShader == NULL))
+		return NULL;
+
 	ShaderProgram* result = NULL;
 
-	// Generate key to lookup shader 
+	// Generate key to lookup shader. We just use the names of the vertex and fragment shaders because they
+	// are the only mandatory shader objects in a shader program.
 	string key = genKey(inVertexShader, inFragmentShader);
 
 	// Have we attempted to load this shader already?
@@ -93,6 +100,34 @@ ShaderProgram* ShaderFactory::getShaderProgram(const char* inVertexShader, const
 			{
 				mProgramLoadAttempts[key] = false;
 				return NULL;
+			}
+
+			// Load optional tesselation-related shaders
+			if (inTessControlShader)
+			{
+				if (!loadShaderObject(inTessControlShader, GL_TESS_CONTROL_SHADER, shaderHandles))
+				{
+					mProgramLoadAttempts[key] = false;
+					return NULL;
+				}
+			}
+			if (inTessEvalShader)
+			{
+				if (!loadShaderObject(inTessEvalShader, GL_TESS_EVALUATION_SHADER, shaderHandles))
+				{
+					mProgramLoadAttempts[key] = false;
+					return NULL;
+				}
+			}
+
+			// Load optional geometry shader
+			if (inGeometryShader)
+			{
+				if (!loadShaderObject(inGeometryShader, GL_GEOMETRY_SHADER, shaderHandles))
+				{
+					mProgramLoadAttempts[key] = false;
+					return NULL;
+				}
 			}
 
 			// Attach shaders to program and delete them. OpenGL flags them for deletion because

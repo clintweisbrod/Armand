@@ -46,7 +46,9 @@ class ShaderFactory : public Singleton<ShaderFactory>
 	friend class Singleton<ShaderFactory>;
 
 public:
-	ShaderProgram*	getShaderProgram(const char* inVertexShader, const char* inFragmentShader);
+	ShaderProgram*	getShaderProgram(const char* inVertexShader, const char* inFragmentShader,
+									 const char* inTessControlShader = NULL, const char* inTessEvalShader = NULL,
+									 const char* inGeometryShader = NULL);
 	void			deleteShaderProgram(GLuint inProgramHandle);
 
 protected:
