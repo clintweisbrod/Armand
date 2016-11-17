@@ -1,0 +1,39 @@
+#version 400
+
+// Any TCS gets invoked once for each vertex in an input patch. Since we call glPatchParameteri(GL_PATCH_VERTICES, 3),
+// this shader is called 3 times.
+
+layout(vertices = 3) out;	// This means there will be 3 invocations of this shader for each vertex 
+							// processed by the vertex shader.
+//in vec3 vPosition[];		// There will be 3 values in this array because of glPatchParameteri(GL_PATCH_VERTICES, 3).
+//out vec3 tcPosition[];	// This array is sent along to the tessellation evaluation shader.
+
+uniform float TessLevelInner;
+uniform float TessLevelOuter;
+
+#define ID gl_InvocationID	// gl_InvocationID will take values of 0, 1, 2 at each invocation of this
+							// tessellation control shader.
+
+void main()
+{
+//	tcPosition[ID] = vPosition[ID];	// Send the new vertex positions along to tessellation evaluation shader.
+//	tcPosition[ID] = gl_in[ID].gl_Position.xyz;
+
+	// Send the new vertex positions along to tessellation evaluation shader.
+	// The output patch is the same as in input patch.
+	gl_out[ID].gl_Position = gl_in[ID].gl_Position;
+
+	// We only need to write to the outputs; gl_TessLevelInner and gl_TessLevelOuter once per triangle.
+	// Setting elements gl_TessLevelInner and gl_TessLevelOuter tells the tessellation primitive generator
+	// how to tessellate this output patch.
+	if (ID == 0)
+	{
+		// Only one element in inner array for triangles
+		gl_TessLevelInner[0] = TessLevelInner;
+		
+		// Three elements for outer array. One for each side of triangle.
+		gl_TessLevelOuter[0] = TessLevelOuter;
+		gl_TessLevelOuter[1] = TessLevelOuter;
+		gl_TessLevelOuter[2] = TessLevelOuter;
+	}
+}

@@ -26,12 +26,85 @@
 #include "OpenGL/OpenGLWindow.h"
 #include "OpenGL/GLUtils.h"
 
+/*
+GLuint vao;
+static GLsizei IndexCount;
+static const GLuint PositionSlot = 0;
+
+static void CreateIcosahedron()
+{
+	const int Faces[] = {
+		2, 1, 0,
+		3, 2, 0,
+		4, 3, 0,
+		5, 4, 0,
+		1, 5, 0,
+
+		11, 6, 7,
+		11, 7, 8,
+		11, 8, 9,
+		11, 9, 10,
+		11, 10, 6,
+
+		1, 2, 6,
+		2, 3, 7,
+		3, 4, 8,
+		4, 5, 9,
+		5, 1, 10,
+
+		2, 7, 6,
+		3, 8, 7,
+		4, 9, 8,
+		5, 10, 9,
+		1, 6, 10 };
+
+	const float Verts[] = {
+		0.000f, 0.000f, 1.000f,
+		0.894f, 0.000f, 0.447f,
+		0.276f, 0.851f, 0.447f,
+		-0.724f, 0.526f, 0.447f,
+		-0.724f, -0.526f, 0.447f,
+		0.276f, -0.851f, 0.447f,
+		0.724f, 0.526f, -0.447f,
+		-0.276f, 0.851f, -0.447f,
+		-0.894f, 0.000f, -0.447f,
+		-0.276f, -0.851f, -0.447f,
+		0.724f, -0.526f, -0.447f,
+		0.000f, 0.000f, -1.000f };
+
+	IndexCount = sizeof(Faces) / sizeof(Faces[0]);
+
+	// Create the VAO:
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+
+	// Create the VBO for positions:
+	GLuint positions;
+	GLsizei stride = 3 * sizeof(float);
+	glGenBuffers(1, &positions);
+	glBindBuffer(GL_ARRAY_BUFFER, positions);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(Verts), Verts, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(PositionSlot);
+	glVertexAttribPointer(PositionSlot, 3, GL_FLOAT, GL_FALSE, stride, 0);
+
+	// Create the VBO for indices:
+	GLuint indices;
+	glGenBuffers(1, &indices);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Faces), Faces, GL_STATIC_DRAW);
+
+	glIsError();
+}
+*/
+
 ModelObject::ModelObject(const char* inModelFileName)
 {
 	// Get pointer to model but only load meta data for now
 	mModel = T3DSModelFactory::inst()->get(inModelFileName, true);
 	if (mModel)
 		setBoundingRadiusAU(mModel->getPhysicalRadiusAU());
+
+//	CreateIcosahedron();
 }
 
 ModelObject::~ModelObject()
@@ -91,6 +164,55 @@ bool ModelObject::renderAsPoint(Camera& inCamera, float inAlpha)
 
 bool ModelObject::renderFull(Camera& inCamera, float inAlpha)
 {
+/*
+	// This code is for rendering tessellated icosahedron. Was learning/testing OpenGL tessellation shaders.
+	// Set up the projection matrix:
+	Vec2i sceneSize;
+	gRenderer->getSceneSize(sceneSize);
+	float aspect = (float)sceneSize.x / (float)sceneSize.y;
+	Mat4f projectionMatrix = Mat4f::perspective((float)(60 * kRadPerDegree), aspect, 1, 20);
+
+	static float theta = 0;
+	Vec3f eyePosition(0, 0, -3);
+	Vec3f targetPosition(0, 0, 0);
+	Vec3f upVector(0, 1, 0);
+	Mat4f modelViewMatrix = Mat4f::lookAt(eyePosition, targetPosition, upVector);
+	Mat4f rotationMatrix = Mat4f::rotationY((float)(theta * kRadPerDegree));
+	modelViewMatrix = modelViewMatrix * rotationMatrix;
+
+	Mat3f normalMatrix(modelViewMatrix.transpose());
+	Vec4f lightPosition(0.25f, 0.25f, 1.0f, 0.0f);
+	lightPosition = lightPosition * rotationMatrix;
+
+	const float TessLevelInner = 10;
+	const float TessLevelOuter = 10;
+
+	theta += 0.001f;
+	if (theta > 360)
+		theta -= 360;
+
+	GLuint handle = mModel->getShaderHandle();
+	glUseProgram(handle);
+
+	glUniformMatrix4fv(glGetUniformLocation(handle, "Projection"), 1, 0, projectionMatrix.data);
+	glUniformMatrix4fv(glGetUniformLocation(handle, "Modelview"), 1, 0, modelViewMatrix.data);
+	glUniformMatrix3fv(glGetUniformLocation(handle, "NormalMatrix"), 1, 0, normalMatrix.data);
+	glUniform3fv(glGetUniformLocation(handle, "LightPosition"), 1, lightPosition.data);
+	glUniform3f(glGetUniformLocation(handle, "AmbientMaterial"), 0.04f, 0.04f, 0.04f);
+	glUniform3f(glGetUniformLocation(handle, "DiffuseMaterial"), 0.0f, 0.75f, 0.75f);
+	glUniform1f(glGetUniformLocation(handle, "TessLevelInner"), TessLevelInner);
+	glUniform1f(glGetUniformLocation(handle, "TessLevelOuter"), TessLevelOuter);
+
+	// This call defines that each patch received by the TCS will consist of 3 vertices.
+	glPatchParameteri(GL_PATCH_VERTICES, 3);
+
+	// Draw the patches
+	glDrawElements(GL_PATCHES, IndexCount, GL_UNSIGNED_INT, 0);
+
+	glUseProgram(0);
+
+	return true;
+*/
 	bool result = false;
 
 	// Make sure the model data is loaded

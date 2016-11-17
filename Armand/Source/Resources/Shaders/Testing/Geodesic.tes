@@ -1,0 +1,37 @@
+#version 400
+
+// Any TES gets invoked at least once per tessellated vertex. The objective of each invocation is to 
+// compute an interpolated position and other per-vertex data for a single vertex.
+// gl_in[0-2] can be referenced to obtain vertex info about the vertices that compose the input patch
+// that was provided to the TCS. This vertex information, along with gl_TessCoord is used to compute
+// the interpolated values for the output vertex.
+
+layout(triangles, equal_spacing, cw) in;
+
+//in vec3 tcPosition[];
+out vec3 tePosition;
+out vec3 tePatchDistance;
+
+uniform mat4 Projection;
+uniform mat4 Modelview;
+
+void main()
+{
+	// gl_TessCoord represents the barycentric coordinates within the original patch triangle
+	// sent to the TCS of a new tessellation point. We need to compute the position of this new
+	// point as follows.
+	tePosition = gl_TessCoord.x * gl_in[0].gl_Position.xyz + 
+				 gl_TessCoord.y * gl_in[1].gl_Position.xyz +
+				 gl_TessCoord.z * gl_in[2].gl_Position.xyz;
+				 
+	// tePosition now represents a position within the plane of the input patch triangle. Since
+	// in this particular case, we want each new position to be on a unit sphere, we
+	// normalize tePosition.
+	tePosition = normalize(tePosition);
+	
+	
+	tePatchDistance = gl_TessCoord;
+
+	// gl_position represents the position of our new vertex in clip space.
+	gl_Position = Projection * Modelview * vec4(tePosition, 1);
+}

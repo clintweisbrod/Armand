@@ -1728,9 +1728,12 @@ GLuint T3DSModel::getShaderHandle()
 {
 	if (mShaderHandle == 0)
 	{
-		// This is a good time load the shader program
+		// This is a good time to load the shader program
 		ShaderProgram* shaderProgram = ShaderFactory::inst()->getShaderProgram(	"Models/3ds.vert",
 																				"Models/3ds.frag");
+//		ShaderProgram* shaderProgram = ShaderFactory::inst()->getShaderProgram("Testing/Geodesic.vert", "Testing/Geodesic.frag",
+//																			   "Testing/Geodesic.tcs", "Testing/Geodesic.tes",
+//																			   "Testing/Geodesic.geom");
 		if (shaderProgram)
 			mShaderHandle = shaderProgram->getHandle();
 	}
