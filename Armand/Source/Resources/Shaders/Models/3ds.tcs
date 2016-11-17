@@ -1,0 +1,85 @@
+#version 400
+
+#include "/Projection/Fisheye.glsl"
+
+// Any TCS gets invoked once for each vertex in an input patch. Since we call glPatchParameteri(GL_PATCH_VERTICES, 3),
+// this shader is called 3 times.
+
+layout(vertices = 3) out;	// This means there will be 3 invocations of this shader for each vertex 
+							// processed by the vertex shader.
+in vec3 vNormal[];
+in vec3 vMaterialAmbient[];
+in vec3 vMaterialDiffuse[];
+in vec3 vMaterialSpecular[];
+in float vMaterialShininess[];
+in vec2 vTexCoord[];
+
+out vec3 tcNormal[];
+out vec3 tcMaterialAmbient[];
+out vec3 tcMaterialDiffuse[];
+out vec3 tcMaterialSpecular[];
+out float tcMaterialShininess[];
+out vec2 tcTexCoord[];
+
+//
+// Uniforms
+//
+uniform mat4	uModelViewMatrix;	// Transforms model coordinates to eye coordinates.
+uniform float	TessLevelInner;
+uniform float	TessLevelOuter;
+
+//
+// Function declarations defined in #include'd files.
+//
+void fisheyeProject(in vec3 inVertexPositionInEyeCoordinates, out vec3 outNormalizedVertexPositionInEyeCoords,
+					out vec4 outScreenPosition, out float outVertexEyeDistanceAU);
+
+#define ID gl_InvocationID	// gl_InvocationID will take values of 0, 1, 2 at each invocation of this
+							// tessellation control shader.
+
+void main()
+{
+	// Send the vertex positions along to tessellation evaluation shader.
+	// The output patch is the same as in input patch.
+	gl_out[ID].gl_Position = gl_in[ID].gl_Position;
+	
+	// Send the other vertex attributes along to tessellation evaluation shader.
+	tcNormal[ID] = vNormal[ID];
+	tcMaterialAmbient[ID] = vMaterialAmbient[ID];
+	tcMaterialDiffuse[ID] = vMaterialDiffuse[ID];
+	tcMaterialSpecular[ID] = vMaterialSpecular[ID];
+	tcMaterialShininess[ID] = vMaterialShininess[ID];
+	tcTexCoord[ID] = vTexCoord[ID];
+
+	// We only need to write to the outputs; gl_TessLevelInner and gl_TessLevelOuter once per triangle.
+	// Setting elements gl_TessLevelInner and gl_TessLevelOuter tells the tessellation primitive generator
+	// how to tessellate this output patch.
+	if (ID == 0)
+	{
+		// Compute the screen locations of the triangle vertices and use the distances in pixels between
+		// each vertex to decide the level of tessellation.
+
+		float outVertexEyeDistanceAU;
+		vec3 vertexPositionInEyeCoords, normalizedVertexPositionInEyeCoords;
+		
+		vec4 screenPosition0;
+		vertexPositionInEyeCoords = (uModelViewMatrix * gl_in[0].gl_Position).xyz;
+		fisheyeProject(vertexPositionInEyeCoords, normalizedVertexPositionInEyeCoords, screenPosition0, outVertexEyeDistanceAU);
+		
+		vec4 screenPosition1;
+		vertexPositionInEyeCoords = (uModelViewMatrix * gl_in[1].gl_Position).xyz;
+		fisheyeProject(vertexPositionInEyeCoords, normalizedVertexPositionInEyeCoords, screenPosition1, outVertexEyeDistanceAU);
+		
+		vec4 screenPosition2;
+		vertexPositionInEyeCoords = (uModelViewMatrix * gl_in[2].gl_Position).xyz;
+		fisheyeProject(vertexPositionInEyeCoords, normalizedVertexPositionInEyeCoords, screenPosition2, outVertexEyeDistanceAU);
+		
+		// Only one element in inner array for triangles
+		gl_TessLevelInner[0] = TessLevelInner;
+		
+		// Three elements for outer array. One for each side of triangle.
+		gl_TessLevelOuter[0] = TessLevelOuter;
+		gl_TessLevelOuter[1] = TessLevelOuter;
+		gl_TessLevelOuter[2] = TessLevelOuter;
+	}
+}

@@ -1729,8 +1729,9 @@ GLuint T3DSModel::getShaderHandle()
 	if (mShaderHandle == 0)
 	{
 		// This is a good time to load the shader program
-		ShaderProgram* shaderProgram = ShaderFactory::inst()->getShaderProgram(	"Models/3ds.vert",
-																				"Models/3ds.frag");
+		ShaderProgram* shaderProgram = ShaderFactory::inst()->getShaderProgram(	"Models/3ds.vert", "Models/3ds.frag",
+																				"Models/3ds.tcs", "Models/3ds.tes",
+																				"Models/3ds.geom");
 //		ShaderProgram* shaderProgram = ShaderFactory::inst()->getShaderProgram("Testing/Geodesic.vert", "Testing/Geodesic.frag",
 //																			   "Testing/Geodesic.tcs", "Testing/Geodesic.tes",
 //																			   "Testing/Geodesic.geom");
@@ -1800,6 +1801,9 @@ bool T3DSModel::render(Camera& inCamera, Mat4f& inViewMatrix, Quatf& inOrientati
 	// Need this to affect clipping vertices behind viewer
 	glEnable(GL_CLIP_DISTANCE0);
 
+	const float TessLevelInner = 3;
+	const float TessLevelOuter = 2;
+
 	glUseProgram(mShaderHandle);
 	{
 //		gOpenGLWindow->mTimer.reset();
@@ -1821,9 +1825,17 @@ bool T3DSModel::render(Camera& inCamera, Mat4f& inViewMatrix, Quatf& inOrientati
 		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "uModelViewMatrix"), 1, 0, modelViewMatrix.data);
 		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "uProjectionMatrix"), 1, 0, projectionMatrix.data);
 		glUniformMatrix3fv(glGetUniformLocation(mShaderHandle, "uNormalMatrix"), 1, 0, normalMatrix.data);
+
+		glUniform1f(glGetUniformLocation(mShaderHandle, "TessLevelInner"), TessLevelInner);
+		glUniform1f(glGetUniformLocation(mShaderHandle, "TessLevelOuter"), TessLevelOuter);
+
+		glIsError();
 		
 		glBindVertexArray(mVAOs[eUntexturedVAO]);
-		glMultiDrawArrays(GL_TRIANGLES, mArrayFirstUntextured.data(), mArrayCountUntextured.data(), (GLsizei)mArrayCountUntextured.size());
+		glPatchParameteri(GL_PATCH_VERTICES, 3);
+		glMultiDrawArrays(GL_PATCHES, mArrayFirstUntextured.data(), mArrayCountUntextured.data(), (GLsizei)mArrayCountUntextured.size());
+
+		glIsError();
 	
 		// Draw the textured vertices
 		glUniform1i(glGetUniformLocation(mShaderHandle, "uIsTexturing"), GL_TRUE);
@@ -1834,7 +1846,9 @@ bool T3DSModel::render(Camera& inCamera, Mat4f& inViewMatrix, Quatf& inOrientati
 			glActiveTexture(GL_TEXTURE0 + kTextureUnit);
 			glBindTexture(GL_TEXTURE_2D, mTextureIDs[i]);
 			glUniform1i(glGetUniformLocation(mShaderHandle, "uTexture"), kTextureUnit);
-			glDrawArrays(GL_TRIANGLES, mArrayFirstTextured[i], mArrayCountTextured[i]);
+
+			glPatchParameteri(GL_PATCH_VERTICES, 3);
+			glDrawArrays(GL_PATCHES, mArrayFirstTextured[i], mArrayCountTextured[i]);
 		}
 		glBindVertexArray(0);
 

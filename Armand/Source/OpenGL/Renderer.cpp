@@ -180,7 +180,8 @@ void Renderer::render()
 	///*
 	// Testing 3DS model loading and fisheye projection shader
 	static ModelObject model("Apollo_3rdStage.3ds");
-	model.setUniveralPositionKm(Vec3f(0.0f, 0.0f, 10.0f));
+	model.setUniveralPositionKm(Vec3f(0.0f, 0.0f, 4.98f));
+//	model.setUniveralPositionKm(Vec3f(0.0f, 0.0f, 10.0f));
 	mRenderList.addObject(mCamera, &model);
 
 	//	T3DSModelFactory::inst()->RemoveAll();

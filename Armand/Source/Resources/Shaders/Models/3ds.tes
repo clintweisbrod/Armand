@@ -1,0 +1,50 @@
+#version 400
+
+// Any TES gets invoked at least once per tessellated vertex. The objective of each invocation is to 
+// compute an interpolated position and other per-vertex data for a single vertex.
+// gl_in[0-2] can be referenced to obtain vertex info about the vertices that compose the input patch
+// that was provided to the TCS. This vertex information, along with gl_TessCoord is used to compute
+// the interpolated values for the output vertex.
+
+layout(triangles, equal_spacing, ccw) in;
+
+in vec3 tcNormal[];
+in vec3 tcMaterialAmbient[];
+in vec3 tcMaterialDiffuse[];
+in vec3 tcMaterialSpecular[];
+in float tcMaterialShininess[];
+in vec2 tcTexCoord[];
+
+out vec3 tePosition;
+out vec3 teNormal;
+out vec3 teMaterialAmbient;
+out vec3 teMaterialDiffuse;
+out vec3 teMaterialSpecular;
+out float teMaterialShininess;
+out vec2 teTexCoord;
+
+void main()
+{
+	// gl_TessCoord represents the barycentric coordinates within the original patch triangle
+	// sent to the TCS of a new tessellation point. We need to compute the position of this new
+	// point as follows.
+	tePosition = gl_TessCoord.x * gl_in[0].gl_Position.xyz + 
+				 gl_TessCoord.y * gl_in[1].gl_Position.xyz +
+				 gl_TessCoord.z * gl_in[2].gl_Position.xyz;
+				 
+	// Compute the normal
+	teNormal =  gl_TessCoord.x * tcNormal[0] + 
+				gl_TessCoord.y * tcNormal[1] +
+				gl_TessCoord.z * tcNormal[2];
+	
+	// Compute the texture coordinate	
+	teTexCoord = gl_TessCoord.x * tcTexCoord[0] + 
+				 gl_TessCoord.y * tcTexCoord[1] +
+				 gl_TessCoord.z * tcTexCoord[2];
+
+	// Forward the material params along to geometry shader
+	teMaterialAmbient = tcMaterialAmbient[0];
+	teMaterialDiffuse = tcMaterialDiffuse[0];
+	teMaterialSpecular = tcMaterialSpecular[0];
+	teMaterialShininess = tcMaterialShininess[0];
+}

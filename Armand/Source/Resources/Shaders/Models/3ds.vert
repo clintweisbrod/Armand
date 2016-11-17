@@ -17,35 +17,42 @@
 // the Universe, depends on computing positions relative to the viewer, so
 // this is nothing new.
 
-#version 330
+#version 400
 
-#include "/Projection/Fisheye.glsl"
-#include "/Lighting/lightingADS.glsl"
+//#include "/Projection/Fisheye.glsl"
+//#include "/Lighting/lightingADS.glsl"
 
 //
 // VAO definition
 //
 layout (location = 0) in vec3 vaoPosition;	// In local model coordinates
+layout (location = 1) in vec3 vaoNormal;	// In local model coordinates
+layout (location = 2) in vec3 vaoMaterialAmbient;
+layout (location = 3) in vec3 vaoMaterialDiffuse;
+layout (location = 4) in vec3 vaoMaterialSpecular;
+layout (location = 5) in float vaoMaterialShininess;
 layout (location = 6) in vec2 vaoTextureCoordinates;
 
 //
 // Outputs
 //
-out vec2 texCoords;
-
-//
-// Uniforms
-//
-uniform mat4	uModelViewMatrix;	// Transforms model coordinates to eye coordinates.
-
-//
-// Function declarations defined in #include'd files.
-//
-void fisheyeProject(vec3 inVertexPositionInEyeCoordinates);
-void computeLighting(vec3 inVertexPositionInEyeCoordinates);
+out vec3 vNormal;
+out vec3 vMaterialAmbient;
+out vec3 vMaterialDiffuse;
+out vec3 vMaterialSpecular;
+out float vMaterialShininess;
+out vec2 vTexCoord;
 
 void main()
 {
+	gl_Position = vec4(vaoPosition, 1);	// Write to the built-in Position variable.
+	vNormal = vaoNormal;
+	vMaterialAmbient = vaoMaterialAmbient;
+	vMaterialDiffuse = vaoMaterialDiffuse;
+	vMaterialSpecular = vaoMaterialSpecular;
+	vMaterialShininess = vaoMaterialShininess;
+	vTexCoord = vaoTextureCoordinates;
+/*	
 	// Transform vaoPosition from local model coordinates to eye coordinates.
 	vec3 vertexPositionInEyeCoords = (uModelViewMatrix * vec4(vaoPosition, 1.0)).xyz;
 	
@@ -57,4 +64,5 @@ void main()
 	
 	// Send the texture coordinates along to fragment shader
 	texCoords = vaoTextureCoordinates;
+*/
 }
