@@ -10,7 +10,6 @@
 // EndPrimitive() after emitting 3 vertices.
 
 layout(triangles) in;
-layout(invocations = 3) in;
 layout(triangle_strip, max_vertices = 3) out;
 
 in vec3 tePosition[3];

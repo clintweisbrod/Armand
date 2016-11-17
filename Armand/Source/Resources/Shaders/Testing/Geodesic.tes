@@ -29,7 +29,7 @@ void main()
 	// normalize tePosition.
 	tePosition = normalize(tePosition);
 	
-	
+	// We output gl_TessCoord which will be used in the fragment shader.
 	tePatchDistance = gl_TessCoord;
 
 	// gl_position represents the position of our new vertex in clip space.

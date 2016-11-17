@@ -19,7 +19,7 @@ void main()
 //	tcPosition[ID] = vPosition[ID];	// Send the new vertex positions along to tessellation evaluation shader.
 //	tcPosition[ID] = gl_in[ID].gl_Position.xyz;
 
-	// Send the new vertex positions along to tessellation evaluation shader.
+	// Send the vertex positions along to tessellation evaluation shader.
 	// The output patch is the same as in input patch.
 	gl_out[ID].gl_Position = gl_in[ID].gl_Position;
 
