@@ -255,9 +255,11 @@ public:
 	static Matrix4<T> rotationZ(const T);
 	static Matrix4<T> scaling(const Vector3<T>&);
 	static Matrix4<T> scaling(T);
-	static Matrix4<T> orthographic(	const T l, const T r,
-									const T b, const T t,
-									const T n, const T f);
+	static Matrix4<T> orthographic(const T l, const T r,
+								   const T b, const T t,
+								   const T n, const T f);
+	static Matrix4<T> perspective(const T fovy, const T aspect, const T zNear, const T zFar);
+	static Matrix4<T> lookAt(const Vector3<T>& eye, const Vector3<T>& center, const Vector3<T>& up);
 
 	static void setIdentity(Matrix4<T>&);
 	static void setRotation(Matrix4<T>&, const Vector3<T>&, const T);
@@ -1519,6 +1521,47 @@ template<class T> Matrix4<T> Matrix4<T>::orthographic(const T l, const T r,
 	m.m30 = 0;				m.m31 = 0;				m.m32 = 0;				m.m33 = 1;
 
 	return m;
+}
+
+template<class T> Matrix4<T> Matrix4<T>::perspective(const T fovy, const T aspect, const T zNear, const T zFar)
+{
+	T f = 1 / Math<T>::tan(fovy / 2);
+	T NminusF = zNear - zFar;
+
+	Matrix4<T> m;
+
+	m.m00 = f / aspect;		m.m01 = 0;				m.m02 = 0;							m.m03 = 0;
+	m.m10 = 0;				m.m11 = f;				m.m12 = 0;							m.m13 = 0;
+	m.m20 = 0;				m.m21 = 0;				m.m22 = (zFar + zNear) / NminusF;	m.m23 = 2 * zFar * zNear / NminusF;
+	m.m30 = 0;				m.m31 = 0;				m.m32 = -1;							m.m33 = 0;
+
+	return m;
+}
+
+template<class T> Matrix4<T> Matrix4<T>::lookAt(const Vector3<T>& eye, const Vector3<T>& center, const Vector3<T>& up)
+{
+	Vector3<T> f(center.x - eye.x, center.y - eye.y, center.z - eye.z);
+	f.normalize();
+
+	Vector3<T> upN = up;
+	upN.normalize();
+
+	Vector3<T> s = f ^ upN;
+	Vector3<T> sN = s;
+	sN.normalize();
+
+	Vector3<T> u = sN ^ f;
+
+	Matrix4<T> m;
+
+	m.m00 = s.x;			m.m01 = s.y;			m.m02 = s.z;			m.m03 = 0;
+	m.m10 = u.x;			m.m11 = u.y;			m.m12 = u.z;			m.m13 = 0;
+	m.m20 = -f.x;			m.m21 = -f.y;			m.m22 = -f.z;			m.m23 = 0;
+	m.m30 = 0;				m.m31 = 0;				m.m32 = 0;				m.m33 = 1;
+
+	Matrix4<T> result = Matrix4<T>::translation(eye);
+
+	return result * m;
 }
 
 // multiply column vector by a 4x4 matrix

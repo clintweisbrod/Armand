@@ -27,6 +27,7 @@ template<class T> class Math
 public:
 	static inline T sin(T);
 	static inline T cos(T);
+	static inline T tan(T);
 	static inline void sincos(T, T&, T&);
 	static inline T asin(T);
 	static inline T acos(T);
@@ -75,6 +76,14 @@ inline double_t cosT(double_t angle)
 inline float_t cosT(float_t angle)
 {
 	return cosf(angle);
+}
+inline double_t tanT(double_t angle)
+{
+	return tan(angle);
+}
+inline float_t tanT(float_t angle)
+{
+	return tanf(angle);
 }
 inline void sincosT(double_t angle, double_t& s, double_t& c)
 {
@@ -242,6 +251,11 @@ template<class T> T Math<T>::sin(T angle)
 template<class T> T Math<T>::cos(T angle)
 {
 	return cosT(angle);
+}
+
+template<class T> T Math<T>::tan(T angle)
+{
+	return tanT(angle);
 }
 
 template<class T> void Math<T>::sincos(T angle, T& s, T& c)
