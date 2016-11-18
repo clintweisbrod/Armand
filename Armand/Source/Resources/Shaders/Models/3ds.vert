@@ -19,9 +19,6 @@
 
 #version 400
 
-//#include "/Projection/Fisheye.glsl"
-//#include "/Lighting/lightingADS.glsl"
-
 //
 // VAO definition
 //
@@ -52,17 +49,4 @@ void main()
 	vMaterialSpecular = vaoMaterialSpecular;
 	vMaterialShininess = vaoMaterialShininess;
 	vTexCoord = vaoTextureCoordinates;
-/*	
-	// Transform vaoPosition from local model coordinates to eye coordinates.
-	vec3 vertexPositionInEyeCoords = (uModelViewMatrix * vec4(vaoPosition, 1.0)).xyz;
-	
-	// Do fisheye projection
-	fisheyeProject(vertexPositionInEyeCoords);
-	
-	// Perform lighting calculations
-	computeLighting(vertexPositionInEyeCoords);
-	
-	// Send the texture coordinates along to fragment shader
-	texCoords = vaoTextureCoordinates;
-*/
 }

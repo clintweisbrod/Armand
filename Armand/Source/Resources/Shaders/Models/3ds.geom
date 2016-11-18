@@ -1,7 +1,6 @@
 #version 400
 
 #include "/Projection/Fisheye.glsl"
-#include "/Projection/FisheyeUtils.glsl"
 #include "/Lighting/lightingADS.glsl"
 
 // Any geometry shader is fed as input, one primitive defined by the vertix information located
@@ -35,9 +34,8 @@ uniform mat4	uModelViewMatrix;	// Transforms model coordinates to eye coordinate
 //
 // Function declarations defined in #include'd files.
 //
-void setupClipPlane(in vec3 inNormalizedVertexPositionInEyeCoords);
 void fisheyeProject(in vec3 inVertexPositionInEyeCoordinates, out vec3 outNormalizedVertexPositionInEyeCoords,
-					out vec4 outScreenPosition, out float outVertexEyeDistanceAU);
+					out float outVertexEyeDistanceAU);
 void computeLighting(in vec3 inVertexPositionInEyeCoordinates, in vec3 inNormalizedVertexPositionInEyeCoords,
 					 in vec3 inNormal, in vec3 inAmbient, in vec3 inDiffuse, in vec3 inSpecular, in float inShininess,
 					 out vec3 outLightIntensity);
@@ -50,12 +48,9 @@ void main()
 	// texture coordinates to fragment shader.
 	float outVertexEyeDistanceAU;
 	vec3 vertexPositionInEyeCoords, normalizedVertexPositionInEyeCoords;
-	vec4 screenPosition;
 	
 	vertexPositionInEyeCoords = (uModelViewMatrix * vec4(tePosition[0], 1.0)).xyz;
-	fisheyeProject(vertexPositionInEyeCoords, normalizedVertexPositionInEyeCoords, screenPosition, outVertexEyeDistanceAU);
-	gl_Position = screenPosition;
-	setupClipPlane(normalizedVertexPositionInEyeCoords);
+	fisheyeProject(vertexPositionInEyeCoords, normalizedVertexPositionInEyeCoords, outVertexEyeDistanceAU);
 	computeLighting(vertexPositionInEyeCoords, normalizedVertexPositionInEyeCoords,
 					teNormal[0], teMaterialAmbient[0], teMaterialDiffuse[0], teMaterialSpecular[0], teMaterialShininess[0],
 					gLightIntensity);
@@ -63,9 +58,7 @@ void main()
 	EmitVertex();
 
 	vertexPositionInEyeCoords = (uModelViewMatrix * vec4(tePosition[1], 1.0)).xyz;
-	fisheyeProject(vertexPositionInEyeCoords, normalizedVertexPositionInEyeCoords, screenPosition, outVertexEyeDistanceAU);
-	gl_Position = screenPosition;
-	setupClipPlane(normalizedVertexPositionInEyeCoords);
+	fisheyeProject(vertexPositionInEyeCoords, normalizedVertexPositionInEyeCoords, outVertexEyeDistanceAU);
 	computeLighting(vertexPositionInEyeCoords, normalizedVertexPositionInEyeCoords,
 					teNormal[1], teMaterialAmbient[1], teMaterialDiffuse[1], teMaterialSpecular[1], teMaterialShininess[1],
 					gLightIntensity);
@@ -73,9 +66,7 @@ void main()
 	EmitVertex();
 
 	vertexPositionInEyeCoords = (uModelViewMatrix * vec4(tePosition[2], 1.0)).xyz;
-	fisheyeProject(vertexPositionInEyeCoords, normalizedVertexPositionInEyeCoords, screenPosition, outVertexEyeDistanceAU);
-	gl_Position = screenPosition;
-	setupClipPlane(normalizedVertexPositionInEyeCoords);
+	fisheyeProject(vertexPositionInEyeCoords, normalizedVertexPositionInEyeCoords, outVertexEyeDistanceAU);
 	computeLighting(vertexPositionInEyeCoords, normalizedVertexPositionInEyeCoords,
 					teNormal[2], teMaterialAmbient[2], teMaterialDiffuse[2], teMaterialSpecular[2], teMaterialShininess[2],
 					gLightIntensity);

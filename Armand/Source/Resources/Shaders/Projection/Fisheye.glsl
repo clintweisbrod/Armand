@@ -1,15 +1,28 @@
 #version 400
 
 //
+// Outputs
+//
+out float gl_ClipDistance[1];		// Need this to clip vertices behind viewer
+
+//
 // Uniforms
 //
 uniform float	uHalfAperture;		// In radians. Typically a value near PI/2.
+uniform float	uClipPlaneDistance;	// Is only dependent on uAperture and requires a cos() to calculate so
+									// we calculate once on CPU rather than per-vertex.
 									// The following 3 vec3 uniforms are in eye coordinates.
 uniform vec3	uViewDirection;		// This points to the center of the fisheye space.
 uniform vec3	uUpDirection;		// The "up" direction relative to uViewDirection.
 uniform vec3	uLeftDirection;		// The left direction relative to uViewDirection and uUpDirection.
 
 uniform mat4 	uProjectionMatrix;	// Transforms computed fisheye coordinates and depth value to clipping space.
+
+void setupClipPlane(in vec3 inNormalizedVertexPositionInEyeCoords)
+{
+	vec4 clipPlane = vec4(uViewDirection, uClipPlaneDistance);
+	gl_ClipDistance[0] = dot(vec4(inNormalizedVertexPositionInEyeCoords, 1.0), clipPlane);
+}
 
 //
 // The end goal of this method is to transform inVertexPositionInEyeCoordinates to gl_Position
@@ -21,7 +34,7 @@ uniform mat4 	uProjectionMatrix;	// Transforms computed fisheye coordinates and 
 // gVertexEyeDistanceAU is used externally by PointStars.vert.
 //
 void fisheyeProject(in vec3 inVertexPositionInEyeCoordinates, out vec3 outNormalizedVertexPositionInEyeCoords,
-					out vec4 outScreenPosition, out float outVertexEyeDistanceAU)
+					out float outVertexEyeDistanceAU)
 {
 	// Sensible depth value is length of inVertexPositionInEyeCoordinates
 	outVertexEyeDistanceAU = length(inVertexPositionInEyeCoordinates);
@@ -30,7 +43,7 @@ void fisheyeProject(in vec3 inVertexPositionInEyeCoordinates, out vec3 outNormal
 	outNormalizedVertexPositionInEyeCoords = inVertexPositionInEyeCoordinates / outVertexEyeDistanceAU;
 	
 	// Setup clipping for vertices that are behind the viewer
-//	setupClipPlane(outNormalizedVertexPositionInEyeCoords);
+	setupClipPlane(outNormalizedVertexPositionInEyeCoords);
 	
 	// Perform fisheye transformation
 	vec2 point = vec2(0.0, 0.0);
@@ -53,6 +66,5 @@ void fisheyeProject(in vec3 inVertexPositionInEyeCoordinates, out vec3 outNormal
 	// Why does outVertexEyeDistanceAU need to be negated???
 	// I think this is because m22 in ortho matrix is negated.
 	// Compute the homogeneous gl_Position output variable.
-	outScreenPosition = uProjectionMatrix * vec4(point, -outVertexEyeDistanceAU, 1.0);
-//	gl_Position = uProjectionMatrix * vec4(point, -outVertexEyeDistanceAU, 1.0);
+	gl_Position = uProjectionMatrix * vec4(point, -outVertexEyeDistanceAU, 1.0);
 }

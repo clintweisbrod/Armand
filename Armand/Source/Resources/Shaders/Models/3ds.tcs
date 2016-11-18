@@ -1,7 +1,5 @@
 #version 400
 
-#include "/Projection/Fisheye.glsl"
-
 // Any TCS gets invoked once for each vertex in an input patch. Since we call glPatchParameteri(GL_PATCH_VERTICES, 3),
 // this shader is called 3 times.
 
@@ -25,14 +23,6 @@ out vec2 tcTexCoord[];
 // Uniforms
 //
 uniform mat4	uModelViewMatrix;	// Transforms model coordinates to eye coordinates.
-uniform float	TessLevelInner;
-uniform float	TessLevelOuter;
-
-//
-// Function declarations defined in #include'd files.
-//
-void fisheyeProject(in vec3 inVertexPositionInEyeCoordinates, out vec3 outNormalizedVertexPositionInEyeCoords,
-					out vec4 outScreenPosition, out float outVertexEyeDistanceAU);
 
 #define ID gl_InvocationID	// gl_InvocationID will take values of 0, 1, 2 at each invocation of this
 							// tessellation control shader.
@@ -60,26 +50,36 @@ void main()
 		// each vertex to decide the level of tessellation.
 
 		float outVertexEyeDistanceAU;
-		vec3 vertexPositionInEyeCoords, normalizedVertexPositionInEyeCoords;
+		vec3 normalizedVertexPositionInEyeCoords;
 		
-		vec4 screenPosition0;
-		vertexPositionInEyeCoords = (uModelViewMatrix * gl_in[0].gl_Position).xyz;
-		fisheyeProject(vertexPositionInEyeCoords, normalizedVertexPositionInEyeCoords, screenPosition0, outVertexEyeDistanceAU);
+		// Compute dot products between each of the three vertices.
+		vec3 vertexPositionInEyeCoords0 = normalize((uModelViewMatrix * gl_in[0].gl_Position).xyz);
+		vec3 vertexPositionInEyeCoords1 = normalize((uModelViewMatrix * gl_in[1].gl_Position).xyz);
+		vec3 vertexPositionInEyeCoords2 = normalize((uModelViewMatrix * gl_in[2].gl_Position).xyz);
+		float dot01 = dot(vertexPositionInEyeCoords0, vertexPositionInEyeCoords1);
+		float dot12 = dot(vertexPositionInEyeCoords1, vertexPositionInEyeCoords2);
+		float dot20 = dot(vertexPositionInEyeCoords2, vertexPositionInEyeCoords0);
 		
-		vec4 screenPosition1;
-		vertexPositionInEyeCoords = (uModelViewMatrix * gl_in[1].gl_Position).xyz;
-		fisheyeProject(vertexPositionInEyeCoords, normalizedVertexPositionInEyeCoords, screenPosition1, outVertexEyeDistanceAU);
+		// Assume no tesselation.
+		float innerTessLevel = 1;
+		float outerTessLevel = 1;
 		
-		vec4 screenPosition2;
-		vertexPositionInEyeCoords = (uModelViewMatrix * gl_in[2].gl_Position).xyz;
-		fisheyeProject(vertexPositionInEyeCoords, normalizedVertexPositionInEyeCoords, screenPosition2, outVertexEyeDistanceAU);
+		const float kMinAngleInDegreesForNoTessellation = 10.0;
+		const float kCosMinAngle = cos(kMinAngleInDegreesForNoTessellation * 3.14 / 180.0);
+		if ((dot01 < kCosMinAngle) || (dot12 < kCosMinAngle) || (dot20 < kCosMinAngle))
+		{
+			// If we get here, the primitive has at least one dimension with an angular size
+			// greater than 10 degrees, so we perform some modest tessellation.
+			innerTessLevel = 3.0;
+			outerTessLevel = 2.0;
+		}
 		
 		// Only one element in inner array for triangles
-		gl_TessLevelInner[0] = TessLevelInner;
+		gl_TessLevelInner[0] = innerTessLevel;
 		
 		// Three elements for outer array. One for each side of triangle.
-		gl_TessLevelOuter[0] = TessLevelOuter;
-		gl_TessLevelOuter[1] = TessLevelOuter;
-		gl_TessLevelOuter[2] = TessLevelOuter;
+		gl_TessLevelOuter[0] = outerTessLevel;
+		gl_TessLevelOuter[1] = outerTessLevel;
+		gl_TessLevelOuter[2] = outerTessLevel;
 	}
 }

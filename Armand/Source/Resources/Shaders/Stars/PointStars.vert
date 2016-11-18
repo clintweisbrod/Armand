@@ -1,7 +1,6 @@
 #version 400
 
 #include "/Projection/Fisheye.glsl"
-#include "/Projection/FisheyeUtils.glsl"
 
 const float kParsecsPerAU = 4.84813681e-6;
 const float kNaturalLog10 = 2.3025850929;
@@ -32,9 +31,8 @@ uniform float	uLimitingMagnitude;
 //
 // Function declarations defined in #include'd files.
 //
-void setupClipPlane(in vec3 inNormalizedVertexPositionInEyeCoords);
 void fisheyeProject(in vec3 inVertexPositionInEyeCoordinates, out vec3 outNormalizedVertexPositionInEyeCoords,
-					out vec4 outScreenPosition, out float outVertexEyeDistanceAU);
+					out float outVertexEyeDistanceAU);
 
 void main()
 {
@@ -42,10 +40,7 @@ void main()
 	vec3 vertexPositionInEyeCoords = (uModelViewMatrix * vec4(vaoPosition, 1.0)).xyz;
 	vec3 normalizedVertexPositionInEyeCoords;
 	float vertexEyeDistanceAU;
-	vec4 screenPosition;
-	fisheyeProject(vertexPositionInEyeCoords, normalizedVertexPositionInEyeCoords, screenPosition, vertexEyeDistanceAU);
-	gl_Position = screenPosition;
-	setupClipPlane(normalizedVertexPositionInEyeCoords);
+	fisheyeProject(vertexPositionInEyeCoords, normalizedVertexPositionInEyeCoords, vertexEyeDistanceAU);
 
 	// Mix-in white color according to uSaturation
 	vec3 unsaturatedColor = mix(vaoColor.rgb, kWhiteLight, 1.0 - uSaturation);

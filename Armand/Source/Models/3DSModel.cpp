@@ -1801,9 +1801,6 @@ bool T3DSModel::render(Camera& inCamera, Mat4f& inViewMatrix, Quatf& inOrientati
 	// Need this to affect clipping vertices behind viewer
 	glEnable(GL_CLIP_DISTANCE0);
 
-	const float TessLevelInner = 3;
-	const float TessLevelOuter = 2;
-
 	glUseProgram(mShaderHandle);
 	{
 //		gOpenGLWindow->mTimer.reset();
@@ -1826,17 +1823,12 @@ bool T3DSModel::render(Camera& inCamera, Mat4f& inViewMatrix, Quatf& inOrientati
 		glUniformMatrix4fv(glGetUniformLocation(mShaderHandle, "uProjectionMatrix"), 1, 0, projectionMatrix.data);
 		glUniformMatrix3fv(glGetUniformLocation(mShaderHandle, "uNormalMatrix"), 1, 0, normalMatrix.data);
 
-		glUniform1f(glGetUniformLocation(mShaderHandle, "TessLevelInner"), TessLevelInner);
-		glUniform1f(glGetUniformLocation(mShaderHandle, "TessLevelOuter"), TessLevelOuter);
-
-		glIsError();
-		
 		glBindVertexArray(mVAOs[eUntexturedVAO]);
 		glPatchParameteri(GL_PATCH_VERTICES, 3);
 		glMultiDrawArrays(GL_PATCHES, mArrayFirstUntextured.data(), mArrayCountUntextured.data(), (GLsizei)mArrayCountUntextured.size());
 
 		glIsError();
-	
+
 		// Draw the textured vertices
 		glUniform1i(glGetUniformLocation(mShaderHandle, "uIsTexturing"), GL_TRUE);
 		glBindVertexArray(mVAOs[eTexturedVAO]);
@@ -1849,6 +1841,8 @@ bool T3DSModel::render(Camera& inCamera, Mat4f& inViewMatrix, Quatf& inOrientati
 
 			glPatchParameteri(GL_PATCH_VERTICES, 3);
 			glDrawArrays(GL_PATCHES, mArrayFirstTextured[i], mArrayCountTextured[i]);
+
+			glIsError();
 		}
 		glBindVertexArray(0);
 

@@ -1,7 +1,6 @@
 #version 400
 
 #include "/Projection/Fisheye.glsl"
-#include "/Projection/FisheyeUtils.glsl"
 
 //
 // VAO definition
@@ -26,7 +25,7 @@ uniform mat4	uModelViewMatrix;	// Transforms model coordinates to eye coordinate
 //
 void setupClipPlane(in vec3 inNormalizedVertexPositionInEyeCoords);
 void fisheyeProject(in vec3 inVertexPositionInEyeCoordinates, out vec3 outNormalizedVertexPositionInEyeCoords,
-					out vec4 outScreenPosition, out float outVertexEyeDistanceAU);
+					out float outVertexEyeDistanceAU);
 
 void main()
 {
@@ -34,10 +33,7 @@ void main()
 	vec3 vertexPositionInEyeCoords = (uModelViewMatrix * vec4(vaoPosition, 1.0)).xyz;
 	vec3 normalizedVertexPositionInEyeCoords;
 	float vertexEyeDistanceAU;
-	vec4 screenPosition;
-	fisheyeProject(vertexPositionInEyeCoords, normalizedVertexPositionInEyeCoords, screenPosition, vertexEyeDistanceAU);
-	gl_Position = screenPosition;
-	setupClipPlane(normalizedVertexPositionInEyeCoords);
+	fisheyeProject(vertexPositionInEyeCoords, normalizedVertexPositionInEyeCoords, vertexEyeDistanceAU);
 
 	// Set the point size
 	gl_PointSize = vaoSize;
