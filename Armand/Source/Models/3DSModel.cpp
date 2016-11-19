@@ -317,17 +317,17 @@ bool T3DSModel::load(File& inModelFile, bool inLoadMetaOnly)
 
 void T3DSModel::removeFacelessObjects()
 {
-	T3DSObjectVec_t::iterator object = mObjects.begin();
-	while (object != mObjects.end())
+	T3DSObjectVec_t::iterator object;
+	for (object = mObjects.begin(); object != mObjects.end();)
 	{
 		// Erase any objects that have no faces defined
 		if (object->mNumFaces == 0)
-			mObjects.erase(object);
+			object = mObjects.erase(object);
 		else
 		{
 			// Also, erase any faces that have material specifications that make them invisible.
-			T3DSFaceVec_t::iterator face = object->mFaces.begin();
-			while (face != object->mFaces.end())
+			T3DSFaceVec_t::iterator face;
+			for (face = object->mFaces.begin(); face != object->mFaces.end();)
 			{
 				if (face->mMaterialID >= 0)
 				{
@@ -336,7 +336,10 @@ void T3DSModel::removeFacelessObjects()
 					// Our model of Cassini happens to use this material definition and it looks nutty.
 					T3DSMaterialInfo* theMaterial = &mMaterials[face->mMaterialID];
 					if ((theMaterial->mDiffuseColor[3] == 0.0f) && (theMaterial->mSpecularColor[3] == 0.0f))
-						object->mFaces.erase(face);
+					{
+						face = object->mFaces.erase(face);
+						object->mNumFaces--;
+					}
 					else
 						face++;
 				}
