@@ -217,7 +217,11 @@ bool ModelObject::renderFull(Camera& inCamera, float inAlpha)
 
 	// Make sure the model data is loaded
 	if (!mModel->isLoaded())
+	{
+		Timer t;
 		mModel->load();
+		*DebugStream::inst() << "Model load time: " << t.elapsedSeconds() << " ms." << endl;
+	}
 	if (!mModel->isLoaded())
 		return false;	// Error while loading model data
 
