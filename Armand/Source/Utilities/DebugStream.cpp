@@ -88,7 +88,7 @@ DebugStream& DebugStream::operator<<(const float_t rhs)
 DebugStream& DebugStream::operator<<(const double_t rhs)
 {
 	char buf[64];
-	sprintf(buf, "%f", rhs);
+	sprintf(buf, "%lf", rhs);
 	OutputDebugStringA(buf);
 	return *this;
 }
