@@ -61,7 +61,8 @@ void VAOBuilder::setupGPU(GLuint inVBOid)
 	// Bind the VBO as being the active buffer and storing vertex attributes
 	glBindBuffer(GL_ARRAY_BUFFER, inVBOid);
 
-	GLuint i = 0, offset = 0;
+	GLuint i = 0;
+	size_t offset = 0;
 	for (VBOArrayInfoVec_t::iterator it = mArrayInfo.begin(); it != mArrayInfo.end(); it++)
 	{
 		glVertexAttribPointer(i, it->mSize, it->mType, it->mNormalized, mStride, BUFFER_OFFSET(offset));

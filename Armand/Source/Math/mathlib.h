@@ -263,9 +263,19 @@ template<class T> void Math<T>::sincos(T angle, T& s, T& c)
 	sincosT(angle, s, c);
 }
 
+template<class T> T Math<T>::asin(T x)
+{
+	return asinT(x);
+}
+
 template<class T> T Math<T>::acos(T x)
 {
 	return acosT(x);
+}
+
+template<class T> T Math<T>::atan2(T x, T y)
+{
+	return atan2T(x, y);
 }
 
 template<class T> T Math<T>::sqrt(T x)
@@ -281,6 +291,11 @@ template<class T> T Math<T>::exp(T x)
 template<class T> T Math<T>::log(T x)
 {
 	return logT(x);
+}
+
+template<class T> T Math<T>::fabs(T x)
+{
+	return fabsT(x);
 }
 
 

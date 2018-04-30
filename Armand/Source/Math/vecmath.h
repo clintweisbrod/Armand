@@ -615,6 +615,14 @@ template<class T> Vector3<T>::Vector3(T _x, T _y, T _z) : x(_x), y(_y), z(_z)
 {
 }
 
+template<class T> Vector3<T>::Vector3(const Polar3<T>& p)
+{
+	T cosLatitude = Math<T>::cos(p.fLatitude);
+	x = p.fRadius * cosLatitude * Math<T>::cos(p.fLongitude);
+	y = p.fRadius * cosLatitude * Math<T>::sin(p.fLongitude);
+	z = p.fRadius * sin(p.fLatitude);
+}
+
 template<class T> Vector3<T>::Vector3(const std::string& a)
 {
 	x = 0;
@@ -1196,10 +1204,10 @@ template<class T> Matrix3<T> operator+(const Matrix3<T>& a,
 
 template<class T> Matrix3<T> Matrix3<T>::identity()
 {
-	Matrix4<T> result;
+	Matrix3<T> result;
 	setIdentity(result);
 
-	return resut;
+	return result;
 }
 
 template<class T> void Matrix3<T>::setIdentity(Matrix3<T>& m)
@@ -1492,10 +1500,10 @@ template<class T> Matrix4<T> Matrix4<T>::scaling(const Vector3<T>& s)
 {
 	Matrix4<T> r;
 
-	r.m00 = s;	r.m01 = 0;	r.m02 = 0;	r.m03 = 0;
-	r.m10 = 0;	r.m11 = s;	r.m12 = 0;	r.m13 = 0;
-	r.m20 = 0;	r.m21 = 0;	r.m22 = s;	r.m23 = 0;
-	r.m30 = 0;	r.m31 = 0;	r.m32 = 0;	r.m33 = 1;
+	r.m00 = s.x;	r.m01 = 0;		r.m02 = 0;		r.m03 = 0;
+	r.m10 = 0;		r.m11 = s.y;	r.m12 = 0;		r.m13 = 0;
+	r.m20 = 0;		r.m21 = 0;		r.m22 = s.z;	r.m23 = 0;
+	r.m30 = 0;		r.m31 = 0;		r.m32 = 0;		r.m33 = 1;
 
 	return r;
 }

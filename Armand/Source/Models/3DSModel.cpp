@@ -435,7 +435,7 @@ void T3DSModel::buildArrays()
 	glBufferData(GL_ARRAY_BUFFER, mArrayDataUntextured.size() * sizeof(T3DSVBOInfo), mArrayDataUntextured.data(), GL_STATIC_DRAW);
 	glIsError();
 
-	GLuint offset = 0;
+	size_t offset = 0;
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(T3DSVBOInfo), BUFFER_OFFSET(offset));	// vPosition
 	offset += (3 * sizeof(GLfloat));
 	glVertexAttribPointer(1, GL_BGRA, GL_INT_2_10_10_10_REV, GL_TRUE, sizeof(T3DSVBOInfo), BUFFER_OFFSET(offset));	// vNormal
