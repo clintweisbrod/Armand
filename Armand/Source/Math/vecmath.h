@@ -1548,7 +1548,7 @@ template<class T> Matrix4<T> Matrix4<T>::perspective(const T fovy, const T aspec
 
 template<class T> Matrix4<T> Matrix4<T>::lookAt(const Vector3<T>& eye, const Vector3<T>& center, const Vector3<T>& up)
 {
-	Vector3<T> f(center.x - eye.x, center.y - eye.y, center.z - eye.z);
+	Vector3<T> f = center - eye;
 	f.normalize();
 
 	Vector3<T> upN = up;
@@ -1562,14 +1562,14 @@ template<class T> Matrix4<T> Matrix4<T>::lookAt(const Vector3<T>& eye, const Vec
 
 	Matrix4<T> m;
 
-	m.m00 = s.x;			m.m01 = s.y;			m.m02 = s.z;			m.m03 = 0;
-	m.m10 = u.x;			m.m11 = u.y;			m.m12 = u.z;			m.m13 = 0;
-	m.m20 = -f.x;			m.m21 = -f.y;			m.m22 = -f.z;			m.m23 = 0;
-	m.m30 = 0;				m.m31 = 0;				m.m32 = 0;				m.m33 = 1;
+	m.m11 = s.x;			m.m12 = s.y;			m.m13 = s.z;			m.m14 = 0;
+	m.m21 = u.x;			m.m22 = u.y;			m.m23 = u.z;			m.m24 = 0;
+	m.m31 = -f.x;			m.m32 = -f.y;			m.m33 = -f.z;			m.m34 = 0;
+	m.m41 = 0;				m.m42 = 0;				m.m43 = 0;				m.m44 = 1;
 
-	Matrix4<T> result = Matrix4<T>::translation(eye);
+	Matrix4<T> result = Matrix4<T>::translation(-eye);
 
-	return result * m;
+	return m * result;
 }
 
 // multiply column vector by a 4x4 matrix
